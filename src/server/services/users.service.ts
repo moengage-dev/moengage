@@ -85,8 +85,21 @@ export async function getAdminUsersPageData(): Promise<AdminUsersPageData> {
     verifiedUsers,
     inactiveUsers,
   ] = await Promise.all([
+    // Use explicit select (not include) so passwordHash is never loaded into memory
     prisma.user.findMany({
-      include: userInclude,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        brandId: true,
+        advertiserId: true,
+        isActive: true,
+        isEmailVerified: true,
+        createdAt: true,
+        brand: { select: { name: true } },
+        advertiser: { select: { name: true } },
+      },
       orderBy: { createdAt: "desc" },
     }),
     prisma.brand.findMany({

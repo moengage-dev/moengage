@@ -33,6 +33,7 @@ import type {
 import type { ActionResult } from "@/app/admin/users/actions";
 import { formatStatusLabel } from "@/lib/format";
 
+// Keep in sync with brandRequiredRoles in src/lib/validators/user.validator.ts
 const BRAND_ROLES = ["BRAND_ADMIN", "CAMPAIGN_MANAGER", "RETAIL_OPERATIONS"];
 
 type CreateProps = {
