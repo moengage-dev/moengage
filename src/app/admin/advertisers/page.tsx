@@ -1,25 +1,13 @@
+// src/app/admin/advertisers/page.tsx
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import prisma from "@/lib/prisma";
-import { formatDate, formatStatusLabel, formatNumber } from "@/lib/format";
+import { getAdminAdvertisersPageData } from "@/server/services/advertisers.service";
+import { formatNumber } from "@/lib/format";
+import { AdvertisersClient } from "@/app/admin/advertisers/advertisers-client";
 
 export default async function AdvertisersPage() {
-  const [advertisers, totalAdvertisers, activeAdvertisers] = await Promise.all([
-    prisma.advertiser.findMany({
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.advertiser.count(),
-    prisma.advertiser.count({ where: { status: "ACTIVE" } }),
-  ]);
+  const { advertisers, totalAdvertisers, activeAdvertisers } =
+    await getAdminAdvertisersPageData();
 
   return (
     <div className="space-y-6">
@@ -36,7 +24,9 @@ export default async function AdvertisersPage() {
             <CardTitle className="text-sm font-medium">Total Advertisers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(totalAdvertisers)}</div>
+            <div className="text-2xl font-bold">
+              {formatNumber(totalAdvertisers)}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -44,55 +34,14 @@ export default async function AdvertisersPage() {
             <CardTitle className="text-sm font-medium">Active Advertisers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(activeAdvertisers)}</div>
+            <div className="text-2xl font-bold">
+              {formatNumber(activeAdvertisers)}
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Slug</TableHead>
-              <TableHead>Industry</TableHead>
-              <TableHead>Contact Email</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created At</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {advertisers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  No advertisers found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              advertisers.map((adv) => (
-                <TableRow key={adv.id}>
-                  <TableCell className="font-medium">{adv.name}</TableCell>
-                  <TableCell className="text-muted-foreground font-mono text-sm">
-                    {adv.slug}
-                  </TableCell>
-                  <TableCell>{adv.industry ?? "—"}</TableCell>
-                  <TableCell>{adv.contactEmail ?? "—"}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={adv.status === "ACTIVE" ? "default" : "secondary"}
-                    >
-                      {formatStatusLabel(adv.status)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(adv.createdAt)}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <AdvertisersClient advertisers={advertisers} />
     </div>
   );
 }

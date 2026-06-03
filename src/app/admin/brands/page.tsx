@@ -1,25 +1,12 @@
+// src/app/admin/brands/page.tsx
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import prisma from "@/lib/prisma";
-import { formatDate, formatStatusLabel, formatNumber } from "@/lib/format";
+import { getAdminBrandsPageData } from "@/server/services/brands.service";
+import { formatNumber } from "@/lib/format";
+import { BrandsClient } from "@/app/admin/brands/brands-client";
 
 export default async function BrandsPage() {
-  const [brands, totalBrands, activeBrands] = await Promise.all([
-    prisma.brand.findMany({
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.brand.count(),
-    prisma.brand.count({ where: { status: "ACTIVE" } }),
-  ]);
+  const { brands, totalBrands, activeBrands } = await getAdminBrandsPageData();
 
   return (
     <div className="space-y-6">
@@ -49,48 +36,7 @@ export default async function BrandsPage() {
         </Card>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Slug</TableHead>
-              <TableHead>Industry</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created At</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {brands.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                  No brands found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              brands.map((brand) => (
-                <TableRow key={brand.id}>
-                  <TableCell className="font-medium">{brand.name}</TableCell>
-                  <TableCell className="text-muted-foreground font-mono text-sm">
-                    {brand.slug}
-                  </TableCell>
-                  <TableCell>{brand.industry ?? "—"}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={brand.status === "ACTIVE" ? "default" : "secondary"}
-                    >
-                      {formatStatusLabel(brand.status)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(brand.createdAt)}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <BrandsClient brands={brands} />
     </div>
   );
 }
