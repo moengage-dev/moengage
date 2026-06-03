@@ -1,42 +1,39 @@
-"use client";
-
+// src/app/admin/batches/page.tsx
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { getAdminBatchesPageData } from "@/server/services/batches.service";
+import { BatchesClient } from "@/app/admin/batches/batches-client";
 
-export default function Page() {
+export default async function BatchesPage() {
+  const {
+    batches,
+    brands,
+    campaigns,
+    products,
+    totalBatches,
+    activeBatches,
+    deliveringBatches,
+    closedBatches,
+  } = await getAdminBatchesPageData();
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Product Batches</h1>
-          <p className="text-muted-foreground">Manage and assign manufacturing batches for QR code printing.</p>
-        </div>
-        <Badge variant="secondary" className="w-fit bg-emerald-50 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700 border-emerald-200">
-          Coming soon
-        </Badge>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Batches</h1>
+        <p className="text-muted-foreground">
+          Product batches assigned to campaigns, ready for QR code printing.
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Batches</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1,204</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Printing</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">8</div>
-          </CardContent>
-        </Card>
-      </div>
+      <BatchesClient
+        batches={batches}
+        brands={brands}
+        campaigns={campaigns}
+        products={products}
+        totalBatches={totalBatches}
+        activeBatches={activeBatches}
+        deliveringBatches={deliveringBatches}
+        closedBatches={closedBatches}
+      />
     </div>
   );
 }
