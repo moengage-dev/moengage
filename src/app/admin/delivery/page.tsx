@@ -1,42 +1,166 @@
-"use client";
-
+// src/app/admin/delivery/page.tsx
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { requireRole } from "@/lib/auth/require-role";
+import { getRetailDeliveriesPageData } from "@/server/services/delivery-scan.service";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { formatDate, formatNumber } from "@/lib/format";
+import { Truck, Layers, Archive, Calendar, MapPin, Building2 } from "lucide-react";
 
-export default function Page() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminDeliveryPage() {
+  // Enforce admin permission
+  const user = await requireRole(["ADMIN"]);
+
+  // Fetch all delivery data across all brands
+  const {
+    deliveryScans,
+    totalDeliveryScans,
+    totalCartonsDelivered,
+    totalEstimatedUnitsDelivered,
+  } = await getRetailDeliveriesPageData(user);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Delivery Operations</h1>
-          <p className="text-muted-foreground">Verify supply chain delivery scans and distribution status.</p>
-        </div>
-        <Badge variant="secondary" className="w-fit bg-emerald-50 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700 border-emerald-200">
-          Coming soon
-        </Badge>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Delivery Operations</h1>
+        <p className="text-muted-foreground">
+          Monitor supply chain carton delivery logs and distribution metrics across all registered brands.
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        
-        <Card>
+      {/* Summary Stats */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="bg-slate-900/40 border-slate-850">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cartons Scanned</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-400">Total Delivery Scans</CardTitle>
+            <Truck className="h-4.5 w-4.5 text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12,450</div>
+            <div className="text-2xl font-bold font-mono text-slate-100">{formatNumber(totalDeliveryScans)}</div>
+            <p className="text-[10px] text-slate-500 mt-1">Platform-wide logged deliveries</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-slate-900/40 border-slate-850">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Retail Placements</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-400">Total Cartons Delivered</CardTitle>
+            <Layers className="h-4.5 w-4.5 text-teal-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">84%</div>
+            <div className="text-2xl font-bold font-mono text-slate-100">{formatNumber(totalCartonsDelivered)}</div>
+            <p className="text-[10px] text-slate-500 mt-1">Platform-wide cartons dropped off</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-900/40 border-slate-850">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-slate-400">Total Placed Units</CardTitle>
+            <Archive className="h-4.5 w-4.5 text-emerald-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-mono text-slate-100">
+              {formatNumber(totalEstimatedUnitsDelivered)} units
+            </div>
+            <p className="text-[10px] text-slate-500 mt-1">Estimated product units in circulation</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Audit History Table */}
+      <Card className="bg-slate-900/40 border-slate-850">
+        <CardHeader>
+          <CardTitle className="text-base font-bold text-slate-200">Global Supply Chain History</CardTitle>
+          <CardDescription className="text-xs text-slate-400">
+            Audit history of logged cartons and placements.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {deliveryScans.length === 0 ? (
+            <div className="text-center py-12 text-xs text-slate-500">
+              No delivery scan logs recorded yet.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-slate-800">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-800 bg-slate-950/40 text-slate-400 font-semibold">
+                    <th className="py-3.5 px-3">Date</th>
+                    <th className="py-3.5 px-3">Brand</th>
+                    <th className="py-3.5 px-3">Retailer</th>
+                    <th className="py-3.5 px-3">Campaign</th>
+                    <th className="py-3.5 px-3">Product</th>
+                    <th className="py-3.5 px-3">Batch Code</th>
+                    <th className="py-3.5 px-3 text-right">Cartons</th>
+                    <th className="py-3.5 px-3 text-right">Units/Carton</th>
+                    <th className="py-3.5 px-3 text-right">Est. Units</th>
+                    <th className="py-3.5 px-3">City / Suburb</th>
+                    <th className="py-3.5 px-3">Notes</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                  {deliveryScans.map((scan) => (
+                    <tr key={scan.id} className="hover:bg-slate-850/40 transition-colors">
+                      <td className="py-3.5 px-3 whitespace-nowrap text-slate-400">
+                        <span className="flex items-center gap-1.5 font-mono text-[11px]">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {formatDate(scan.createdAt)}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3 whitespace-nowrap font-medium text-slate-200">
+                        <span className="flex items-center gap-1">
+                          <Building2 className="h-3.5 w-3.5 text-slate-400" />
+                          {scan.brand?.name ?? "—"}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <span className="font-semibold text-slate-200 block">
+                          {scan.retailer?.name ?? "—"}
+                        </span>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider block">
+                          {scan.retailer?.type ?? "—"}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3 max-w-[120px] truncate">
+                        {scan.campaign?.name ?? "—"}
+                      </td>
+                      <td className="py-3.5 px-3 max-w-[120px] truncate">
+                        {scan.qrCode?.product?.name ?? "—"}
+                      </td>
+                      <td className="py-3.5 px-3 font-mono text-[10px]">
+                        {scan.batch?.batchCode ?? "—"}
+                      </td>
+                      <td className="py-3.5 px-3 text-right font-mono font-medium">
+                        {scan.cartonsDelivered}
+                      </td>
+                      <td className="py-3.5 px-3 text-right font-mono text-slate-400">
+                        {scan.unitsPerCarton}
+                      </td>
+                      <td className="py-3.5 px-3 text-right font-mono font-semibold text-emerald-400">
+                        {formatNumber(scan.estimatedUnitsDelivered)}
+                      </td>
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        {scan.city ? (
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="h-3 w-3 text-slate-500" />
+                            {scan.suburb ? `${scan.suburb}, ` : ""}
+                            {scan.city}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">—</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-3 max-w-[150px] truncate italic text-slate-400" title={scan.notes ?? undefined}>
+                        {scan.notes ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

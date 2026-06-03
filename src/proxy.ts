@@ -91,6 +91,7 @@ export async function proxy(request: NextRequest) {
     { prefix: "/campaign-manager", roles: ["CAMPAIGN_MANAGER"] },
     { prefix: "/advertiser", roles: ["ADVERTISER_VIEWER"] },
     { prefix: "/retail", roles: ["RETAIL_OPERATIONS"] },
+    { prefix: "/d", roles: ["RETAIL_OPERATIONS"] },
   ];
 
   const matchedRoute = protectedRoutes.find((route) =>
@@ -127,5 +128,6 @@ export const config = {
     "/campaign-manager/:path*",
     "/advertiser/:path*",
     "/retail/:path*",
+    "/d/:path*",
   ],
 };
