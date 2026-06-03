@@ -1,0 +1,651 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  BRAND_ADMIN
+  CAMPAIGN_MANAGER
+  ADVERTISER_VIEWER
+  RETAIL_OPERATIONS
+}
+
+enum BrandStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum AdvertiserStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum ProductStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ENDED
+  ARCHIVED
+}
+
+enum BatchStatus {
+  CREATED
+  ACTIVE
+  DELIVERING
+  DELIVERED
+  CLOSED
+}
+
+enum QRCodeType {
+  CONSUMER_CAMPAIGN
+  SAMPLE_LABEL
+  BATCH_DELIVERY
+  INTERNAL_TEST
+}
+
+enum QRCodeStatus {
+  ACTIVE
+  PAUSED
+  EXPIRED
+  DISABLED
+}
+
+enum RewardType {
+  FREE_DATA
+  AIRTIME
+  WALLET
+  INSURANCE
+  VOUCHER
+  CASHBACK
+  OTHER
+}
+
+enum RewardLimitType {
+  ONE_PER_MOBILE_PER_CAMPAIGN
+}
+
+enum RewardClaimStatus {
+  STARTED
+  APPROVED
+  DECLINED_DUPLICATE
+  DECLINED_SUSPICIOUS
+  FAILED
+}
+
+enum RewardProviderStatus {
+  SIMULATED
+  PENDING
+  FULFILLED
+  FAILED
+}
+
+enum OtpStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+  FAILED
+}
+
+enum LocationSource {
+  IP
+  GPS
+  MANUAL
+  DEMO_SEED
+}
+
+enum RetailerType {
+  RETAILER
+  DISTRIBUTOR
+  KIOSK
+  SUPERMARKET
+  WHOLESALER
+  OUTLET
+  OTHER
+}
+
+enum ReportType {
+  CAMPAIGN_SUMMARY_CSV
+  CAMPAIGN_SUMMARY_PDF
+  SCAN_EVENTS_CSV
+  REWARD_CLAIMS_CSV
+  DELIVERY_SCANS_CSV
+  BILLING_SUMMARY_PDF
+}
+
+model User {
+  id              String   @id @default(cuid())
+  name            String?
+  email           String   @unique
+  passwordHash    String
+  role            UserRole
+  brandId         String?
+  advertiserId    String?
+  isActive        Boolean  @default(true)
+  isEmailVerified Boolean  @default(false)
+
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  brand      Brand?      @relation("BrandUsers", fields: [brandId], references: [id], onDelete: SetNull)
+  advertiser Advertiser? @relation("AdvertiserUsers", fields: [advertiserId], references: [id], onDelete: SetNull)
+
+  createdCampaigns        Campaign[]               @relation("CampaignCreatedByUser")
+  createdQRCodes          QRCode[]                 @relation("QRCodeCreatedByUser")
+  deliveryScans           DeliveryScan[]           @relation("DeliveryScannedByUser")
+  campaignAssignments     CampaignAssignment[]     @relation("CampaignAssignmentUser")
+  reportExports           ReportExport[]           @relation("ReportGeneratedByUser")
+  auditLogs               AuditLog[]               @relation("AuditLogUser")
+  emailVerificationTokens EmailVerificationToken[]
+
+  @@index([role])
+  @@index([brandId])
+  @@index([advertiserId])
+}
+
+model Brand {
+  id         String      @id @default(cuid())
+  name       String
+  slug       String      @unique
+  industry   String?
+  websiteUrl String?
+  logoUrl    String?
+  status     BrandStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users            User[]           @relation("BrandUsers")
+  products         Product[]
+  campaigns        Campaign[]
+  batches          Batch[]
+  qrCodes          QRCode[]
+  retailers        Retailer[]
+  scanEvents       ScanEvent[]
+  rewardClaims     RewardClaim[]
+  deliveryScans    DeliveryScan[]
+  billingSummaries BillingSummary[]
+  reportExports    ReportExport[]
+
+  @@index([status])
+}
+
+model Advertiser {
+  id           String           @id @default(cuid())
+  name         String
+  slug         String           @unique
+  industry     String?
+  websiteUrl   String?
+  logoUrl      String?
+  contactName  String?
+  contactEmail String?
+  status       AdvertiserStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users            User[]           @relation("AdvertiserUsers")
+  campaigns        Campaign[]
+  qrCodes          QRCode[]
+  scanEvents       ScanEvent[]
+  rewardClaims     RewardClaim[]
+  billingSummaries BillingSummary[]
+  reportExports    ReportExport[]
+
+  @@index([status])
+}
+
+model Product {
+  id        String        @id @default(cuid())
+  brandId   String
+  name      String
+  slug      String
+  sku       String?
+  category  String?
+  unitLabel String? // Example: can, bottle, pack, crate, bag, box
+  status    ProductStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  brand      Brand       @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  campaigns  Campaign[]
+  batches    Batch[]
+  qrCodes    QRCode[]
+  scanEvents ScanEvent[]
+
+  @@unique([brandId, slug])
+  @@index([brandId])
+  @@index([status])
+}
+
+model Campaign {
+  id           String  @id @default(cuid())
+  brandId      String
+  advertiserId String
+  productId    String?
+  createdById  String?
+
+  name             String
+  slug             String         @unique
+  offerTitle       String
+  offerDescription String?
+  rewardType       RewardType     @default(FREE_DATA)
+  status           CampaignStatus @default(DRAFT)
+
+  startDate DateTime?
+  endDate   DateTime?
+
+  fixedFeePerUnit      Decimal? @db.Decimal(10, 4)
+  engagementFeePerScan Decimal? @db.Decimal(10, 4)
+  currency             String   @default("USD")
+
+  rewardLimitType    RewardLimitType @default(ONE_PER_MOBILE_PER_CAMPAIGN)
+  maxClaimsPerMobile Int             @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  brand      Brand      @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  advertiser Advertiser @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
+  product    Product?   @relation(fields: [productId], references: [id], onDelete: SetNull)
+  createdBy  User?      @relation("CampaignCreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
+
+  batches          Batch[]
+  qrCodes          QRCode[]
+  scanEvents       ScanEvent[]
+  rewardClaims     RewardClaim[]
+  deliveryScans    DeliveryScan[]
+  billingSummaries BillingSummary[]
+  reportExports    ReportExport[]
+  assignments      CampaignAssignment[]
+
+  @@index([brandId])
+  @@index([advertiserId])
+  @@index([productId])
+  @@index([status])
+  @@index([startDate, endDate])
+}
+
+model Batch {
+  id         String  @id @default(cuid())
+  brandId    String
+  campaignId String
+  productId  String?
+
+  batchCode          String      @unique
+  region             String?
+  city               String?
+  estimatedUnitCount Int?
+  unitsPerCarton     Int?
+  status             BatchStatus @default(CREATED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  brand    Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  product  Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  qrCodes       QRCode[]
+  scanEvents    ScanEvent[]
+  deliveryScans DeliveryScan[]
+
+  @@index([brandId])
+  @@index([campaignId])
+  @@index([productId])
+  @@index([status])
+}
+
+model QRCode {
+  id     String       @id @default(cuid())
+  code   String       @unique
+  type   QRCodeType
+  status QRCodeStatus @default(ACTIVE)
+
+  brandId      String?
+  advertiserId String?
+  campaignId   String?
+  productId    String?
+  batchId      String?
+  createdById  String?
+
+  destinationUrl String?
+  label          String?
+  scanCount      Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  brand      Brand?      @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  advertiser Advertiser? @relation(fields: [advertiserId], references: [id], onDelete: SetNull)
+  campaign   Campaign?   @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  product    Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
+  batch      Batch?      @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  createdBy  User?       @relation("QRCodeCreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
+
+  scanEvents    ScanEvent[]
+  deliveryScans DeliveryScan[]
+
+  @@index([type])
+  @@index([status])
+  @@index([brandId])
+  @@index([advertiserId])
+  @@index([campaignId])
+  @@index([productId])
+  @@index([batchId])
+}
+
+model ScanEvent {
+  id String @id @default(cuid())
+
+  qrCodeId     String
+  brandId      String?
+  advertiserId String?
+  campaignId   String?
+  productId    String?
+  batchId      String?
+
+  anonymousVisitorId String?
+  sessionId          String?
+  ipHash             String?
+  userAgent          String?
+  deviceType         String?
+  os                 String?
+  browser            String?
+
+  country        String?
+  region         String?
+  city           String?
+  suburb         String?
+  latitude       Decimal?       @db.Decimal(10, 7)
+  longitude      Decimal?       @db.Decimal(10, 7)
+  locationSource LocationSource @default(IP)
+
+  isRepeatScan     Boolean @default(false)
+  isSuspicious     Boolean @default(false)
+  suspiciousReason String?
+  isBillable       Boolean @default(true)
+  isInternalTest   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  qrCode     QRCode      @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+  brand      Brand?      @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  advertiser Advertiser? @relation(fields: [advertiserId], references: [id], onDelete: SetNull)
+  campaign   Campaign?   @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  product    Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
+  batch      Batch?      @relation(fields: [batchId], references: [id], onDelete: SetNull)
+
+  rewardClaims RewardClaim[]
+
+  @@index([qrCodeId])
+  @@index([brandId])
+  @@index([advertiserId])
+  @@index([campaignId])
+  @@index([productId])
+  @@index([batchId])
+  @@index([anonymousVisitorId])
+  @@index([ipHash])
+  @@index([isRepeatScan])
+  @@index([isSuspicious])
+  @@index([isBillable])
+  @@index([createdAt])
+}
+
+model RewardClaim {
+  id String @id @default(cuid())
+
+  scanEventId       String
+  campaignId        String
+  brandId           String?
+  advertiserId      String?
+  otpVerificationId String?
+
+  mobileNumber      String?
+  mobileNumberHash  String
+  mobileNumberLast4 String?
+
+  status        RewardClaimStatus
+  declineReason String?
+
+  rewardType       RewardType
+  providerStatus   RewardProviderStatus @default(SIMULATED)
+  providerResponse Json?
+
+  createdAt DateTime  @default(now())
+  claimedAt DateTime?
+
+  scanEvent       ScanEvent        @relation(fields: [scanEventId], references: [id], onDelete: Cascade)
+  campaign        Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  brand           Brand?           @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  advertiser      Advertiser?      @relation(fields: [advertiserId], references: [id], onDelete: SetNull)
+  otpVerification OtpVerification? @relation(fields: [otpVerificationId], references: [id], onDelete: SetNull)
+
+  @@unique([campaignId, mobileNumberHash])
+  @@index([scanEventId])
+  @@index([campaignId])
+  @@index([brandId])
+  @@index([advertiserId])
+  @@index([mobileNumberHash])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OtpVerification {
+  id               String    @id @default(cuid())
+  mobileNumber     String?
+  mobileNumberHash String
+  codeHash         String?
+  status           OtpStatus @default(PENDING)
+  isSimulated      Boolean   @default(true)
+  attemptCount     Int       @default(0)
+  expiresAt        DateTime
+  verifiedAt       DateTime?
+
+  createdAt DateTime @default(now())
+
+  rewardClaims RewardClaim[]
+
+  @@index([mobileNumberHash])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model Retailer {
+  id      String  @id @default(cuid())
+  brandId String?
+
+  name    String
+  type    RetailerType?
+  country String?
+  region  String?
+  city    String?
+  suburb  String?
+  address String?
+
+  latitude  Decimal? @db.Decimal(10, 7)
+  longitude Decimal? @db.Decimal(10, 7)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  brand Brand? @relation(fields: [brandId], references: [id], onDelete: SetNull)
+
+  deliveryScans DeliveryScan[]
+
+  @@index([brandId])
+  @@index([city])
+  @@index([region])
+}
+
+model DeliveryScan {
+  id String @id @default(cuid())
+
+  qrCodeId        String
+  brandId         String?
+  campaignId      String?
+  batchId         String?
+  retailerId      String?
+  scannedByUserId String?
+
+  cartonsDelivered        Int
+  unitsPerCarton          Int
+  estimatedUnitsDelivered Int
+
+  country        String?
+  region         String?
+  city           String?
+  suburb         String?
+  latitude       Decimal?       @db.Decimal(10, 7)
+  longitude      Decimal?       @db.Decimal(10, 7)
+  locationSource LocationSource @default(MANUAL)
+
+  notes     String?
+  createdAt DateTime @default(now())
+
+  qrCode    QRCode    @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+  brand     Brand?    @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  campaign  Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  batch     Batch?    @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  retailer  Retailer? @relation(fields: [retailerId], references: [id], onDelete: SetNull)
+  scannedBy User?     @relation("DeliveryScannedByUser", fields: [scannedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([qrCodeId])
+  @@index([brandId])
+  @@index([campaignId])
+  @@index([batchId])
+  @@index([retailerId])
+  @@index([scannedByUserId])
+  @@index([createdAt])
+}
+
+model BillingSummary {
+  id String @id @default(cuid())
+
+  brandId      String?
+  advertiserId String?
+  campaignId   String
+
+  fixedFeePerUnit      Decimal? @db.Decimal(10, 4)
+  estimatedUnitsPlaced Int      @default(0)
+  fixedFeeTotal        Decimal? @db.Decimal(12, 4)
+
+  engagementFeePerScan  Decimal? @db.Decimal(10, 4)
+  totalScanCount        Int      @default(0)
+  uniqueScanCount       Int      @default(0)
+  repeatScanCount       Int      @default(0)
+  suspiciousScanCount   Int      @default(0)
+  internalTestScanCount Int      @default(0)
+  billableScanCount     Int      @default(0)
+  engagementFeeTotal    Decimal? @db.Decimal(12, 4)
+
+  approvedRewardClaims    Int @default(0)
+  duplicateRewardDeclines Int @default(0)
+
+  totalAmount Decimal? @db.Decimal(12, 4)
+  currency    String   @default("USD")
+
+  generatedAt DateTime @default(now())
+
+  brand      Brand?      @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  advertiser Advertiser? @relation(fields: [advertiserId], references: [id], onDelete: SetNull)
+  campaign   Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([brandId])
+  @@index([advertiserId])
+  @@index([campaignId])
+  @@index([generatedAt])
+}
+
+model ReportExport {
+  id String @id @default(cuid())
+
+  brandId       String?
+  advertiserId  String?
+  campaignId    String?
+  generatedById String?
+
+  type     ReportType
+  fileUrl  String
+  fileName String?
+  mimeType String?
+
+  createdAt DateTime @default(now())
+
+  brand       Brand?      @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  advertiser  Advertiser? @relation(fields: [advertiserId], references: [id], onDelete: SetNull)
+  campaign    Campaign?   @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  generatedBy User?       @relation("ReportGeneratedByUser", fields: [generatedById], references: [id], onDelete: SetNull)
+
+  @@index([brandId])
+  @@index([advertiserId])
+  @@index([campaignId])
+  @@index([generatedById])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  user User? @relation("AuditLogUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+}
+
+model CampaignAssignment {
+  id         String @id @default(cuid())
+  campaignId String
+  userId     String
+
+  createdAt DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User     @relation("CampaignAssignmentUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, userId])
+  @@index([campaignId])
+  @@index([userId])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  email     String
+  token     String
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@index([email])
+  @@index([expiresAt])
+}
