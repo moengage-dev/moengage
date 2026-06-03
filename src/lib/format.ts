@@ -36,3 +36,27 @@ export function formatStatusLabel(status: string | null | undefined): string {
     .replace(/_/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+export function formatPercent(value: number | null | undefined, total: number | null | undefined): string {
+  if (value === null || value === undefined || total === null || total === undefined || total === 0) return "0.0%";
+  return `${((value / total) * 100).toFixed(1)}%`;
+}
+
+export function formatCompactNumber(value: number | null | undefined): string {
+  if (value === null || value === undefined) return "—";
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+export function formatDateTime(date: Date | string | null | undefined): string {
+  if (!date) return "—";
+  return new Date(date).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
