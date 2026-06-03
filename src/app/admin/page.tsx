@@ -1,59 +1,48 @@
-"use client";
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { getAdminDashboardStats } from "@/server/services/admin-dashboard.service";
+import { formatNumber, formatCurrency } from "@/lib/format";
 
-export default function Page() {
+export default async function AdminDashboardPage() {
+  const stats = await getAdminDashboardStats();
+
+  const cards = [
+    { title: "Total Brands", value: formatNumber(stats.totalBrands) },
+    { title: "Active Campaigns", value: formatNumber(stats.activeCampaigns) },
+    { title: "Total Advertisers", value: formatNumber(stats.totalAdvertisers) },
+    { title: "Total Products", value: formatNumber(stats.totalProducts) },
+    { title: "Total Users", value: formatNumber(stats.totalUsers) },
+    { title: "Total QR Codes", value: formatNumber(stats.totalQrCodes) },
+    { title: "Total Scans", value: formatNumber(stats.totalScanEvents) },
+    { title: "Reward Claims", value: formatNumber(stats.totalRewardClaims) },
+    { title: "Delivery Scans", value: formatNumber(stats.totalDeliveryScans) },
+    {
+      title: "Est. Billing Total",
+      value: formatCurrency(stats.estimatedBillingTotal),
+    },
+  ];
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Platform-wide overview for brands, advertisers, campaigns, QR activity, delivery scans, and billing.</p>
-        </div>
-        <Badge variant="secondary" className="w-fit bg-emerald-50 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700 border-emerald-200">
-          Coming soon
-        </Badge>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+        <p className="text-muted-foreground">
+          Platform-wide overview for brands, advertisers, campaigns, QR
+          activity, delivery scans, and billing.
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Brands</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Campaigns</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">48</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Scans</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1,240,892</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Billable Engagements</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$45,230</div>
-          </CardContent>
-        </Card>
+        {cards.map((card) => (
+          <Card key={card.title}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{card.value}</div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );
