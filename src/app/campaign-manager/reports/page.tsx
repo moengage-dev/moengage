@@ -1,42 +1,34 @@
-"use client";
+import { Metadata } from "next";
+import { requireRole } from "@/lib/auth/require-role";
+import { ReportsClient, DEFAULT_REPORT_CARDS } from "@/components/dashboard/reports-client";
+import { FileText } from "lucide-react";
 
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+export const metadata: Metadata = {
+  title: "Reports | Campaign Manager",
+  description: "Download CSV and PDF reports",
+};
 
-export default function Page() {
+export default async function CampaignManagerReportsPage() {
+  await requireRole(["CAMPAIGN_MANAGER"]);
+
+  // Campaign Managers do not see Billing or Suspicious Scans
+  const cards = DEFAULT_REPORT_CARDS.filter(
+    (c) => c.pdfType !== "BILLING_SUMMARY_PDF" && c.csvType !== "SUSPICIOUS_SCANS_CSV"
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Campaign Reports</h1>
-          <p className="text-muted-foreground">Generate detailed reward claims reports and scan logs.</p>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <FileText className="h-8 w-8 text-primary" />
+            Campaign Reports
+          </h1>
+          <p className="text-muted-foreground">Export and view reports for your assigned campaigns.</p>
         </div>
-        <Badge variant="secondary" className="w-fit bg-emerald-50 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700 border-emerald-200">
-          Coming soon
-        </Badge>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Exported</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">54</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Next Scheduled</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Sunday</div>
-          </CardContent>
-        </Card>
-      </div>
+      <ReportsClient availableCards={cards} />
     </div>
   );
 }

@@ -128,10 +128,8 @@ export async function getAdminHeatmapData(filters: HeatmapFilters): Promise<Heat
     batches,
     scans,
     deliveries,
-    totalScanCount,
+    scanEventAgg,
     totalDeliveryCount,
-    totalBillableScans,
-    totalRepeatScans,
     cartonsAgg,
     unitsAgg,
   ] = await Promise.all([
@@ -169,22 +167,15 @@ export async function getAdminHeatmapData(filters: HeatmapFilters): Promise<Heat
       orderBy: { createdAt: "desc" },
     }),
 
-    prisma.scanEvent.count({ where: scanWhere }),
+    prisma.scanEvent.aggregate({
+      _sum: {
+        hitCount: true,
+        billableCount: true,
+        repeatCount: true,
+      },
+      where: scanWhere,
+    }),
     prisma.deliveryScan.count({ where: deliveryWhere }),
-    prisma.scanEvent.count({
-      where: {
-        ...scanWhere,
-        isBillable: true,
-        isSuspicious: false,
-        isInternalTest: false,
-      },
-    }),
-    prisma.scanEvent.count({
-      where: {
-        ...scanWhere,
-        isRepeatScan: true,
-      },
-    }),
     prisma.deliveryScan.aggregate({
       _sum: { cartonsDelivered: true },
       where: deliveryWhere,
@@ -194,6 +185,10 @@ export async function getAdminHeatmapData(filters: HeatmapFilters): Promise<Heat
       where: deliveryWhere,
     }),
   ]);
+
+  const totalScanCount = scanEventAgg._sum.hitCount ?? 0;
+  const totalBillableScans = scanEventAgg._sum.billableCount ?? 0;
+  const totalRepeatScans = scanEventAgg._sum.repeatCount ?? 0;
 
   const consumerEngagementMarkers: ConsumerScanMarker[] = scans.map((s) => ({
     id: s.id,

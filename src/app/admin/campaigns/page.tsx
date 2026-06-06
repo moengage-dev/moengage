@@ -1,9 +1,11 @@
 // src/app/admin/campaigns/page.tsx
 import React from "react";
-import { getAdminCampaignsPageData } from "@/server/services/campaigns.service";
+import { getCampaignsPageData } from "@/server/services/campaigns.service";
 import { CampaignsClient } from "@/app/admin/campaigns/campaigns-client";
+import { requireRole } from "@/lib/auth/require-role";
 
 export default async function CampaignsPage() {
+  const user = await requireRole(["ADMIN"]);
   const {
     campaigns,
     brands,
@@ -13,7 +15,7 @@ export default async function CampaignsPage() {
     activeCampaigns,
     draftCampaigns,
     archivedCampaigns,
-  } = await getAdminCampaignsPageData();
+  } = await getCampaignsPageData(user);
 
   return (
     <div className="space-y-6">

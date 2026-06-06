@@ -19,7 +19,7 @@ export async function createQRCodeAction(
 ): Promise<ActionResult> {
   try {
     const user = await requireRole(["ADMIN"]);
-    const result = await createQRCode(input, user.id);
+    const result = await createQRCode(input, user);
     if (!result.ok) return { ok: false, error: result.error };
     revalidatePath("/admin/qr-codes");
     return { ok: true, message: "QR Code created successfully." };
@@ -34,8 +34,8 @@ export async function updateQRCodeAction(
   input: QRCodeFormValues
 ): Promise<ActionResult> {
   try {
-    await requireRole(["ADMIN"]);
-    const result = await updateQRCode(id, input);
+    const user = await requireRole(["ADMIN"]);
+    const result = await updateQRCode(id, input, user);
     if (!result.ok) return { ok: false, error: result.error };
     revalidatePath("/admin/qr-codes");
     return { ok: true, message: "QR Code updated successfully." };
@@ -47,8 +47,8 @@ export async function updateQRCodeAction(
 
 export async function disableQRCodeAction(id: string): Promise<ActionResult> {
   try {
-    await requireRole(["ADMIN"]);
-    const result = await disableQRCode(id);
+    const user = await requireRole(["ADMIN"]);
+    const result = await disableQRCode(id, user);
     if (!result.ok) return { ok: false, error: result.error };
     revalidatePath("/admin/qr-codes");
     return { ok: true, message: "QR Code disabled." };

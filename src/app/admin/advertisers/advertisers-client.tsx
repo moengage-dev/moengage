@@ -44,9 +44,10 @@ import { formatDate, formatStatusLabel } from "@/lib/format";
 
 type Props = {
   advertisers: AdvertiserRow[];
+  unassignedUsers: { id: string; name: string | null; email: string }[];
 };
 
-export function AdvertisersClient({ advertisers }: Props) {
+export function AdvertisersClient({ advertisers, unassignedUsers }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingAdvertiser, setEditingAdvertiser] = useState<
     AdvertiserRow | undefined
@@ -224,6 +225,7 @@ export function AdvertisersClient({ advertisers }: Props) {
           <AdvertiserForm
             key={editingAdvertiser?.id ?? "create"}
             initialData={editingAdvertiser}
+            unassignedUsers={unassignedUsers}
             onSubmitAction={makeSubmitAction(editingAdvertiser)}
             onSuccess={handleSheetSuccess}
           />

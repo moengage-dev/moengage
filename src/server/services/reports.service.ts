@@ -1,6 +1,9 @@
 // src/server/services/reports.service.ts
 import prisma from "@/lib/prisma";
 import { ReportFilterParams } from "@/lib/validators/report-filter.validator";
+import type { RoleScopeFilters } from "@/lib/auth/role-scope";
+
+export type ReportParams = ReportFilterParams & RoleScopeFilters;
 
 type BuildWhereOptions = {
   startDate?: string;
@@ -18,9 +21,27 @@ function buildDateFilter(options: BuildWhereOptions) {
   return Object.keys(dateFilter).length > 0 ? dateFilter : undefined;
 }
 
-export async function getCampaignSummaryData(filters: ReportFilterParams) {
+function applyRoleScope(where: any, filters: ReportParams, isCampaignModel: boolean = false) {
+  if (filters.brandId) {
+    where.brandId = filters.brandId;
+  }
+  if (filters.advertiserId) {
+    where.advertiserId = filters.advertiserId;
+  }
+  if (filters.campaignId) {
+    if (isCampaignModel) {
+      where.id = filters.campaignId;
+    } else {
+      where.campaignId = filters.campaignId;
+    }
+  }
+  return where;
+}
+
+export async function getCampaignSummaryData(filters: ReportParams) {
   const createdAtFilter = buildDateFilter(filters);
-  const whereClause = createdAtFilter ? { createdAt: createdAtFilter } : {};
+  const whereClause: any = createdAtFilter ? { createdAt: createdAtFilter } : {};
+  applyRoleScope(whereClause, filters, true);
 
   const campaigns = await prisma.campaign.findMany({
     where: whereClause,
@@ -34,9 +55,10 @@ export async function getCampaignSummaryData(filters: ReportFilterParams) {
   return campaigns;
 }
 
-export async function getScanEventsData(filters: ReportFilterParams) {
+export async function getScanEventsData(filters: ReportParams) {
   const createdAtFilter = buildDateFilter(filters);
-  const whereClause = createdAtFilter ? { createdAt: createdAtFilter } : {};
+  const whereClause: any = createdAtFilter ? { createdAt: createdAtFilter } : {};
+  applyRoleScope(whereClause, filters, false);
 
   const scanEvents = await prisma.scanEvent.findMany({
     where: whereClause,
@@ -52,9 +74,10 @@ export async function getScanEventsData(filters: ReportFilterParams) {
   return scanEvents;
 }
 
-export async function getRewardClaimsData(filters: ReportFilterParams) {
+export async function getRewardClaimsData(filters: ReportParams) {
   const createdAtFilter = buildDateFilter(filters);
-  const whereClause = createdAtFilter ? { createdAt: createdAtFilter } : {};
+  const whereClause: any = createdAtFilter ? { createdAt: createdAtFilter } : {};
+  applyRoleScope(whereClause, filters, false);
 
   const rewardClaims = await prisma.rewardClaim.findMany({
     where: whereClause,
@@ -69,9 +92,14 @@ export async function getRewardClaimsData(filters: ReportFilterParams) {
   return rewardClaims;
 }
 
-export async function getDeliveryScansData(filters: ReportFilterParams) {
+export async function getDeliveryScansData(filters: ReportParams) {
   const createdAtFilter = buildDateFilter(filters);
-  const whereClause = createdAtFilter ? { createdAt: createdAtFilter } : {};
+  const whereClause: any = createdAtFilter ? { createdAt: createdAtFilter } : {};
+  
+  if (filters.brandId) whereClause.brandId = filters.brandId;
+  if (filters.campaignId) whereClause.campaignId = filters.campaignId;
+  // DeliveryScan does not have advertiserId in the schema.
+  // If an ADVERTISER_VIEWER attempts this report, it's blocked at the API level.
 
   const deliveryScans = await prisma.deliveryScan.findMany({
     where: whereClause,
@@ -86,12 +114,50 @@ export async function getDeliveryScansData(filters: ReportFilterParams) {
   return deliveryScans;
 }
 
-export async function getBillingSummaryData(filters: ReportFilterParams) {
-  const generatedAtFilter = buildDateFilter(filters);
-  const whereClause = generatedAtFilter ? { generatedAt: generatedAtFilter } : {};
+export async function getSuspiciousScansData(filters: ReportParams) {
+  const createdAtFilter = buildDateFilter(filters);
+  const whereClause: any = {
+    OR: [
+      { isSuspicious: true },
+      { suspiciousReason: { not: null } },
+      { isBillable: false },
+    ],
+  };
+
+  if (createdAtFilter) {
+    whereClause.createdAt = createdAtFilter;
+  }
+  applyRoleScope(whereClause, filters, false);
+
+  const suspiciousScans = await prisma.scanEvent.findMany({
+    where: whereClause,
+    include: {
+      campaign: { select: { name: true } },
+      product: { select: { name: true } },
+      brand: { select: { name: true } },
+      advertiser: { select: { name: true } },
+      qrCode: { select: { code: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return suspiciousScans;
+}
+
+export async function getBillingSummaryData(filters: ReportParams) {
+  const where: any = {};
+  if (filters.brandId) where.brandId = filters.brandId;
+  if (filters.advertiserId) where.advertiserId = filters.advertiserId;
+  if (filters.campaignId) where.campaignId = filters.campaignId;
+
+  if (filters.startDate || filters.endDate) {
+    where.generatedAt = {};
+    if (filters.startDate) where.generatedAt.gte = new Date(filters.startDate);
+    if (filters.endDate) where.generatedAt.lte = new Date(filters.endDate);
+  }
 
   const summaries = await prisma.billingSummary.findMany({
-    where: whereClause,
+    where,
     include: {
       campaign: { select: { name: true } },
       brand: { select: { name: true } },
@@ -100,5 +166,23 @@ export async function getBillingSummaryData(filters: ReportFilterParams) {
     orderBy: { generatedAt: "desc" },
   });
 
-  return summaries;
+  return summaries.map((s) => ({
+    campaignId: s.campaignId,
+    campaignName: s.campaign.name,
+    brandName: s.brand?.name || "—",
+    advertiserName: s.advertiser?.name || "—",
+    fixedFeePerUnit: s.fixedFeePerUnit ? s.fixedFeePerUnit.toNumber() : 0,
+    engagementFeePerScan: s.engagementFeePerScan ? s.engagementFeePerScan.toNumber() : 0,
+    currency: s.currency,
+    estimatedUnitsPlaced: s.estimatedUnitsPlaced,
+    totalScans: s.totalScanCount,
+    billableScanCount: s.billableScanCount,
+    nonBillableScanCount: s.totalScanCount - s.billableScanCount,
+    rewardClaimsApproved: s.approvedRewardClaims,
+    duplicateRewardClaimsDeclined: s.duplicateRewardDeclines,
+    fixedFeeTotal: s.fixedFeeTotal ? s.fixedFeeTotal.toNumber() : 0,
+    engagementFeeTotal: s.engagementFeeTotal ? s.engagementFeeTotal.toNumber() : 0,
+    totalAmount: s.totalAmount ? s.totalAmount.toNumber() : 0,
+    generatedAt: s.generatedAt,
+  }));
 }

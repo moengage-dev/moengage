@@ -4,6 +4,13 @@ import { BatchStatus } from "@prisma/client";
 import { batchSchema } from "@/lib/validators/batch.validator";
 import type { BatchFormValues } from "@/lib/validators/batch.validator";
 
+export type ScopedUser = {
+  id: string;
+  role: string;
+  brandId?: string | null;
+  advertiserId?: string | null;
+};
+
 function toNull(v: string | undefined | null): string | null {
   if (!v || v.trim() === "") return null;
   return v;
@@ -104,7 +111,31 @@ const batchInclude = {
   product: { select: { name: true } },
 } as const;
 
-export async function getAdminBatchesPageData(): Promise<AdminBatchesPageData> {
+export async function getBatchesPageData(user: ScopedUser): Promise<AdminBatchesPageData> {
+  const batchFilter: any = {};
+  if (user.role === "BRAND_ADMIN") {
+    batchFilter.brandId = user.brandId;
+  } else if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+    batchFilter.campaign = { advertiserId: user.advertiserId };
+  }
+
+  const brandFilter: any = { status: "ACTIVE" };
+  if (user.role === "BRAND_ADMIN") {
+    brandFilter.id = user.brandId;
+  }
+
+  const campaignFilter: any = { status: { in: ["ACTIVE", "DRAFT", "PAUSED"] } };
+  if (user.role === "BRAND_ADMIN") {
+    campaignFilter.brandId = user.brandId;
+  } else if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+    campaignFilter.advertiserId = user.advertiserId;
+  }
+
+  const productFilter: any = { status: "ACTIVE" };
+  if (user.role === "BRAND_ADMIN") {
+    productFilter.brandId = user.brandId;
+  }
+
   const [
     batches,
     brands,
@@ -116,28 +147,29 @@ export async function getAdminBatchesPageData(): Promise<AdminBatchesPageData> {
     closedBatches,
   ] = await Promise.all([
     prisma.batch.findMany({
+      where: batchFilter,
       include: batchInclude,
       orderBy: { createdAt: "desc" },
     }),
     prisma.brand.findMany({
-      where: { status: "ACTIVE" },
+      where: brandFilter,
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
     prisma.campaign.findMany({
-      where: { status: { in: ["ACTIVE", "DRAFT", "PAUSED"] } },
+      where: campaignFilter,
       select: { id: true, name: true, brandId: true, productId: true },
       orderBy: { name: "asc" },
     }),
     prisma.product.findMany({
-      where: { status: "ACTIVE" },
+      where: productFilter,
       select: { id: true, name: true, brandId: true },
       orderBy: { name: "asc" },
     }),
-    prisma.batch.count(),
-    prisma.batch.count({ where: { status: "ACTIVE" } }),
-    prisma.batch.count({ where: { status: "DELIVERING" } }),
-    prisma.batch.count({ where: { status: "CLOSED" } }),
+    prisma.batch.count({ where: batchFilter }),
+    prisma.batch.count({ where: { ...batchFilter, status: "ACTIVE" } }),
+    prisma.batch.count({ where: { ...batchFilter, status: "DELIVERING" } }),
+    prisma.batch.count({ where: { ...batchFilter, status: "CLOSED" } }),
   ]);
 
   return {
@@ -162,7 +194,8 @@ export async function getAdminBatchesPageData(): Promise<AdminBatchesPageData> {
 }
 
 export async function createBatch(
-  input: BatchFormValues
+  input: BatchFormValues,
+  user: ScopedUser
 ): Promise<ServiceResult<BatchRow>> {
   const parsed = batchSchema.safeParse(input);
   if (!parsed.success) {
@@ -183,6 +216,17 @@ export async function createBatch(
     unitsPerCarton,
     status,
   } = parsed.data;
+
+  if (user.role === "BRAND_ADMIN" && brandId !== user.brandId) {
+    return { ok: false, error: "Unauthorized: Invalid brand mapping" };
+  }
+  
+  if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+    const checkCampaign = await prisma.campaign.findUnique({ where: { id: campaignId }, select: { advertiserId: true } });
+    if (!checkCampaign || checkCampaign.advertiserId !== user.advertiserId) {
+       return { ok: false, error: "Unauthorized to create batch for this campaign" };
+    }
+  }
 
   const existing = await prisma.batch.findUnique({ where: { batchCode } });
   if (existing) {
@@ -233,7 +277,8 @@ export async function createBatch(
 
 export async function updateBatch(
   id: string,
-  input: BatchFormValues
+  input: BatchFormValues,
+  user: ScopedUser
 ): Promise<ServiceResult<BatchRow>> {
   const parsed = batchSchema.safeParse(input);
   if (!parsed.success) {
@@ -254,6 +299,17 @@ export async function updateBatch(
     unitsPerCarton,
     status,
   } = parsed.data;
+
+  if (user.role !== "ADMIN") {
+    const existingBatch = await prisma.batch.findUnique({
+      where: { id },
+      include: { campaign: { select: { advertiserId: true } } }
+    });
+    if (!existingBatch) return { ok: false, error: "Batch not found" };
+    if (user.role === "BRAND_ADMIN" && existingBatch.brandId !== user.brandId) return { ok: false, error: "Unauthorized" };
+    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && existingBatch.campaign?.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+    if (user.role === "BRAND_ADMIN" && brandId !== existingBatch.brandId) return { ok: false, error: "Unauthorized to change brand ownership" };
+  }
 
   const codeConflict = await prisma.batch.findFirst({
     where: { batchCode, NOT: { id } },
@@ -305,7 +361,17 @@ export async function updateBatch(
   return { ok: true, data: toBatchRow(batch) };
 }
 
-export async function closeBatch(id: string): Promise<ServiceResult> {
+export async function closeBatch(id: string, user: ScopedUser): Promise<ServiceResult> {
+  if (user.role !== "ADMIN") {
+    const existingBatch = await prisma.batch.findUnique({
+      where: { id },
+      include: { campaign: { select: { advertiserId: true } } }
+    });
+    if (!existingBatch) return { ok: false, error: "Batch not found" };
+    if (user.role === "BRAND_ADMIN" && existingBatch.brandId !== user.brandId) return { ok: false, error: "Unauthorized" };
+    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && existingBatch.campaign?.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+  }
+
   await prisma.batch.update({
     where: { id },
     data: { status: "CLOSED" },

@@ -1,42 +1,59 @@
-"use client";
+import { Metadata } from "next";
+import { requireRole } from "@/lib/auth/require-role";
+import { getAdvertiserBillingPageData } from "@/server/services/billing.service";
+import { billingFilterSchema } from "@/lib/validators/billing.validator";
+import { BillingClient } from "@/components/dashboard/billing-client";
+import { Coins } from "lucide-react";
 
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+export const metadata: Metadata = {
+  title: "Billing | Advertiser Dashboard",
+  description: "View billing summaries for your campaigns",
+};
 
-export default function Page() {
+export default async function AdvertiserBillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const user = await requireRole(["ADVERTISER_VIEWER"]);
+
+  if (!user.advertiserId) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed rounded-xl bg-card">
+        <Coins className="h-12 w-12 text-destructive mb-4" />
+        <h1 className="text-2xl font-bold text-foreground">No Advertiser Assigned</h1>
+        <p className="text-muted-foreground mt-2 max-w-md">
+          Your account is not currently assigned to an advertiser. Please contact an administrator to complete your profile assignment.
+        </p>
+      </div>
+    );
+  }
+
+  const resolvedParams = await searchParams;
+
+  const parseResult = billingFilterSchema.safeParse({
+    startDate: typeof resolvedParams.startDate === "string" ? resolvedParams.startDate : undefined,
+    endDate: typeof resolvedParams.endDate === "string" ? resolvedParams.endDate : undefined,
+  });
+
+  const filters = parseResult.success ? parseResult.data : {};
+  const data = await getAdvertiserBillingPageData(user.advertiserId, filters);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Billing Overview</h1>
-          <p className="text-muted-foreground">Track placement cost summaries and campaign fee structure.</p>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <Coins className="h-8 w-8 text-primary" />
+            Advertiser Billing Summary
+          </h1>
+          <p className="text-muted-foreground font-medium">
+            View calculated billing metrics for your active and historical campaigns.
+          </p>
         </div>
-        <Badge variant="secondary" className="w-fit bg-emerald-50 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700 border-emerald-200">
-          Coming soon
-        </Badge>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Advertiser Budget</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$100,000</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Spend To Date</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$18,400</div>
-          </CardContent>
-        </Card>
-      </div>
+      <BillingClient data={data} basePath="/advertiser/billing" isAdmin={false} />
     </div>
   );
 }

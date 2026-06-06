@@ -2,11 +2,15 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAdminBrandsPageData } from "@/server/services/brands.service";
+import { getUnassignedBrandAdmins } from "@/server/services/users.service";
 import { formatNumber } from "@/lib/format";
 import { BrandsClient } from "@/app/admin/brands/brands-client";
 
 export default async function BrandsPage() {
-  const { brands, totalBrands, activeBrands } = await getAdminBrandsPageData();
+  const [{ brands, totalBrands, activeBrands }, unassignedAdmins] = await Promise.all([
+    getAdminBrandsPageData(),
+    getUnassignedBrandAdmins(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -36,7 +40,7 @@ export default async function BrandsPage() {
         </Card>
       </div>
 
-      <BrandsClient brands={brands} />
+      <BrandsClient brands={brands} unassignedAdmins={unassignedAdmins} />
     </div>
   );
 }

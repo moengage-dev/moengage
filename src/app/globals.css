@@ -18,11 +18,20 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
+  
+  /* Brand Theme Extensions */
+  --color-brand-cream: var(--brand-cream);
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-coral: var(--brand-coral);
+  --color-brand-yellow: var(--brand-yellow);
+
+  /* Charts mapped to dashboard analytics layers */
+  --color-chart-1: var(--chart-1); /* Coral: Campaigns */
+  --color-chart-2: var(--chart-2); /* Teal: Scan Events */
+  --color-chart-3: var(--chart-3); /* Yellow: Reward Claims */
   --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
+  --color-chart-5: var(--chart-5);
+  
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -40,6 +49,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -49,75 +59,88 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Base Light Mode Tokens - Warm, Organic SaaS Style */
 :root {
-  --background: #ffffff;
-  --foreground: #09090b;
-  --card: #ffffff;
-  --card-foreground: #09090b;
-  --popover: #ffffff;
-  --popover-foreground: #09090b;
-  --primary: #10b981;
+  /* Brand Palette Tones */
+  --brand-cream: #FFF6DE;  /* Deep base cream canvas */
+  --brand-teal: #8BDFDD;    /* Consumer engagement / scans */
+  --brand-coral: #F48F68;   /* Primary actions / active campaigns */
+  --brand-yellow: #FFE394;  /* Rewards / alerts */
+  
+  /* Core Layout Mapping */
+  --background: var(--brand-cream);
+  --foreground: #2C2621;    /* Rich, warm charcoal instead of harsh pitch black */
+  
+  /* Elevated elements use pure white to pop cleanly against the cream canvas */
+  --card: #FFFBF5;
+  --card-foreground: #2C2621;
+  --popover: #FFFBF5;
+  --popover-foreground: #2C2621;
+  
+  /* Interactive Mapping */
+  --primary: var(--brand-coral);
   --primary-foreground: #ffffff;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #09090b;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --accent: #f4f4f5;
-  --accent-foreground: #09090b;
-  --destructive: #ef4444;
-  --destructive-foreground: #f8fafc;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #10b981;
-  --chart-1: #10b981;
-  --chart-2: #34d399;
-  --chart-3: #059669;
-  --chart-4: #6ee7b7;
-  --chart-5: #047857;
-  --radius: 0.5rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #09090b;
-  --sidebar-primary: #10b981;
+  --secondary: #F4EBD4;     /* Muted cream tint */
+  --secondary-foreground: #2C2621;
+  
+  --muted: #F5EFE0;
+  --muted-foreground: #7D756E;
+  --accent: #F5EFE0;
+  --accent-foreground: #2C2621;
+  --destructive: #E15A3E;
+  --destructive-foreground: #ffffff;
+  
+  --border: #EFE6D0;
+  --input: #EFE6D0;
+  --ring: var(--brand-teal);
+  
+  /* Chart Definitions matching brand palette */
+  --chart-1: var(--brand-coral);
+  --chart-2: var(--brand-teal);
+  --chart-3: var(--brand-yellow);
+  --chart-4: #A6C5B3;
+  --chart-5: #D9A07E;
+  
+  --radius: 0.85rem; /* Generous, premium curves */
+  
+  /* Navigation Sidebar Configuration */
+  --sidebar: #FFFBF5;
+  --sidebar-foreground: #2C2621;
+  --sidebar-primary: var(--brand-coral);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f4f4f5;
-  --sidebar-accent-foreground: #09090b;
-  --sidebar-border: #e4e4e7;
-  --sidebar-ring: #10b981;
+  --sidebar-accent: var(--brand-cream);
+  --sidebar-accent-foreground: #2C2621;
+  --sidebar-border: #EFE6D0;
+  --sidebar-ring: var(--brand-teal);
 }
 
+/* Elegant Complementary Dark Mode Context */
 .dark {
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: #09090b;
-  --card-foreground: #fafafa;
-  --popover: #09090b;
-  --popover-foreground: #fafafa;
-  --primary: #10b981;
-  --primary-foreground: #09090b;
-  --secondary: #27272a;
-  --secondary-foreground: #fafafa;
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
-  --accent: #27272a;
-  --accent-foreground: #fafafa;
-  --destructive: #ef4444;
-  --destructive-foreground: #fafafa;
-  --border: #27272a;
-  --input: #27272a;
-  --ring: #10b981;
-  --chart-1: #10b981;
-  --chart-2: #34d399;
-  --chart-3: #059669;
-  --chart-4: #6ee7b7;
-  --chart-5: #047857;
-  --sidebar: #09090b;
-  --sidebar-foreground: #fafafa;
-  --sidebar-primary: #10b981;
-  --sidebar-primary-foreground: #09090b;
-  --sidebar-accent: #27272a;
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #27272a;
-  --sidebar-ring: #10b981;
+  --background: #181512;    /* Super deep warm dark base */
+  --foreground: #F7F5F0;
+  
+  --card: #221E1A;          /* Slightly raised warm containers */
+  --card-foreground: #F7F5F0;
+  --popover: #221E1A;
+  --popover-foreground: #F7F5F0;
+  
+  --primary: var(--brand-coral);
+  --primary-foreground: #181512;
+  --secondary: #2C2621;
+  --secondary-foreground: #F7F5F0;
+  
+  --muted: #2C2621;
+  --muted-foreground: #A69E96;
+  --accent: #2C2621;
+  --accent-foreground: #F7F5F0;
+  
+  --border: #2C2621;
+  --input: #2C2621;
+  --ring: var(--brand-teal);
+  
+  --sidebar: #181512;
+  --sidebar-foreground: #F7F5F0;
+  --sidebar-border: #2C2621;
 }
 
 @layer base {
@@ -125,7 +148,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased tracking-tight;
   }
   html {
     @apply font-sans;

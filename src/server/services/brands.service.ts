@@ -17,6 +17,9 @@ export type BrandRow = {
   logoUrl: string | null;
   status: "ACTIVE" | "PAUSED" | "ARCHIVED";
   createdAt: string;
+  primaryUserId: string | null;
+  primaryUserName: string | null;
+  primaryUserEmail: string | null;
 };
 
 export type AdminBrandsPageData = {
@@ -27,7 +30,15 @@ export type AdminBrandsPageData = {
 
 export async function getAdminBrandsPageData(): Promise<AdminBrandsPageData> {
   const [brands, totalBrands, activeBrands] = await Promise.all([
-    prisma.brand.findMany({ orderBy: { createdAt: "desc" } }),
+    prisma.brand.findMany({
+      include: {
+        users: {
+          where: { role: "BRAND_ADMIN" },
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
     prisma.brand.count(),
     prisma.brand.count({ where: { status: "ACTIVE" } }),
   ]);
@@ -42,6 +53,9 @@ export async function getAdminBrandsPageData(): Promise<AdminBrandsPageData> {
       logoUrl: b.logoUrl,
       status: b.status as "ACTIVE" | "PAUSED" | "ARCHIVED",
       createdAt: b.createdAt.toISOString(),
+      primaryUserId: b.users[0]?.id ?? null,
+      primaryUserName: b.users[0]?.name ?? null,
+      primaryUserEmail: b.users[0]?.email ?? null,
     })),
     totalBrands,
     activeBrands,
@@ -60,7 +74,7 @@ export async function createBrand(
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { name, slug, industry, websiteUrl, logoUrl, status } = parsed.data;
+  const { name, slug, industry, websiteUrl, logoUrl, status, primaryUserId } = parsed.data;
 
   const existing = await prisma.brand.findUnique({ where: { slug } });
   if (existing) {
@@ -78,6 +92,19 @@ export async function createBrand(
     },
   });
 
+  let primaryUserName: string | null = null;
+  let primaryUserEmail: string | null = null;
+
+  if (primaryUserId) {
+    const updatedUser = await prisma.user.update({
+      where: { id: primaryUserId },
+      data: { brandId: brand.id },
+      select: { name: true, email: true },
+    });
+    primaryUserName = updatedUser.name;
+    primaryUserEmail = updatedUser.email;
+  }
+
   return {
     ok: true,
     data: {
@@ -89,6 +116,9 @@ export async function createBrand(
       logoUrl: brand.logoUrl,
       status: brand.status as "ACTIVE" | "PAUSED" | "ARCHIVED",
       createdAt: brand.createdAt.toISOString(),
+      primaryUserId: primaryUserId ?? null,
+      primaryUserName,
+      primaryUserEmail,
     },
   };
 }
@@ -102,7 +132,7 @@ export async function updateBrand(
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { name, slug, industry, websiteUrl, logoUrl, status } = parsed.data;
+  const { name, slug, industry, websiteUrl, logoUrl, status, primaryUserId } = parsed.data;
 
   const slugConflict = await prisma.brand.findFirst({
     where: { slug, NOT: { id } },
@@ -123,6 +153,25 @@ export async function updateBrand(
     },
   });
 
+  // Clear existing links
+  await prisma.user.updateMany({
+    where: { brandId: id },
+    data: { brandId: null },
+  });
+
+  let primaryUserName: string | null = null;
+  let primaryUserEmail: string | null = null;
+
+  if (primaryUserId) {
+    const updatedUser = await prisma.user.update({
+      where: { id: primaryUserId },
+      data: { brandId: id },
+      select: { name: true, email: true },
+    });
+    primaryUserName = updatedUser.name;
+    primaryUserEmail = updatedUser.email;
+  }
+
   return {
     ok: true,
     data: {
@@ -134,6 +183,9 @@ export async function updateBrand(
       logoUrl: brand.logoUrl,
       status: brand.status as "ACTIVE" | "PAUSED" | "ARCHIVED",
       createdAt: brand.createdAt.toISOString(),
+      primaryUserId: primaryUserId ?? null,
+      primaryUserName,
+      primaryUserEmail,
     },
   };
 }

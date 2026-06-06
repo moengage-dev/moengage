@@ -1,10 +1,10 @@
 import React from "react";
 import { requireRole } from "@/lib/auth/require-role";
-import { getAdminQRCodesPageData } from "@/server/services/qr-codes.service";
+import { getQRCodesPageData } from "@/server/services/qr-codes.service";
 import { QRCodesClient } from "@/app/admin/qr-codes/qr-codes-client";
 
 export default async function QRCodesPage() {
-  await requireRole(["ADMIN"]);
+  const user = await requireRole(["ADMIN"]);
 
   const {
     qrCodes,
@@ -19,7 +19,7 @@ export default async function QRCodesPage() {
     deliveryQRCodes,
     sampleLabelQRCodes,
     internalTestQRCodes,
-  } = await getAdminQRCodesPageData();
+  } = await getQRCodesPageData(user);
 
   return (
     <div className="space-y-6">

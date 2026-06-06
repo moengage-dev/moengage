@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { requireRole } from "@/lib/auth/require-role";
-import { ReportsClient } from "./reports-client";
+import { ReportsClient } from "@/components/dashboard/reports-client";
 import { FileText } from "lucide-react";
 
 export const metadata: Metadata = {

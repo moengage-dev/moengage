@@ -306,3 +306,84 @@ export async function activateUser(id: string): Promise<ServiceResult> {
   });
   return { ok: true, data: undefined };
 }
+
+export async function getUnassignedBrandAdmins(): Promise<{ id: string; name: string | null; email: string }[]> {
+  return prisma.user.findMany({
+    where: {
+      role: "BRAND_ADMIN",
+      brandId: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+    orderBy: {
+      name: "asc",
+    },
+  });
+}
+
+export async function getUnassignedAdvertiserUsers(): Promise<{ id: string; name: string | null; email: string }[]> {
+  return prisma.user.findMany({
+    where: {
+      role: {
+        in: ["CAMPAIGN_MANAGER", "ADVERTISER_VIEWER"],
+      },
+      advertiserId: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+    orderBy: {
+      name: "asc",
+    },
+  });
+}
+
+export async function createUnassignedUser(input: {
+  name: string;
+  email: string;
+  password: string;
+  role: "BRAND_ADMIN" | "CAMPAIGN_MANAGER" | "ADVERTISER_VIEWER";
+}): Promise<ServiceResult<UserRow>> {
+  const { name, email, password, role } = input;
+  if (!name || name.trim().length < 2) {
+    return { ok: false, error: "Name must be at least 2 characters" };
+  }
+  if (!email || !email.includes("@")) {
+    return { ok: false, error: "Invalid email address" };
+  }
+  if (!password || password.length < 8) {
+    return { ok: false, error: "Password must be at least 8 characters" };
+  }
+
+  const existing = await prisma.user.findUnique({
+    where: { email: email.toLowerCase().trim() },
+    select: { id: true },
+  });
+  if (existing) {
+    return { ok: false, error: `Email "${email}" is already registered` };
+  }
+
+  const passwordHash = await bcryptjs.hash(password, 10);
+
+  const user = await prisma.user.create({
+    data: {
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      passwordHash,
+      role: role as UserRole,
+      brandId: null,
+      advertiserId: null,
+      isActive: true,
+      isEmailVerified: true,
+      emailVerifiedAt: new Date(),
+    },
+    include: userInclude,
+  });
+
+  return { ok: true, data: toUserRow(user) };
+}

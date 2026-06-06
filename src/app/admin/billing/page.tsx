@@ -1,42 +1,50 @@
-"use client";
+import { Metadata } from "next";
+import { requireRole } from "@/lib/auth/require-role";
+import { getAdminBillingPageData } from "@/server/services/billing.service";
+import { billingFilterSchema } from "@/lib/validators/billing.validator";
+import { BillingClient } from "@/components/dashboard/billing-client";
+import { Coins } from "lucide-react";
 
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+export const metadata: Metadata = {
+  title: "Billing | MoEngage Admin",
+  description: "View calculated billing summaries",
+};
 
-export default function Page() {
+export default async function AdminBillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  await requireRole(["ADMIN"]);
+
+  const resolvedParams = await searchParams;
+  
+  const parseResult = billingFilterSchema.safeParse({
+    brandId: typeof resolvedParams.brandId === "string" ? resolvedParams.brandId : undefined,
+    advertiserId: typeof resolvedParams.advertiserId === "string" ? resolvedParams.advertiserId : undefined,
+    campaignId: typeof resolvedParams.campaignId === "string" ? resolvedParams.campaignId : undefined,
+    startDate: typeof resolvedParams.startDate === "string" ? resolvedParams.startDate : undefined,
+    endDate: typeof resolvedParams.endDate === "string" ? resolvedParams.endDate : undefined,
+  });
+
+  const filters = parseResult.success ? parseResult.data : {};
+  const data = await getAdminBillingPageData(filters);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Billing & Invoices</h1>
-          <p className="text-muted-foreground">Configure fixed fees, track engagement costs, and audit platform billing.</p>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <Coins className="h-8 w-8 text-primary" />
+            Billing Overview
+          </h1>
+          <p className="text-muted-foreground">
+            Calculated engagement fees and fixed fees across all campaigns.
+          </p>
         </div>
-        <Badge variant="secondary" className="w-fit bg-emerald-50 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700 border-emerald-200">
-          Coming soon
-        </Badge>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Invoiced</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$124,500</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Payment</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$12,400</div>
-          </CardContent>
-        </Card>
-      </div>
+      <BillingClient data={data} isAdmin={true} />
     </div>
   );
 }

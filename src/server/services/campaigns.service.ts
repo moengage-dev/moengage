@@ -4,6 +4,13 @@ import { RewardType, CampaignStatus } from "@prisma/client";
 import { campaignSchema } from "@/lib/validators/campaign.validator";
 import type { CampaignFormValues } from "@/lib/validators/campaign.validator";
 
+export type ScopedUser = {
+  id: string;
+  role: string;
+  brandId?: string | null;
+  advertiserId?: string | null;
+};
+
 function toNull(v: string | undefined | null): string | null {
   if (!v || v.trim() === "") return null;
   return v;
@@ -128,7 +135,29 @@ const campaignInclude = {
   product: { select: { name: true } },
 } as const;
 
-export async function getAdminCampaignsPageData(): Promise<AdminCampaignsPageData> {
+export async function getCampaignsPageData(user: ScopedUser): Promise<AdminCampaignsPageData> {
+  const campaignFilter: any = {};
+  if (user.role === "BRAND_ADMIN") {
+    campaignFilter.brandId = user.brandId;
+  } else if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+    campaignFilter.advertiserId = user.advertiserId;
+  }
+
+  const brandFilter: any = { status: "ACTIVE" };
+  if (user.role === "BRAND_ADMIN") {
+    brandFilter.id = user.brandId;
+  }
+
+  const advertiserFilter: any = { status: "ACTIVE" };
+  if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+    advertiserFilter.id = user.advertiserId;
+  }
+
+  const productFilter: any = { status: "ACTIVE" };
+  if (user.role === "BRAND_ADMIN") {
+    productFilter.brandId = user.brandId;
+  }
+
   const [
     campaigns,
     brands,
@@ -140,28 +169,29 @@ export async function getAdminCampaignsPageData(): Promise<AdminCampaignsPageDat
     archivedCampaigns,
   ] = await Promise.all([
     prisma.campaign.findMany({
+      where: campaignFilter,
       include: campaignInclude,
       orderBy: { createdAt: "desc" },
     }),
     prisma.brand.findMany({
-      where: { status: "ACTIVE" },
+      where: brandFilter,
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
     prisma.advertiser.findMany({
-      where: { status: "ACTIVE" },
+      where: advertiserFilter,
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
     prisma.product.findMany({
-      where: { status: "ACTIVE" },
+      where: productFilter,
       select: { id: true, name: true, brandId: true },
       orderBy: { name: "asc" },
     }),
-    prisma.campaign.count(),
-    prisma.campaign.count({ where: { status: "ACTIVE" } }),
-    prisma.campaign.count({ where: { status: "DRAFT" } }),
-    prisma.campaign.count({ where: { status: "ARCHIVED" } }),
+    prisma.campaign.count({ where: campaignFilter }),
+    prisma.campaign.count({ where: { ...campaignFilter, status: "ACTIVE" } }),
+    prisma.campaign.count({ where: { ...campaignFilter, status: "DRAFT" } }),
+    prisma.campaign.count({ where: { ...campaignFilter, status: "ARCHIVED" } }),
   ]);
 
   return {
@@ -182,7 +212,7 @@ export async function getAdminCampaignsPageData(): Promise<AdminCampaignsPageDat
 
 export async function createCampaign(
   input: CampaignFormValues,
-  createdById: string
+  user: ScopedUser
 ): Promise<ServiceResult<CampaignRow>> {
   const parsed = campaignSchema.safeParse(input);
   if (!parsed.success) {
@@ -209,6 +239,13 @@ export async function createCampaign(
     currency,
     maxClaimsPerMobile,
   } = parsed.data;
+
+  if (user.role === "BRAND_ADMIN" && brandId !== user.brandId) {
+    return { ok: false, error: "Unauthorized: Invalid brand mapping" };
+  }
+  if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && advertiserId !== user.advertiserId) {
+    return { ok: false, error: "Unauthorized: Invalid advertiser mapping" };
+  }
 
   const existing = await prisma.campaign.findUnique({ where: { slug } });
   if (existing) {
@@ -233,7 +270,7 @@ export async function createCampaign(
       brandId,
       advertiserId,
       productId: productId ?? null,
-      createdById,
+      createdById: user.id,
       name,
       slug,
       offerTitle,
@@ -255,7 +292,8 @@ export async function createCampaign(
 
 export async function updateCampaign(
   id: string,
-  input: CampaignFormValues
+  input: CampaignFormValues,
+  user: ScopedUser
 ): Promise<ServiceResult<CampaignRow>> {
   const parsed = campaignSchema.safeParse(input);
   if (!parsed.success) {
@@ -282,6 +320,15 @@ export async function updateCampaign(
     currency,
     maxClaimsPerMobile,
   } = parsed.data;
+
+  if (user.role !== "ADMIN") {
+    const existing = await prisma.campaign.findUnique({ where: { id }, select: { brandId: true, advertiserId: true } });
+    if (!existing) return { ok: false, error: "Campaign not found" };
+    if (user.role === "BRAND_ADMIN" && existing.brandId !== user.brandId) return { ok: false, error: "Unauthorized" };
+    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && existing.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+    if (user.role === "BRAND_ADMIN" && brandId !== existing.brandId) return { ok: false, error: "Unauthorized to change brand ownership" };
+    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && advertiserId !== existing.advertiserId) return { ok: false, error: "Unauthorized to change advertiser ownership" };
+  }
 
   const slugConflict = await prisma.campaign.findFirst({
     where: { slug, NOT: { id } },
@@ -328,7 +375,13 @@ export async function updateCampaign(
   return { ok: true, data: toCampaignRow(campaign) };
 }
 
-export async function archiveCampaign(id: string): Promise<ServiceResult> {
+export async function archiveCampaign(id: string, user: ScopedUser): Promise<ServiceResult> {
+  if (user.role !== "ADMIN") {
+    const existing = await prisma.campaign.findUnique({ where: { id }, select: { brandId: true, advertiserId: true } });
+    if (!existing) return { ok: false, error: "Campaign not found" };
+    if (user.role === "BRAND_ADMIN" && existing.brandId !== user.brandId) return { ok: false, error: "Unauthorized" };
+    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && existing.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+  }
   await prisma.campaign.update({
     where: { id },
     data: { status: "ARCHIVED" },

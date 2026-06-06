@@ -18,7 +18,7 @@ export async function createDeliveryScanAction(input: DeliveryScanFormValues) {
       return { ok: false as const, error: "Unauthorized. Retail Operations or Admin access required." };
     }
 
-    const result = await createDeliveryScan(input, user.id);
+    const result = await createDeliveryScan(input, user);
 
     if (!result.ok) {
       return { ok: false as const, error: result.error };

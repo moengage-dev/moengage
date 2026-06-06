@@ -1,7 +1,7 @@
 // src/lib/report-generator.ts
 import Papa from "papaparse";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,7 +16,7 @@ export function generateCSV(data: any[], columns: string[]): string {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function generatePDF(title: string, columns: string[], data: any[]): Buffer {
+export function generatePDF(title: string, columns: string[], data: any[], noDataMessage?: string): Buffer {
   const doc = new jsPDF();
   
   // Add title
@@ -29,10 +29,10 @@ export function generatePDF(title: string, columns: string[], data: any[]): Buff
   doc.text(`Generated: ${formatDateTime(new Date())}`, 14, 30);
 
   if (data.length === 0) {
-    doc.text("No data available for this report.", 14, 40);
+    doc.text(noDataMessage || "No data available for this report.", 14, 40);
   } else {
     // Add table
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 36,
       head: [columns],
       // Ensure data is mapped to arrays in the order of columns

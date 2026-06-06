@@ -81,7 +81,7 @@ export async function getDeliveryQRCodePageData(
 
 export async function createDeliveryScan(
   input: DeliveryScanFormValues,
-  scannedByUserId: string
+  user: CurrentUser
 ): Promise<ServiceResult> {
   const parsed = deliveryScanSchema.safeParse(input);
   if (!parsed.success) {
@@ -93,6 +93,7 @@ export async function createDeliveryScan(
   }
 
   const data = parsed.data;
+  const scannedByUserId = user.id;
 
   // Load QRCode and Batch
   const qrCode = await prisma.qRCode.findUnique({
@@ -113,6 +114,16 @@ export async function createDeliveryScan(
       ok: false,
       status: "WRONG_TYPE",
       error: "This QR code is not a delivery QR",
+    };
+  }
+
+  // Enforce brand ownership: a RETAIL_OPERATIONS user may only log scans for
+  // their own brand's delivery QR codes. ADMIN bypasses (mirrors page-load guard).
+  if (user.role === "RETAIL_OPERATIONS" && qrCode.brandId !== user.brandId) {
+    return {
+      ok: false,
+      status: "UNAUTHORIZED",
+      error: "You are not authorized to log deliveries for this brand's QR codes.",
     };
   }
 

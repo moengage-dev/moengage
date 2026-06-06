@@ -8,12 +8,12 @@ export async function GET(
 ) {
   try {
     const user = await getCurrentUser();
-    if (!user || user.role !== "ADMIN") {
+    if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const { id } = await params;
-    const result = await generateQRCodeDownloadData(id, "png");
+    const result = await generateQRCodeDownloadData(id, "png", user as any);
     if (!result.ok) {
       return new NextResponse(result.error, { status: 404 });
     }

@@ -7,7 +7,13 @@ export async function getOrCreateAnonymousVisitorId(): Promise<string> {
   try {
     cookieStore = await cookies();
   } catch (e) {
-    // Request context not active (e.g. running in test script)
+    if (process.env.NODE_ENV === "production") {
+      // In production, cookies() must always succeed within a request context.
+      // Return a per-call unique ID rather than a shared hardcoded value to avoid
+      // collapsing all cookie-less scans into a single visitor bucket.
+      return crypto.randomUUID();
+    }
+    // Dev/test only: stable ID makes repeated calls easy to trace.
     return "test-visitor-id-123";
   }
 

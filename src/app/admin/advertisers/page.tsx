@@ -2,12 +2,15 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAdminAdvertisersPageData } from "@/server/services/advertisers.service";
+import { getUnassignedAdvertiserUsers } from "@/server/services/users.service";
 import { formatNumber } from "@/lib/format";
 import { AdvertisersClient } from "@/app/admin/advertisers/advertisers-client";
 
 export default async function AdvertisersPage() {
-  const { advertisers, totalAdvertisers, activeAdvertisers } =
-    await getAdminAdvertisersPageData();
+  const [{ advertisers, totalAdvertisers, activeAdvertisers }, unassignedUsers] = await Promise.all([
+    getAdminAdvertisersPageData(),
+    getUnassignedAdvertiserUsers(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -41,7 +44,7 @@ export default async function AdvertisersPage() {
         </Card>
       </div>
 
-      <AdvertisersClient advertisers={advertisers} />
+      <AdvertisersClient advertisers={advertisers} unassignedUsers={unassignedUsers} />
     </div>
   );
 }

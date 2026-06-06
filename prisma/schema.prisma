@@ -380,6 +380,15 @@ model ScanEvent {
   isBillable       Boolean @default(true)
   isInternalTest   Boolean @default(false)
 
+  fingerprintKey    String
+  windowStartedAt   DateTime
+  firstScanAt       DateTime       @default(now())
+  lastScanAt        DateTime       @default(now())
+  hitCount          Int            @default(1)
+  repeatCount       Int            @default(0)
+  suspiciousCount   Int            @default(0)
+  billableCount     Int            @default(1)
+
   createdAt DateTime @default(now())
 
   qrCode     QRCode      @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
@@ -391,6 +400,7 @@ model ScanEvent {
 
   rewardClaims RewardClaim[]
 
+  @@unique([qrCodeId, fingerprintKey, windowStartedAt], name: "scan_event_window_unique")
   @@index([qrCodeId])
   @@index([brandId])
   @@index([advertiserId])
@@ -403,6 +413,14 @@ model ScanEvent {
   @@index([isSuspicious])
   @@index([isBillable])
   @@index([createdAt])
+  @@index([qrCodeId, windowStartedAt])
+  @@index([qrCodeId, createdAt])
+  @@index([fingerprintKey, lastScanAt])
+  // Composite indexes for scan classification lookback queries (per-scan hot path)
+  @@index([campaignId, anonymousVisitorId, createdAt])
+  @@index([campaignId, ipHash, createdAt])
+  @@index([anonymousVisitorId, createdAt])
+  @@index([ipHash, createdAt])
 }
 
 model RewardClaim {

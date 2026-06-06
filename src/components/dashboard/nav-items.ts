@@ -37,7 +37,7 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
   { title: "Heatmaps", href: "/admin/heatmaps", icon: Map },
   { title: "Reports", href: "/admin/reports", icon: BarChart3 },
   { title: "Billing", href: "/admin/billing", icon: CreditCard },
-  { title: "Fraud", href: "/admin/fraud", icon: ShieldAlert },
+  { title: "Suspicious Scans", href: "/admin/suspicious-scans", icon: ShieldAlert },
 ];
 
 export const BRAND_ADMIN_NAV_ITEMS: NavItem[] = [

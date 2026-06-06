@@ -3,7 +3,7 @@ import { z } from "zod";
 import { ReportType } from "@prisma/client";
 
 export const ReportFilterSchema = z.object({
-  type: z.nativeEnum(ReportType),
+  type: z.union([z.nativeEnum(ReportType), z.literal("SUSPICIOUS_SCANS_CSV")]),
   startDate: z.string().optional().refine((date) => !date || !isNaN(Date.parse(date)), {
     message: "Invalid start date format",
   }),

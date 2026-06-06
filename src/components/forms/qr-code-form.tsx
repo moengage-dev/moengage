@@ -1,7 +1,7 @@
 // src/components/forms/qr-code-form.tsx
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -98,39 +98,93 @@ export function QRCodeForm({
   });
 
   const selectedType = watch("type");
+  const selectedBrandId = watch("brandId");
+  const selectedAdvertiserId = watch("advertiserId");
   const selectedCampaignId = watch("campaignId");
-  const selectedBatchId = watch("batchId");
+  const selectedProductId = watch("productId");
 
   const isBatchDelivery = selectedType === "BATCH_DELIVERY";
   const isConsumerCampaign = selectedType === "CONSUMER_CAMPAIGN";
 
-  // Auto-derive fields when campaign changes
+  // --- Reactive Reset Cascades ---
+
+  // 1. Reset advertiser and below when brand changes
+  const lastBrandIdRef = useRef<string | null | undefined>(defaultValues.brandId);
   useEffect(() => {
-    if (selectedCampaignId) {
-      const camp = campaigns.find((c) => c.id === selectedCampaignId);
-      if (camp) {
-        setValue("brandId", camp.brandId);
-        setValue("advertiserId", camp.advertiserId);
-        if (camp.productId) {
-          setValue("productId", camp.productId);
-        }
-      }
+    if (selectedBrandId !== lastBrandIdRef.current) {
+      lastBrandIdRef.current = selectedBrandId;
+      setValue("advertiserId", "");
+      setValue("campaignId", "");
+      setValue("productId", "");
+      setValue("batchId", "");
+    }
+  }, [selectedBrandId, setValue]);
+
+  // 2. Reset campaign and below when advertiser changes
+  const lastAdvertiserIdRef = useRef<string | null | undefined>(defaultValues.advertiserId);
+  useEffect(() => {
+    if (selectedAdvertiserId !== lastAdvertiserIdRef.current) {
+      lastAdvertiserIdRef.current = selectedAdvertiserId;
+      setValue("campaignId", "");
+      setValue("productId", "");
+      setValue("batchId", "");
+    }
+  }, [selectedAdvertiserId, setValue]);
+
+  // 3. Reset product and below when campaign changes, pre-populating campaign product if available
+  const lastCampaignIdRef = useRef<string | null | undefined>(defaultValues.campaignId);
+  useEffect(() => {
+    if (selectedCampaignId !== lastCampaignIdRef.current) {
+      lastCampaignIdRef.current = selectedCampaignId;
+      const campaign = campaigns.find((c) => c.id === selectedCampaignId);
+      setValue("productId", campaign?.productId ?? "");
+      setValue("batchId", "");
     }
   }, [selectedCampaignId, campaigns, setValue]);
 
-  // Auto-derive fields when batch changes
+  // 4. Reset batch when product changes
+  const lastProductIdRef = useRef<string | null | undefined>(defaultValues.productId);
   useEffect(() => {
-    if (selectedBatchId) {
-      const bat = batches.find((b) => b.id === selectedBatchId);
-      if (bat) {
-        setValue("brandId", bat.brandId);
-        setValue("campaignId", bat.campaignId);
-        if (bat.productId) {
-          setValue("productId", bat.productId);
-        }
-      }
+    if (selectedProductId !== lastProductIdRef.current) {
+      lastProductIdRef.current = selectedProductId;
+      setValue("batchId", "");
     }
-  }, [selectedBatchId, batches, setValue]);
+  }, [selectedProductId, setValue]);
+
+  // --- Optimized Options Filtering ---
+
+  // 1. Advertisers: belong to brand if there's campaigns linking them
+  const filteredAdvertisers = useMemo(() => {
+    if (!selectedBrandId) return [];
+    const brandCampaigns = campaigns.filter((c) => c.brandId === selectedBrandId);
+    const advertiserIds = new Set(brandCampaigns.map((c) => c.advertiserId));
+    return advertisers.filter((a) => advertiserIds.has(a.id));
+  }, [selectedBrandId, advertisers, campaigns]);
+
+  // 2. Campaigns: belong to selected brand and advertiser
+  const filteredCampaigns = useMemo(() => {
+    if (!selectedBrandId || !selectedAdvertiserId) return [];
+    return campaigns.filter(
+      (c) => c.brandId === selectedBrandId && c.advertiserId === selectedAdvertiserId
+    );
+  }, [selectedBrandId, selectedAdvertiserId, campaigns]);
+
+  // 3. Products: match active brandId
+  const filteredProducts = useMemo(() => {
+    if (!selectedBrandId || !selectedCampaignId) return [];
+    return products.filter((p) => p.brandId === selectedBrandId);
+  }, [selectedBrandId, selectedCampaignId, products]);
+
+  // 4. Batches: match active brandId, campaignId, and productId
+  const filteredBatches = useMemo(() => {
+    if (!selectedBrandId || !selectedCampaignId || !selectedProductId) return [];
+    return batches.filter(
+      (b) =>
+        b.brandId === selectedBrandId &&
+        b.campaignId === selectedCampaignId &&
+        b.productId === selectedProductId
+    );
+  }, [selectedBrandId, selectedCampaignId, selectedProductId, batches]);
 
   const onSubmit = async (values: QRCodeFormValues) => {
     const result = await onSubmitAction(values);
@@ -232,74 +286,10 @@ export function QRCodeForm({
         )}
       </div>
 
-      {/* Campaign */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium" htmlFor="campaignId">
-          Campaign {isConsumerCampaign && <span className="text-destructive">*</span>}
-        </label>
-        <Controller
-          name="campaignId"
-          control={control}
-          render={({ field }) => (
-            <Select
-              value={field.value ?? ""}
-              onValueChange={(val) => field.onChange(val === "__none__" ? "" : val)}
-            >
-              <SelectTrigger id="campaignId">
-                <SelectValue placeholder="Select campaign" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">None</SelectItem>
-                {campaigns.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name} ({c.advertiser?.name ?? "No Advertiser"})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-        {errors.campaignId && (
-          <p className="text-xs text-destructive">{errors.campaignId.message}</p>
-        )}
-      </div>
-
-      {/* Batch */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium" htmlFor="batchId">
-          Batch {isBatchDelivery && <span className="text-destructive">*</span>}
-        </label>
-        <Controller
-          name="batchId"
-          control={control}
-          render={({ field }) => (
-            <Select
-              value={field.value ?? ""}
-              onValueChange={(val) => field.onChange(val === "__none__" ? "" : val)}
-            >
-              <SelectTrigger id="batchId">
-                <SelectValue placeholder="Select batch" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">None</SelectItem>
-                {batches.map((b) => (
-                  <SelectItem key={b.id} value={b.id}>
-                    {b.batchCode} ({b.campaign?.name ?? "No Campaign"})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-        {errors.batchId && (
-          <p className="text-xs text-destructive">{errors.batchId.message}</p>
-        )}
-      </div>
-
-      {/* Brand */}
+      {/* 1. Brand Dropdown */}
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium" htmlFor="brandId">
-          Brand <span className="text-xs text-muted-foreground">(Optional / Auto-derived)</span>
+          Brand <span className="text-xs text-muted-foreground">(Optional)</span>
         </label>
         <Controller
           name="brandId"
@@ -325,10 +315,10 @@ export function QRCodeForm({
         />
       </div>
 
-      {/* Advertiser */}
+      {/* 2. Advertiser Dropdown */}
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium" htmlFor="advertiserId">
-          Advertiser <span className="text-xs text-muted-foreground">(Optional / Auto-derived)</span>
+          Advertiser <span className="text-xs text-muted-foreground">(Optional)</span>
         </label>
         <Controller
           name="advertiserId"
@@ -338,12 +328,12 @@ export function QRCodeForm({
               value={field.value ?? ""}
               onValueChange={(val) => field.onChange(val === "__none__" ? "" : val)}
             >
-              <SelectTrigger id="advertiserId">
-                <SelectValue placeholder="Select advertiser" />
+              <SelectTrigger id="advertiserId" disabled={!selectedBrandId}>
+                <SelectValue placeholder={selectedBrandId ? "Select advertiser" : "Select a Brand first..."} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none__">None</SelectItem>
-                {advertisers.map((a) => (
+                {filteredAdvertisers.map((a) => (
                   <SelectItem key={a.id} value={a.id}>
                     {a.name}
                   </SelectItem>
@@ -354,10 +344,42 @@ export function QRCodeForm({
         />
       </div>
 
-      {/* Product */}
+      {/* 3. Campaign Dropdown */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium" htmlFor="campaignId">
+          Campaign {isConsumerCampaign && <span className="text-destructive">*</span>}
+        </label>
+        <Controller
+          name="campaignId"
+          control={control}
+          render={({ field }) => (
+            <Select
+              value={field.value ?? ""}
+              onValueChange={(val) => field.onChange(val === "__none__" ? "" : val)}
+            >
+              <SelectTrigger id="campaignId" disabled={!selectedAdvertiserId}>
+                <SelectValue placeholder={selectedAdvertiserId ? "Select campaign" : "Select an Advertiser first..."} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">None</SelectItem>
+                {filteredCampaigns.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {errors.campaignId && (
+          <p className="text-xs text-destructive">{errors.campaignId.message}</p>
+        )}
+      </div>
+
+      {/* 4. Product Dropdown */}
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium" htmlFor="productId">
-          Product <span className="text-xs text-muted-foreground">(Optional / Auto-derived)</span>
+          Product <span className="text-xs text-muted-foreground">(Optional)</span>
         </label>
         <Controller
           name="productId"
@@ -367,12 +389,12 @@ export function QRCodeForm({
               value={field.value ?? ""}
               onValueChange={(val) => field.onChange(val === "__none__" ? "" : val)}
             >
-              <SelectTrigger id="productId">
-                <SelectValue placeholder="Select product" />
+              <SelectTrigger id="productId" disabled={!selectedCampaignId}>
+                <SelectValue placeholder={selectedCampaignId ? "Select product" : "Select a Campaign first..."} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none__">None</SelectItem>
-                {products.map((p) => (
+                {filteredProducts.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.name}
                   </SelectItem>
@@ -381,6 +403,38 @@ export function QRCodeForm({
             </Select>
           )}
         />
+      </div>
+
+      {/* 5. Batch Dropdown */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium" htmlFor="batchId">
+          Batch {isBatchDelivery && <span className="text-destructive">*</span>}
+        </label>
+        <Controller
+          name="batchId"
+          control={control}
+          render={({ field }) => (
+            <Select
+              value={field.value ?? ""}
+              onValueChange={(val) => field.onChange(val === "__none__" ? "" : val)}
+            >
+              <SelectTrigger id="batchId" disabled={!selectedProductId}>
+                <SelectValue placeholder={selectedProductId ? "Select batch" : "Select a Product first..."} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">None</SelectItem>
+                {filteredBatches.map((b) => (
+                  <SelectItem key={b.id} value={b.id}>
+                    {b.batchCode}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {errors.batchId && (
+          <p className="text-xs text-destructive">{errors.batchId.message}</p>
+        )}
       </div>
 
       {/* Destination URL */}

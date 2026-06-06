@@ -23,9 +23,8 @@ export const advertiserSchema = z.object({
   industry: z.string().optional(),
   websiteUrl: optionalUrl,
   logoUrl: optionalUrl,
-  contactName: z.string().optional(),
-  contactEmail: optionalEmail,
   status: z.enum(["ACTIVE", "PAUSED", "ARCHIVED"]),
+  primaryUserId: z.string().nullable().optional(),
 });
 
 export type AdvertiserFormValues = z.infer<typeof advertiserSchema>;

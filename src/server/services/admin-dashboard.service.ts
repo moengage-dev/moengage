@@ -34,7 +34,7 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
     activeUsers,
     verifiedUsers,
     totalQrCodes,
-    totalScanEvents,
+    scanEventsAgg,
     totalRewardClaims,
     totalDeliveryScans,
     billingAgg,
@@ -51,12 +51,13 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
     prisma.user.count({ where: { isActive: true } }),
     prisma.user.count({ where: { isEmailVerified: true } }),
     prisma.qRCode.count(),
-    prisma.scanEvent.count(),
+    prisma.scanEvent.aggregate({ _sum: { hitCount: true } }),
     prisma.rewardClaim.count(),
     prisma.deliveryScan.count(),
     prisma.billingSummary.aggregate({ _sum: { totalAmount: true } }),
   ]);
 
+  const totalScanEvents = scanEventsAgg._sum.hitCount ?? 0;
   const rawTotal = billingAgg._sum.totalAmount;
   const estimatedBillingTotal =
     rawTotal !== null ? rawTotal.toNumber() : 0;

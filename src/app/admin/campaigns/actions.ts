@@ -19,7 +19,7 @@ export async function createCampaignAction(
 ): Promise<ActionResult> {
   try {
     const user = await requireRole(["ADMIN"]);
-    const result = await createCampaign(input, user.id);
+    const result = await createCampaign(input, user);
     if (!result.ok) return { ok: false, error: result.error };
     revalidatePath("/admin/campaigns");
     return { ok: true, message: "Campaign created successfully." };
@@ -34,8 +34,8 @@ export async function updateCampaignAction(
   input: CampaignFormValues
 ): Promise<ActionResult> {
   try {
-    await requireRole(["ADMIN"]);
-    const result = await updateCampaign(id, input);
+    const user = await requireRole(["ADMIN"]);
+    const result = await updateCampaign(id, input, user);
     if (!result.ok) return { ok: false, error: result.error };
     revalidatePath("/admin/campaigns");
     return { ok: true, message: "Campaign updated successfully." };
@@ -47,8 +47,8 @@ export async function updateCampaignAction(
 
 export async function archiveCampaignAction(id: string): Promise<ActionResult> {
   try {
-    await requireRole(["ADMIN"]);
-    await archiveCampaign(id);
+    const user = await requireRole(["ADMIN"]);
+    await archiveCampaign(id, user);
     revalidatePath("/admin/campaigns");
     return { ok: true, message: "Campaign archived." };
   } catch (e) {

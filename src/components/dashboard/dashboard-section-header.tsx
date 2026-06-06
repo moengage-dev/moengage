@@ -10,11 +10,11 @@ type Props = {
 };
 
 const BADGE_CLASSES = {
-  blue: "bg-blue-500/10 border-blue-500/20 text-blue-400",
-  emerald: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400",
-  amber: "bg-amber-500/10 border-amber-500/20 text-amber-400",
-  indigo: "bg-indigo-500/10 border-indigo-500/20 text-indigo-400",
-  purple: "bg-purple-500/10 border-purple-500/20 text-purple-400",
+  blue: "bg-brand-teal/20 text-[#0d5f5d] border-brand-teal/30 dark:bg-brand-teal/10 dark:text-brand-teal",
+  emerald: "bg-brand-coral/20 text-[#a03816] border-brand-coral/30 dark:bg-brand-coral/10 dark:text-brand-coral",
+  amber: "bg-brand-yellow/30 text-[#8B6B00] border-brand-yellow/40 dark:bg-brand-yellow/10 dark:text-brand-yellow",
+  indigo: "bg-brand-coral/20 text-[#a03816] border-brand-coral/30 dark:bg-brand-coral/10 dark:text-brand-coral",
+  purple: "bg-brand-teal/20 text-[#0d5f5d] border-brand-teal/30 dark:bg-brand-teal/10 dark:text-brand-teal",
 };
 
 export function DashboardSectionHeader({
@@ -28,7 +28,7 @@ export function DashboardSectionHeader({
     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between pb-2">
       <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-100">
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-foreground">
             {title}
           </h1>
           {badgeText && (
@@ -37,7 +37,7 @@ export function DashboardSectionHeader({
             </span>
           )}
         </div>
-        <p className="text-xs md:text-sm text-slate-400 max-w-2xl leading-normal">
+        <p className="text-xs md:text-sm text-muted-foreground max-w-2xl leading-normal">
           {description}
         </p>
       </div>

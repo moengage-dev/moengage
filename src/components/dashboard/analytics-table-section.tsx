@@ -1,6 +1,4 @@
-// src/components/dashboard/analytics-table-section.tsx
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 type Props = {
   title: string;
@@ -20,29 +18,30 @@ export function AnalyticsTableSection({
   hasData = true,
 }: Props) {
   return (
-    <Card className="bg-slate-900/40 border-slate-850 shadow-md h-full">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm md:text-base font-bold text-slate-200">{title}</CardTitle>
-        {description && (
-          <CardDescription className="text-xs text-slate-400 leading-normal">
-            {description}
-          </CardDescription>
-        )}
-      </CardHeader>
-      <CardContent>
+    <div className="bg-card rounded-xl border border-border shadow-sm p-6 h-full flex flex-col justify-between">
+      <div>
+        <div className="pb-4">
+          <h3 className="text-base font-bold text-foreground tracking-tight">{title}</h3>
+          {description && (
+            <p className="text-xs text-muted-foreground mt-1 leading-normal">
+              {description}
+            </p>
+          )}
+        </div>
+        
         {!hasData ? (
-          <div className="text-center py-10 text-xs text-slate-500 italic">
+          <div className="text-center py-10 text-xs text-muted-foreground/70 italic border border-border/40 rounded-lg">
             {emptyMessage}
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-slate-800 bg-slate-950/20">
+          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/40 text-slate-400 font-semibold">
+                <tr className="border-b border-border/60 text-muted-foreground font-semibold uppercase tracking-wider text-[10px]">
                   {headers.map((header, idx) => (
                     <th
                       key={idx}
-                      className={`py-3 px-3.5 ${
+                      className={`py-3 px-3 ${
                         header.toLowerCase().includes("scans") ||
                         header.toLowerCase().includes("claims") ||
                         header.toLowerCase().includes("declines") ||
@@ -58,13 +57,13 @@ export function AnalyticsTableSection({
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/40 text-slate-300">
+              <tbody className="divide-y divide-border/40 text-foreground">
                 {children}
               </tbody>
             </table>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

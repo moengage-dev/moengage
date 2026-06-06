@@ -44,9 +44,10 @@ import { formatDate, formatStatusLabel } from "@/lib/format";
 
 type Props = {
   brands: BrandRow[];
+  unassignedAdmins: { id: string; name: string | null; email: string }[];
 };
 
-export function BrandsClient({ brands }: Props) {
+export function BrandsClient({ brands, unassignedAdmins }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingBrand, setEditingBrand] = useState<BrandRow | undefined>(
     undefined
@@ -216,6 +217,7 @@ export function BrandsClient({ brands }: Props) {
           <BrandForm
             key={editingBrand?.id ?? "create"}
             initialData={editingBrand}
+            unassignedAdmins={unassignedAdmins}
             onSubmitAction={makeSubmitAction(editingBrand)}
             onSuccess={handleSheetSuccess}
           />

@@ -19,6 +19,9 @@ export type AdvertiserRow = {
   contactEmail: string | null;
   status: "ACTIVE" | "PAUSED" | "ARCHIVED";
   createdAt: string;
+  primaryUserId: string | null;
+  primaryUserName: string | null;
+  primaryUserEmail: string | null;
 };
 
 export type AdminAdvertisersPageData = {
@@ -29,7 +32,15 @@ export type AdminAdvertisersPageData = {
 
 export async function getAdminAdvertisersPageData(): Promise<AdminAdvertisersPageData> {
   const [advertisers, totalAdvertisers, activeAdvertisers] = await Promise.all([
-    prisma.advertiser.findMany({ orderBy: { createdAt: "desc" } }),
+    prisma.advertiser.findMany({
+      include: {
+        users: {
+          where: { role: { in: ["CAMPAIGN_MANAGER", "ADVERTISER_VIEWER"] } },
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
     prisma.advertiser.count(),
     prisma.advertiser.count({ where: { status: "ACTIVE" } }),
   ]);
@@ -46,6 +57,9 @@ export async function getAdminAdvertisersPageData(): Promise<AdminAdvertisersPag
       contactEmail: a.contactEmail,
       status: a.status as "ACTIVE" | "PAUSED" | "ARCHIVED",
       createdAt: a.createdAt.toISOString(),
+      primaryUserId: a.users[0]?.id ?? null,
+      primaryUserName: a.users[0]?.name ?? null,
+      primaryUserEmail: a.users[0]?.email ?? null,
     })),
     totalAdvertisers,
     activeAdvertisers,
@@ -64,7 +78,7 @@ export async function createAdvertiser(
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { name, slug, industry, websiteUrl, logoUrl, contactName, contactEmail, status } =
+  const { name, slug, industry, websiteUrl, logoUrl, status, primaryUserId } =
     parsed.data;
 
   const existing = await prisma.advertiser.findUnique({ where: { slug } });
@@ -79,11 +93,24 @@ export async function createAdvertiser(
       industry: toNull(industry),
       websiteUrl: toNull(websiteUrl),
       logoUrl: toNull(logoUrl),
-      contactName: toNull(contactName),
-      contactEmail: toNull(contactEmail),
+      contactName: null,
+      contactEmail: null,
       status,
     },
   });
+
+  let primaryUserName: string | null = null;
+  let primaryUserEmail: string | null = null;
+
+  if (primaryUserId) {
+    const updatedUser = await prisma.user.update({
+      where: { id: primaryUserId },
+      data: { advertiserId: advertiser.id },
+      select: { name: true, email: true },
+    });
+    primaryUserName = updatedUser.name;
+    primaryUserEmail = updatedUser.email;
+  }
 
   return {
     ok: true,
@@ -98,6 +125,9 @@ export async function createAdvertiser(
       contactEmail: advertiser.contactEmail,
       status: advertiser.status as "ACTIVE" | "PAUSED" | "ARCHIVED",
       createdAt: advertiser.createdAt.toISOString(),
+      primaryUserId: primaryUserId ?? null,
+      primaryUserName,
+      primaryUserEmail,
     },
   };
 }
@@ -111,7 +141,7 @@ export async function updateAdvertiser(
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { name, slug, industry, websiteUrl, logoUrl, contactName, contactEmail, status } =
+  const { name, slug, industry, websiteUrl, logoUrl, status, primaryUserId } =
     parsed.data;
 
   const slugConflict = await prisma.advertiser.findFirst({
@@ -129,11 +159,30 @@ export async function updateAdvertiser(
       industry: toNull(industry),
       websiteUrl: toNull(websiteUrl),
       logoUrl: toNull(logoUrl),
-      contactName: toNull(contactName),
-      contactEmail: toNull(contactEmail),
+      contactName: null,
+      contactEmail: null,
       status,
     },
   });
+
+  // Clear existing links
+  await prisma.user.updateMany({
+    where: { advertiserId: id },
+    data: { advertiserId: null },
+  });
+
+  let primaryUserName: string | null = null;
+  let primaryUserEmail: string | null = null;
+
+  if (primaryUserId) {
+    const updatedUser = await prisma.user.update({
+      where: { id: primaryUserId },
+      data: { advertiserId: id },
+      select: { name: true, email: true },
+    });
+    primaryUserName = updatedUser.name;
+    primaryUserEmail = updatedUser.email;
+  }
 
   return {
     ok: true,
@@ -148,6 +197,9 @@ export async function updateAdvertiser(
       contactEmail: advertiser.contactEmail,
       status: advertiser.status as "ACTIVE" | "PAUSED" | "ARCHIVED",
       createdAt: advertiser.createdAt.toISOString(),
+      primaryUserId: primaryUserId ?? null,
+      primaryUserName,
+      primaryUserEmail,
     },
   };
 }

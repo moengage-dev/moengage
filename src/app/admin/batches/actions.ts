@@ -18,8 +18,8 @@ export async function createBatchAction(
   input: BatchFormValues
 ): Promise<ActionResult> {
   try {
-    await requireRole(["ADMIN"]);
-    const result = await createBatch(input);
+    const user = await requireRole(["ADMIN"]);
+    const result = await createBatch(input, user);
     if (!result.ok) return { ok: false, error: result.error };
     revalidatePath("/admin/batches");
     return { ok: true, message: "Batch created successfully." };
@@ -34,8 +34,8 @@ export async function updateBatchAction(
   input: BatchFormValues
 ): Promise<ActionResult> {
   try {
-    await requireRole(["ADMIN"]);
-    const result = await updateBatch(id, input);
+    const user = await requireRole(["ADMIN"]);
+    const result = await updateBatch(id, input, user);
     if (!result.ok) return { ok: false, error: result.error };
     revalidatePath("/admin/batches");
     return { ok: true, message: "Batch updated successfully." };
@@ -47,8 +47,8 @@ export async function updateBatchAction(
 
 export async function closeBatchAction(id: string): Promise<ActionResult> {
   try {
-    await requireRole(["ADMIN"]);
-    await closeBatch(id);
+    const user = await requireRole(["ADMIN"]);
+    await closeBatch(id, user);
     revalidatePath("/admin/batches");
     return { ok: true, message: "Batch closed." };
   } catch (e) {

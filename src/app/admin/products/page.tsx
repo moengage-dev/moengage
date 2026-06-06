@@ -1,13 +1,15 @@
 // src/app/admin/products/page.tsx
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getAdminProductsPageData } from "@/server/services/products.service";
+import { getProductsPageData } from "@/server/services/products.service";
 import { formatNumber } from "@/lib/format";
 import { ProductsClient } from "@/app/admin/products/products-client";
+import { requireRole } from "@/lib/auth/require-role";
 
 export default async function ProductsPage() {
+  const user = await requireRole(["ADMIN"]);
   const { products, brands, totalProducts, activeProducts } =
-    await getAdminProductsPageData();
+    await getProductsPageData(user);
 
   return (
     <div className="space-y-6">

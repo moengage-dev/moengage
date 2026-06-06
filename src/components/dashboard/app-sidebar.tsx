@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import {
   Sidebar,
   SidebarContent,
@@ -31,25 +32,27 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
   const navItems = getNavItemsForRole(role);
 
   return (
-    <Sidebar className="border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-      <SidebarHeader className="h-16 px-6 border-b border-sidebar-border flex items-center">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white font-bold text-lg shadow-sm shadow-emerald-600/20">
-            ME
-          </div>
-          <div className="flex flex-col">
-            <span className="font-bold leading-none text-base">MoEngage</span>
-            <span className="text-[10px] text-muted-foreground font-medium mt-0.5">
-              FMCG Platform
-            </span>
-          </div>
+    <Sidebar className="bg-white dark:bg-[#181512] border-r border-border/50 text-sidebar-foreground animate-in fade-in duration-300">
+      <SidebarHeader className="flex flex-row items-center py-4 border-b border-border/40 bg-transparent gap-3">
+        <div className="relative w-8 h-8 flex items-center justify-center">
+          <Image
+            src="/images/moEngageLogo.png"
+            alt="MoEngage Logo"
+            width={32}
+            height={32}
+            className="object-contain"
+            priority
+          />
         </div>
+        <span className="font-bold leading-none text-xl text-[#2C2621] dark:text-[#F7F5F0] tracking-tight">
+          MoEngage
+        </span>
       </SidebarHeader>
 
       <SidebarContent className="px-3 py-4">
         <SidebarGroup className="p-0">
           <SidebarGroupContent>
-            <SidebarMenu className="gap-1">
+            <SidebarMenu className="gap-1.5">
               {navItems.map((item) => {
                 const isHomeRoute =
                   item.href === "/admin" ||
@@ -68,16 +71,16 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                       asChild
                       isActive={isActive}
                       className={`
-                        w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                        w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative overflow-hidden
                         ${
                           isActive
-                            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700"
-                            : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                            ? "bg-[#F48F68]/10 text-[#F48F68] font-semibold before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-5 before:bg-[#F48F68] before:rounded-r"
+                            : "text-[#2C2621]/80 hover:text-[#2C2621] hover:bg-[#F5EFE0]/60 font-medium dark:text-muted-foreground dark:hover:text-[#F7F5F0] dark:hover:bg-muted/40"
                         }
                       `}
                     >
                       <Link href={item.href}>
-                        <item.icon className={`h-4 w-4 ${isActive ? "text-emerald-600" : ""}`} />
+                        <item.icon className={`h-4 w-4 transition-colors ${isActive ? "text-[#F48F68]" : "text-[#2C2621]/60 group-hover/menu-button:text-[#2C2621] dark:text-muted-foreground/80 dark:group-hover/menu-button:text-[#F7F5F0]"}`} />
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -89,7 +92,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3 border-t border-sidebar-border bg-sidebar">
+      <SidebarFooter className="p-3 border-t border-border/40 bg-transparent">
         <UserMenu user={user} />
       </SidebarFooter>
     </Sidebar>

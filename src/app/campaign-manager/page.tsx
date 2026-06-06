@@ -1,7 +1,7 @@
 // src/app/campaign-manager/page.tsx
 import React from "react";
 import { requireRole } from "@/lib/auth/require-role";
-import { getCampaignManagerAnalyticsDashboardData } from "@/server/services/analytics.service";
+import { getAnalyticsDashboardData } from "@/server/services/analytics.service";
 import { formatNumber, formatDateTime } from "@/lib/format";
 import { AnalyticsStatCard } from "@/components/dashboard/analytics-stat-card";
 import { AnalyticsTableSection } from "@/components/dashboard/analytics-table-section";
@@ -28,7 +28,7 @@ export default async function CampaignManagerDashboardPage() {
   const user = await requireRole(["CAMPAIGN_MANAGER", "ADMIN"]);
 
   // Fetch campaign manager dashboard analytics (scoped to assignments)
-  const data = await getCampaignManagerAnalyticsDashboardData(user.id, user.brandId);
+  const data = await getAnalyticsDashboardData(user);
   const { metrics, performance, hasData } = data;
 
   if (!hasData) {

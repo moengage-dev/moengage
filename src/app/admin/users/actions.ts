@@ -8,6 +8,8 @@ import {
   updateUser,
   deactivateUser,
   activateUser,
+  createUnassignedUser,
+  type UserRow,
 } from "@/server/services/users.service";
 import type { CreateUserFormValues, UpdateUserFormValues } from "@/lib/validators/user.validator";
 
@@ -66,6 +68,26 @@ export async function activateUserAction(id: string): Promise<ActionResult> {
     if (!result.ok) return { ok: false, error: result.error };
     revalidatePath("/admin/users");
     return { ok: true, message: "User activated." };
+  } catch (e) {
+    if (e && typeof e === "object" && "digest" in e) throw e;
+    return { ok: false, error: "Unexpected error. Please try again." };
+  }
+}
+
+export async function createUnassignedUserAction(input: {
+  name: string;
+  email: string;
+  password: string;
+  role: "BRAND_ADMIN" | "CAMPAIGN_MANAGER" | "ADVERTISER_VIEWER";
+}): Promise<ActionResult & { user?: UserRow }> {
+  try {
+    await requireRole(["ADMIN"]);
+    const result = await createUnassignedUser(input);
+    if (!result.ok) return { ok: false, error: result.error };
+    revalidatePath("/admin/users");
+    revalidatePath("/admin/brands");
+    revalidatePath("/admin/advertisers");
+    return { ok: true, message: "User created successfully.", user: result.data };
   } catch (e) {
     if (e && typeof e === "object" && "digest" in e) throw e;
     return { ok: false, error: "Unexpected error. Please try again." };

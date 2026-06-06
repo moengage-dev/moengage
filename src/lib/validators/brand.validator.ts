@@ -19,6 +19,7 @@ export const brandSchema = z.object({
   websiteUrl: optionalUrl,
   logoUrl: optionalUrl,
   status: z.enum(["ACTIVE", "PAUSED", "ARCHIVED"]),
+  primaryUserId: z.string().nullable().optional(),
 });
 
 export type BrandFormValues = z.infer<typeof brandSchema>;

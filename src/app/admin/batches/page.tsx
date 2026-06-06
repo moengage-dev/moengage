@@ -1,9 +1,11 @@
 // src/app/admin/batches/page.tsx
 import React from "react";
-import { getAdminBatchesPageData } from "@/server/services/batches.service";
+import { getBatchesPageData } from "@/server/services/batches.service";
 import { BatchesClient } from "@/app/admin/batches/batches-client";
+import { requireRole } from "@/lib/auth/require-role";
 
 export default async function BatchesPage() {
+  const user = await requireRole(["ADMIN"]);
   const {
     batches,
     brands,
@@ -13,7 +15,7 @@ export default async function BatchesPage() {
     activeBatches,
     deliveringBatches,
     closedBatches,
-  } = await getAdminBatchesPageData();
+  } = await getBatchesPageData(user);
 
   return (
     <div className="space-y-6">

@@ -11,6 +11,13 @@ import {
   buildQrDestinationUrl,
 } from "@/lib/qr/generate-qr-code";
 
+export type ScopedUser = {
+  id: string;
+  role: string;
+  brandId?: string | null;
+  advertiserId?: string | null;
+};
+
 export type QRCodeRow = {
   id: string;
   code: string;
@@ -121,7 +128,43 @@ function toQRCodeRow(q: {
   };
 }
 
-export async function getAdminQRCodesPageData(): Promise<AdminQRCodesPageData> {
+export async function getQRCodesPageData(user: ScopedUser): Promise<AdminQRCodesPageData> {
+  const qrFilter: any = {};
+  if (user.role === "BRAND_ADMIN") {
+    qrFilter.brandId = user.brandId;
+  } else if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+    qrFilter.advertiserId = user.advertiserId;
+  }
+
+  const brandFilter: any = { status: "ACTIVE" };
+  if (user.role === "BRAND_ADMIN") {
+    brandFilter.id = user.brandId;
+  }
+
+  const advertiserFilter: any = { status: "ACTIVE" };
+  if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+    advertiserFilter.id = user.advertiserId;
+  }
+
+  const campaignFilter: any = { status: { in: ["ACTIVE", "DRAFT", "PAUSED"] } };
+  if (user.role === "BRAND_ADMIN") {
+    campaignFilter.brandId = user.brandId;
+  } else if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+    campaignFilter.advertiserId = user.advertiserId;
+  }
+
+  const productFilter: any = { status: "ACTIVE" };
+  if (user.role === "BRAND_ADMIN") {
+    productFilter.brandId = user.brandId;
+  }
+
+  const batchFilter: any = { status: { in: ["CREATED", "ACTIVE", "DELIVERING", "DELIVERED"] } };
+  if (user.role === "BRAND_ADMIN") {
+    batchFilter.brandId = user.brandId;
+  } else if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+    batchFilter.campaign = { advertiserId: user.advertiserId };
+  }
+
   const [
     qrCodes,
     brands,
@@ -137,21 +180,22 @@ export async function getAdminQRCodesPageData(): Promise<AdminQRCodesPageData> {
     internalTestQRCodes,
   ] = await Promise.all([
     prisma.qRCode.findMany({
+      where: qrFilter,
       include: qrInclude,
       orderBy: { createdAt: "desc" },
     }),
     prisma.brand.findMany({
-      where: { status: "ACTIVE" },
+      where: brandFilter,
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
     prisma.advertiser.findMany({
-      where: { status: "ACTIVE" },
+      where: advertiserFilter,
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
     prisma.campaign.findMany({
-      where: { status: { in: ["ACTIVE", "DRAFT", "PAUSED"] } },
+      where: campaignFilter,
       select: {
         id: true,
         name: true,
@@ -163,12 +207,12 @@ export async function getAdminQRCodesPageData(): Promise<AdminQRCodesPageData> {
       orderBy: { name: "asc" },
     }),
     prisma.product.findMany({
-      where: { status: "ACTIVE" },
+      where: productFilter,
       select: { id: true, name: true, brandId: true },
       orderBy: { name: "asc" },
     }),
     prisma.batch.findMany({
-      where: { status: { in: ["CREATED", "ACTIVE", "DELIVERING", "DELIVERED"] } },
+      where: batchFilter,
       select: {
         id: true,
         batchCode: true,
@@ -179,12 +223,12 @@ export async function getAdminQRCodesPageData(): Promise<AdminQRCodesPageData> {
       },
       orderBy: { batchCode: "asc" },
     }),
-    prisma.qRCode.count(),
-    prisma.qRCode.count({ where: { status: "ACTIVE" } }),
-    prisma.qRCode.count({ where: { type: "CONSUMER_CAMPAIGN" } }),
-    prisma.qRCode.count({ where: { type: "BATCH_DELIVERY" } }),
-    prisma.qRCode.count({ where: { type: "SAMPLE_LABEL" } }),
-    prisma.qRCode.count({ where: { type: "INTERNAL_TEST" } }),
+    prisma.qRCode.count({ where: qrFilter }),
+    prisma.qRCode.count({ where: { ...qrFilter, status: "ACTIVE" } }),
+    prisma.qRCode.count({ where: { ...qrFilter, type: "CONSUMER_CAMPAIGN" } }),
+    prisma.qRCode.count({ where: { ...qrFilter, type: "BATCH_DELIVERY" } }),
+    prisma.qRCode.count({ where: { ...qrFilter, type: "SAMPLE_LABEL" } }),
+    prisma.qRCode.count({ where: { ...qrFilter, type: "INTERNAL_TEST" } }),
   ]);
 
   return {
@@ -219,7 +263,7 @@ export async function getAdminQRCodesPageData(): Promise<AdminQRCodesPageData> {
 
 export async function createQRCode(
   input: QRCodeFormValues,
-  createdById: string
+  user: ScopedUser
 ): Promise<ServiceResult<QRCodeRow>> {
   const parsed = qrCodeSchema.safeParse(input);
   if (!parsed.success) {
@@ -300,6 +344,14 @@ export async function createQRCode(
     if (!productId) productId = batch.productId;
   }
 
+  // Tenant authorization
+  if (user.role === "BRAND_ADMIN" && brandId !== user.brandId) {
+    return { ok: false, error: "Unauthorized: Invalid brand mapping" };
+  }
+  if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && advertiserId !== user.advertiserId) {
+    return { ok: false, error: "Unauthorized: Invalid advertiser mapping" };
+  }
+
   // Relationship consistency checks
   if (campaignId && brandId) {
     const campaign = await prisma.campaign.findUnique({
@@ -354,7 +406,7 @@ export async function createQRCode(
       batchId: batchId ?? null,
       label: label ?? null,
       destinationUrl,
-      createdById,
+      createdById: user.id,
       scanCount: 0,
     },
     include: qrInclude,
@@ -365,7 +417,8 @@ export async function createQRCode(
 
 export async function updateQRCode(
   id: string,
-  input: QRCodeFormValues
+  input: QRCodeFormValues,
+  user: ScopedUser
 ): Promise<ServiceResult<QRCodeRow>> {
   const parsed = qrCodeSchema.safeParse(input);
   if (!parsed.success) {
@@ -393,6 +446,11 @@ export async function updateQRCode(
   });
   if (!existing) {
     return { ok: false, error: "QR Code not found" };
+  }
+
+  if (user.role !== "ADMIN") {
+    if (user.role === "BRAND_ADMIN" && existing.brandId !== user.brandId) return { ok: false, error: "Unauthorized" };
+    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && existing.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
   }
 
   // Verify code uniqueness
@@ -434,6 +492,11 @@ export async function updateQRCode(
     if (!brandId) brandId = batch.brandId;
     if (!campaignId) campaignId = batch.campaignId;
     if (!productId) productId = batch.productId;
+  }
+
+  if (user.role !== "ADMIN") {
+    if (user.role === "BRAND_ADMIN" && brandId !== user.brandId) return { ok: false, error: "Unauthorized: Invalid brand mapping" };
+    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized: Invalid advertiser mapping" };
   }
 
   // Relationship consistency checks
@@ -500,13 +563,18 @@ export async function updateQRCode(
   return { ok: true, data: toQRCodeRow(updated) };
 }
 
-export async function disableQRCode(id: string): Promise<ServiceResult> {
+export async function disableQRCode(id: string, user: ScopedUser): Promise<ServiceResult> {
   const existing = await prisma.qRCode.findUnique({
     where: { id },
-    select: { id: true },
+    select: { id: true, brandId: true, advertiserId: true },
   });
   if (!existing) {
     return { ok: false, error: "QR Code not found" };
+  }
+
+  if (user.role !== "ADMIN") {
+    if (user.role === "BRAND_ADMIN" && existing.brandId !== user.brandId) return { ok: false, error: "Unauthorized" };
+    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && existing.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
   }
 
   await prisma.qRCode.update({
@@ -518,14 +586,20 @@ export async function disableQRCode(id: string): Promise<ServiceResult> {
 
 export async function generateQRCodeDownloadData(
   id: string,
-  format: "png" | "svg" | "dataUrl"
+  format: "png" | "svg" | "dataUrl",
+  user: ScopedUser
 ): Promise<ServiceResult<{ code: string; content: string | Buffer }>> {
   const qr = await prisma.qRCode.findUnique({
     where: { id },
-    select: { code: true, destinationUrl: true },
+    select: { code: true, destinationUrl: true, brandId: true, advertiserId: true },
   });
   if (!qr) {
     return { ok: false, error: "QR Code not found" };
+  }
+
+  if (user.role !== "ADMIN") {
+    if (user.role === "BRAND_ADMIN" && qr.brandId !== user.brandId) return { ok: false, error: "Unauthorized" };
+    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && qr.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
   }
 
   const url = qr.destinationUrl;

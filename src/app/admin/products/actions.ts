@@ -18,8 +18,8 @@ export async function createProductAction(
   input: ProductFormValues
 ): Promise<ActionResult> {
   try {
-    await requireRole(["ADMIN"]);
-    const result = await createProduct(input);
+    const user = await requireRole(["ADMIN"]);
+    const result = await createProduct(input, user);
     if (!result.ok) return { ok: false, error: result.error };
     revalidatePath("/admin/products");
     return { ok: true, message: "Product created successfully." };
@@ -34,8 +34,8 @@ export async function updateProductAction(
   input: ProductFormValues
 ): Promise<ActionResult> {
   try {
-    await requireRole(["ADMIN"]);
-    const result = await updateProduct(id, input);
+    const user = await requireRole(["ADMIN"]);
+    const result = await updateProduct(id, input, user);
     if (!result.ok) return { ok: false, error: result.error };
     revalidatePath("/admin/products");
     return { ok: true, message: "Product updated successfully." };
@@ -47,8 +47,8 @@ export async function updateProductAction(
 
 export async function archiveProductAction(id: string): Promise<ActionResult> {
   try {
-    await requireRole(["ADMIN"]);
-    await archiveProduct(id);
+    const user = await requireRole(["ADMIN"]);
+    await archiveProduct(id, user);
     revalidatePath("/admin/products");
     return { ok: true, message: "Product archived." };
   } catch (e) {

@@ -1,7 +1,7 @@
 // src/app/brand/page.tsx
 import React from "react";
 import { requireRole } from "@/lib/auth/require-role";
-import { getBrandAnalyticsDashboardData } from "@/server/services/analytics.service";
+import { getAnalyticsDashboardData } from "@/server/services/analytics.service";
 import { formatNumber, formatDateTime } from "@/lib/format";
 import { AnalyticsStatCard } from "@/components/dashboard/analytics-stat-card";
 import { AnalyticsTableSection } from "@/components/dashboard/analytics-table-section";
@@ -65,7 +65,7 @@ export default async function BrandDashboardPage() {
   const brandName = brand?.name ?? "Brand";
 
   // Fetch brand dashboard analytics
-  const data = await getBrandAnalyticsDashboardData(brandId);
+  const data = await getAnalyticsDashboardData(user);
   const { metrics, performance } = data;
 
   return (
