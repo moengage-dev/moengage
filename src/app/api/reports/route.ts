@@ -106,13 +106,31 @@ export async function GET(request: Request) {
           Product: s.product?.name || "—",
           DeviceType: s.deviceType || "—",
           Location: [s.suburb, s.city, s.country].filter(Boolean).join(", ") || "—",
+          HitCount: s.hitCount,
+          RepeatCount: s.repeatCount,
+          SuspiciousCount: s.suspiciousCount,
+          BillableCount: s.billableCount,
           IsRepeat: s.isRepeatScan ? "Yes" : "No",
           IsSuspicious: s.isSuspicious ? "Yes" : "No",
           IsBillable: s.isBillable ? "Yes" : "No",
           CreatedAt: formatDateTime(s.createdAt),
         }));
 
-        const columns = ["ID", "Campaign", "Product", "DeviceType", "Location", "IsRepeat", "IsSuspicious", "IsBillable", "CreatedAt"];
+        const columns = [
+          "ID",
+          "Campaign",
+          "Product",
+          "DeviceType",
+          "Location",
+          "HitCount",
+          "RepeatCount",
+          "SuspiciousCount",
+          "BillableCount",
+          "IsRepeat",
+          "IsSuspicious",
+          "IsBillable",
+          "CreatedAt",
+        ];
         fileBuffer = generateCSV(data, columns);
         contentType = "text/csv";
         filename = `Scan_Events_${new Date().toISOString().split("T")[0]}.csv`;

@@ -193,9 +193,6 @@ export async function generateCampaignBillingSummary(
       _sum: { billableCount: true },
       where: {
         campaignId,
-        isBillable: true,
-        isSuspicious: false,
-        isInternalTest: false,
       },
     }),
     prisma.scanEvent.groupBy({

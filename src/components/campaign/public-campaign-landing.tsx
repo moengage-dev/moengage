@@ -20,6 +20,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { formatStatusLabel } from "@/lib/format";
+import { getFriendlyErrorMessage } from "@/components/experience/client-utils";
 
 type Props = {
   qrCode: {
@@ -102,7 +103,9 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
         if (data.status === "DUPLICATE") {
           setUiState("duplicate");
         } else {
-          setErrorMessage(data.error ?? "Failed to request OTP code.");
+          const rawErr = data.error || data.status;
+          console.warn("[Reward Claim OTP Start failed] Internal error:", rawErr, "Details:", data);
+          setErrorMessage(getFriendlyErrorMessage(rawErr));
           setUiState("error");
         }
         return;
@@ -152,7 +155,9 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
           setErrorMessage("This OTP code has expired. Please request a new one.");
           setUiState("otp_sent");
         } else {
-          setErrorMessage(data.error ?? "Verification failed.");
+          const rawErr = data.error || data.status;
+          console.warn("[Reward Claim OTP Verify failed] Internal error:", rawErr, "Details:", data);
+          setErrorMessage(getFriendlyErrorMessage(rawErr));
           setUiState("otp_sent"); // Let them try again
         }
         return;

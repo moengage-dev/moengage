@@ -14,3 +14,30 @@ export function getErrorMessage(error: any, fallback: string): string {
 export async function deleteUploadedAsset(url: string) {
   // stub
 }
+
+export function getFriendlyErrorMessage(errorOrStatus: string | undefined): string {
+  if (!errorOrStatus) {
+    return "Something went wrong. Please try again.";
+  }
+
+  const code = errorOrStatus.toUpperCase();
+
+  if (code === "RATE_LIMIT_EXCEEDED") {
+    return "Too many attempts. Please wait a minute and try again.";
+  }
+
+  if (code === "VERIFICATION_FAILED") {
+    return "Verification failed. Please try again.";
+  }
+
+  if (
+    code === "OTP_COOLDOWN" ||
+    code === "COOLDOWN_ACTIVE" ||
+    code.includes("COOLDOWN")
+  ) {
+    return "Please wait before requesting another OTP.";
+  }
+
+  return "Something went wrong. Please try again.";
+}
+
