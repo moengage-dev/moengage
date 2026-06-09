@@ -95,8 +95,12 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
 
       const data = await response.json();
       if (!response.ok || !data.ok) {
-        if (data.status === "DUPLICATE") {
-          setUiState("duplicate");
+        if (data.status === "DUPLICATE_CLAIM") {
+          setOtp("");
+          setOtpVerificationId("");
+          setDevOtp("");
+          setErrorMessage(getFriendlyErrorMessage(data.status));
+          setUiState("error");
         } else {
           const rawErr = data.error || data.status;
           console.warn("[Reward Claim OTP Start failed] Internal error:", rawErr, "Details:", data);

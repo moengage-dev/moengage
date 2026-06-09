@@ -30,6 +30,10 @@ export function getFriendlyErrorMessage(errorOrStatus: string | undefined): stri
     return "Verification failed. Please try again.";
   }
 
+  if (code === "DUPLICATE_CLAIM") {
+    return "This mobile number is not eligible for another claim on this campaign.";
+  }
+
   if (
     code === "OTP_COOLDOWN" ||
     code === "COOLDOWN_ACTIVE" ||
@@ -40,4 +44,3 @@ export function getFriendlyErrorMessage(errorOrStatus: string | undefined): stri
 
   return "Something went wrong. Please try again.";
 }
-

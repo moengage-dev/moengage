@@ -133,8 +133,13 @@ async function main() {
       },
     );
 
-    if (!duplicateResult.ok || duplicateResult.status !== "OTP_SENT") {
-      throw new Error("Duplicate attempt did not receive the generic OTP response.");
+    if (
+      duplicateResult.ok ||
+      duplicateResult.status !== "DUPLICATE_CLAIM"
+    ) {
+      throw new Error(
+        "Duplicate attempt did not return the expected DUPLICATE_CLAIM response.",
+      );
     }
 
     const [claimCount, duplicateAttemptCount] = await Promise.all([

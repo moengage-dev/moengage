@@ -107,46 +107,33 @@ export async function startRewardClaim(
     },
   });
 
-  // Keep the response indistinguishable from a normal OTP send while recording
-  // the duplicate as an analytics event, not as a second RewardClaim row.
+  // Record the duplicate as an analytics event, not as a second RewardClaim.
+  // No OTP is created because this mobile is not eligible for another claim.
   if (existingApproved && existingApproved.status === "APPROVED") {
-    console.warn(`[startRewardClaim] Duplicate approved claim attempt (silenced success response): phoneHash=${mobileNumberHash}`);
-    const fakeVerification = await prisma.$transaction(async (tx) => {
-      const verification = await tx.otpVerification.create({
-        data: {
-          mobileNumberHash,
-          codeHash: "LOCKED_HASH_THAT_NEVER_MATCHES",
-          status: "FAILED",
-          isSimulated: true,
-          expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-        },
-        select: { id: true },
-      });
-
-      await tx.rewardClaimAttempt.create({
-        data: {
-          campaignId,
-          brandId: scanEvent.brandId,
-          advertiserId: scanEvent.advertiserId,
-          scanEventId,
-          mobileNumberHash,
-          mobileNumberLast4: getMobileNumberLast4(normalizedMobile),
-          status: "DECLINED_DUPLICATE",
-          failureReason: "A reward was already approved for this campaign and mobile number.",
-          ipHash: requestMetadata.ipHash,
-          userAgent: requestMetadata.userAgent,
-        },
-      });
-
-      return verification;
+    console.warn(
+      `[startRewardClaim] Duplicate approved claim attempt: phoneHash=${mobileNumberHash}`,
+    );
+    await prisma.rewardClaimAttempt.create({
+      data: {
+        campaignId,
+        brandId: scanEvent.brandId,
+        advertiserId: scanEvent.advertiserId,
+        scanEventId,
+        mobileNumberHash,
+        mobileNumberLast4: getMobileNumberLast4(normalizedMobile),
+        status: "DECLINED_DUPLICATE",
+        failureReason:
+          "A reward was already approved for this campaign and mobile number.",
+        ipHash: requestMetadata.ipHash,
+        userAgent: requestMetadata.userAgent,
+      },
     });
 
     return {
-      ok: true,
-      status: "OTP_SENT",
-      data: {
-        otpVerificationId: fakeVerification.id,
-      },
+      ok: false,
+      status: "DUPLICATE_CLAIM",
+      error:
+        "This mobile number is not eligible for another claim on this campaign.",
     };
   }
 

@@ -44,8 +44,13 @@ export async function POST(request: NextRequest) {
 
     if (!result.ok) {
       return NextResponse.json(
-        { ok: false, status: result.status, error: result.error },
-        { status: 400 }
+        {
+          ok: false,
+          status: result.status,
+          error: result.error,
+          message: result.error,
+        },
+        { status: result.status === "DUPLICATE_CLAIM" ? 409 : 400 }
       );
     }
 
