@@ -2,16 +2,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcryptjs from "bcryptjs";
-import crypto from "crypto";
 import { sendVerificationEmail } from "@/helpers/mailer";
-
-function generateOtp() {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-function hashOtp(otp: string) {
-  return crypto.createHash("sha256").update(otp).digest("hex");
-}
+import {
+  generateEmailVerificationOtp,
+  hashEmailVerificationOtp,
+} from "@/lib/auth/email-verification";
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,8 +60,8 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await bcryptjs.hash(cleanPassword, 10);
 
-    const otp = generateOtp();
-    const tokenHash = hashOtp(otp);
+    const otp = generateEmailVerificationOtp();
+    const tokenHash = hashEmailVerificationOtp(normalizedEmail, otp);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     const createdUser = await prisma.user.create({

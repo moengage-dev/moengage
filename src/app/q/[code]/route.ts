@@ -17,13 +17,19 @@ export async function GET(
     return NextResponse.redirect(new URL(`/d/${code}`, request.url));
   }
 
-  // 2. Manage the visitor cookie.
-  const cookieStore = await cookies();
-  let visitorId = cookieStore.get("moengage_visitor_id")?.value;
+  // 2. Redirect to the landing sub-route, then attach the visitor cookie to the
+  //    redirect response itself. Setting it via next/headers cookies() does not
+  //    reliably persist onto a separately-returned NextResponse, which would break
+  //    visitor-based repeat-scan detection.
+  const landingUrl = new URL(`/q/${code}/landing`, request.url);
+  const response = NextResponse.redirect(landingUrl);
 
-  if (!visitorId) {
-    visitorId = crypto.randomUUID();
-    cookieStore.set("moengage_visitor_id", visitorId, {
+  const cookieStore = await cookies();
+  const existingVisitorId = cookieStore.get("moengage_visitor_id")?.value;
+
+  if (!existingVisitorId) {
+    const visitorId = crypto.randomUUID();
+    response.cookies.set("moengage_visitor_id", visitorId, {
       maxAge: 60 * 60 * 24 * 365, // 1 year
       path: "/",
       httpOnly: true,
@@ -32,7 +38,5 @@ export async function GET(
     });
   }
 
-  // 3. Redirect to the landing sub-route
-  const landingUrl = new URL(`/q/${code}/landing`, request.url);
-  return NextResponse.redirect(landingUrl);
+  return response;
 }

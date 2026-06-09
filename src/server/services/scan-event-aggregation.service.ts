@@ -1,6 +1,9 @@
 // src/server/services/scan-event-aggregation.service.ts
 import prisma from "@/lib/prisma";
 import crypto from "crypto";
+import type { Prisma } from "@prisma/client";
+
+type ScanAggregationClient = Pick<Prisma.TransactionClient, "$queryRaw">;
 
 export type AggregateScanInput = {
   qrCodeId: string;
@@ -31,7 +34,10 @@ export type AggregateScanInput = {
   now?: Date;
 };
 
-export async function aggregateScanEvent(input: AggregateScanInput) {
+export async function aggregateScanEvent(
+  input: AggregateScanInput,
+  client: ScanAggregationClient = prisma,
+) {
   const now = input.now || new Date();
 
   // 1. Compute windowStartedAt using a fixed 30-second bucket
@@ -57,7 +63,7 @@ export async function aggregateScanEvent(input: AggregateScanInput) {
   const billableCount = input.isBillable ? 1 : 0;
 
   // 5. Parameterized SQL insert using prisma.$queryRaw
-  const result = await prisma.$queryRaw<Array<{ id: string; isRepeatScan: boolean }>>`
+  const result = await client.$queryRaw<Array<{ id: string; isRepeatScan: boolean }>>`
     INSERT INTO "ScanEvent" (
       "id",
       "qrCodeId",

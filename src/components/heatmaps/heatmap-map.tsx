@@ -22,6 +22,7 @@ export function HeatmapMap({ scanMarkers, deliveryMarkers }: HeatmapMapProps) {
   const validScanMarkers = scanMarkers.filter((m) => m.latitude !== null && m.longitude !== null);
   const validDeliveryMarkers = deliveryMarkers.filter((m) => m.latitude !== null && m.longitude !== null);
   const totalValidMarkers = validScanMarkers.length + validDeliveryMarkers.length;
+  const totalMappedScanHits = validScanMarkers.reduce((sum, marker) => sum + marker.hitCount, 0);
 
   // Render graceful fallback if key is missing
   if (!maptilerKey) {
@@ -120,42 +121,57 @@ export function HeatmapMap({ scanMarkers, deliveryMarkers }: HeatmapMapProps) {
         <NavigationControl position="top-right" />
 
         {/* Consumer Scan Markers (Indigo) */}
-        {validScanMarkers.map((marker) => (
-          <Marker
-            key={marker.id}
-            latitude={marker.latitude!}
-            longitude={marker.longitude!}
-            onClick={(e: any) => {
-              e.originalEvent.stopPropagation();
-              setSelectedMarker(marker);
-            }}
-          >
-            <div className="group relative flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500/20 border-2 border-indigo-500 cursor-pointer hover:scale-125 transition-all">
-              <span className="h-2.5 w-2.5 rounded-full bg-indigo-500 animate-pulse" />
-              {/* Invisible touch target extension */}
-              <div className="absolute inset-0 scale-150" />
-            </div>
-          </Marker>
-        ))}
+        {validScanMarkers.map((marker) => {
+          const size = Math.min(38, 18 + Math.log2(marker.hitCount + 1) * 5);
+          return (
+            <Marker
+              key={marker.id}
+              latitude={marker.latitude!}
+              longitude={marker.longitude!}
+              onClick={(e: any) => {
+                e.originalEvent.stopPropagation();
+                setSelectedMarker(marker);
+              }}
+            >
+              <div
+                className="group relative flex items-center justify-center rounded-full bg-indigo-500/20 border-2 border-indigo-500 cursor-pointer hover:scale-125 transition-all"
+                style={{ width: size, height: size }}
+                title={`${marker.hitCount} scan hits`}
+              >
+                <span className="h-2.5 w-2.5 rounded-full bg-indigo-500 animate-pulse" />
+                <div className="absolute inset-0 scale-150" />
+              </div>
+            </Marker>
+          );
+        })}
 
         {/* Delivery Scan Markers (Emerald) */}
-        {validDeliveryMarkers.map((marker) => (
-          <Marker
-            key={marker.id}
-            latitude={marker.latitude!}
-            longitude={marker.longitude!}
-            onClick={(e: any) => {
-              e.originalEvent.stopPropagation();
-              setSelectedMarker(marker);
-            }}
-          >
-            <div className="group relative flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 border-2 border-emerald-500 cursor-pointer hover:scale-125 transition-all">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              {/* Invisible touch target extension */}
-              <div className="absolute inset-0 scale-150" />
-            </div>
-          </Marker>
-        ))}
+        {validDeliveryMarkers.map((marker) => {
+          const size = Math.min(
+            42,
+            18 + Math.log2(marker.estimatedUnitsDelivered + 1) * 2.5,
+          );
+          return (
+            <Marker
+              key={marker.id}
+              latitude={marker.latitude!}
+              longitude={marker.longitude!}
+              onClick={(e: any) => {
+                e.originalEvent.stopPropagation();
+                setSelectedMarker(marker);
+              }}
+            >
+              <div
+                className="group relative flex items-center justify-center rounded-full bg-emerald-500/20 border-2 border-emerald-500 cursor-pointer hover:scale-125 transition-all"
+                style={{ width: size, height: size }}
+                title={`${marker.estimatedUnitsDelivered} estimated units delivered`}
+              >
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="absolute inset-0 scale-150" />
+              </div>
+            </Marker>
+          );
+        })}
 
         {/* Selected Marker Popup Details */}
         {selectedMarker && (
@@ -208,19 +224,15 @@ export function HeatmapMap({ scanMarkers, deliveryMarkers }: HeatmapMapProps) {
                 {selectedMarker.type === "SCAN" ? (
                   <div className="border-t border-slate-800 pt-2 mt-2 space-y-1.5">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Scan Type:</span>
-                      <span className="font-medium text-slate-200">
-                        {(selectedMarker as ConsumerScanMarker).isRepeatScan ? "Repeat Scan" : "First Scan"}
+                      <span className="text-slate-400">Scan Hits:</span>
+                      <span className="font-mono text-slate-200">
+                        {(selectedMarker as ConsumerScanMarker).hitCount}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Billable:</span>
-                      <span
-                        className={`font-semibold ${
-                          (selectedMarker as ConsumerScanMarker).isBillable ? "text-emerald-400" : "text-slate-400"
-                        }`}
-                      >
-                        {(selectedMarker as ConsumerScanMarker).isBillable ? "Yes" : "No"}
+                      <span className="text-slate-400">Billable Hits:</span>
+                      <span className="font-mono font-semibold text-emerald-400">
+                        {(selectedMarker as ConsumerScanMarker).billableCount}
                       </span>
                     </div>
                     {(selectedMarker as ConsumerScanMarker).isSuspicious && (
@@ -263,7 +275,7 @@ export function HeatmapMap({ scanMarkers, deliveryMarkers }: HeatmapMapProps) {
         <span className="font-semibold text-slate-200 uppercase tracking-wider text-[9px] block border-b border-slate-800 pb-1 mb-1.5">Legend</span>
         <div className="flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-indigo-500 border border-indigo-400" />
-          <span>Consumer Scans ({validScanMarkers.length})</span>
+          <span>Consumer Scans ({totalMappedScanHits} hits)</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-emerald-500 border border-emerald-400" />

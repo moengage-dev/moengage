@@ -5,6 +5,12 @@ import { generateCampaignBillingSummary } from "../src/server/services/billing.s
 import crypto from "crypto";
 
 async function main() {
+  if (process.env.ALLOW_MUTATING_DB_TESTS !== "true") {
+    throw new Error(
+      "Refusing to run a mutating database test. Set ALLOW_MUTATING_DB_TESTS=true only for a disposable database.",
+    );
+  }
+
   console.log("Starting billing aggregation validation test...");
 
   // 1. Setup test brand, advertiser, user, campaign, and QR code

@@ -182,7 +182,7 @@ export function DeliveryScanForm({ qrCode, retailers }: Props) {
               <span className="text-[10px] text-slate-500 uppercase tracking-widest block font-semibold">
                 Delivery Notes
               </span>
-              <p className="text-xs text-slate-300 leading-relaxed italic">"{successData.notes}"</p>
+              <p className="text-xs text-slate-300 leading-relaxed italic">&quot;{successData.notes}&quot;</p>
             </div>
           )}
 

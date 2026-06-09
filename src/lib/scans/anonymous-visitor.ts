@@ -6,15 +6,10 @@ export async function getOrCreateAnonymousVisitorId(): Promise<string> {
   let cookieStore;
   try {
     cookieStore = await cookies();
-  } catch (e) {
-    if (process.env.NODE_ENV === "production") {
-      // In production, cookies() must always succeed within a request context.
-      // Return a per-call unique ID rather than a shared hardcoded value to avoid
-      // collapsing all cookie-less scans into a single visitor bucket.
-      return crypto.randomUUID();
-    }
-    // Dev/test only: stable ID makes repeated calls easy to trace.
-    return "test-visitor-id-123";
+  } catch {
+    // Calls outside a request context cannot persist identity. Use a unique ID
+    // rather than fabricating a shared visitor that would distort aggregation.
+    return crypto.randomUUID();
   }
 
   const existing = cookieStore.get("moengage_visitor_id")?.value;

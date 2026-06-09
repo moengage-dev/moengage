@@ -2,11 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
-import crypto from "crypto";
-
-function hashOtp(otp: string) {
-  return crypto.createHash("sha256").update(otp).digest("hex");
-}
+import { hashEmailVerificationOtp } from "@/lib/auth/email-verification";
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,14 +24,14 @@ export async function POST(request: NextRequest) {
     // Accept `code` (new) or `otp` (legacy) field name
     const cleanOtp = String(code || otp || "").trim();
 
-    if (!normalizedEmail || !cleanOtp) {
+    if (!normalizedEmail || !/^\d{6}$/.test(cleanOtp)) {
       return NextResponse.json(
         { error: "Email and verification code are required." },
         { status: 400 },
       );
     }
 
-    const tokenHash = hashOtp(cleanOtp);
+    const tokenHash = hashEmailVerificationOtp(normalizedEmail, cleanOtp);
 
     const verificationToken = await prisma.emailVerificationToken.findFirst({
       where: {

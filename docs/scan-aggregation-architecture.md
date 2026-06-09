@@ -97,3 +97,59 @@ By replacing the in-memory Map with `@upstash/redis` and `@upstash/ratelimit`:
 - **Shared Global State**: All serverless containers query a centralized, highly-available Redis store.
 - **Consistency**: Rate limit counters are tracked globally across all regions, instances, and spin-ups.
 - **Security**: Ensures strict rate-limit lockouts (e.g., 3 OTP sends per hour per phone number) are enforced reliably regardless of serverless scaling behavior.
+
+### Production Fail-Closed Behaviour
+If `UPSTASH_REDIS_REST_URL` or `UPSTASH_REDIS_REST_TOKEN` are not configured:
+- **Production** (`NODE_ENV === "production"`): `src/proxy.ts` returns HTTP 503 `{ ok: false, error: "SERVICE_UNAVAILABLE" }` and logs an error. The OTP endpoints are NOT reachable.
+- **Development / Test**: A warning is logged and the request passes through without rate limiting.
+
+This prevents a misconfigured production deployment from silently skipping rate limits.
+
+---
+
+## 5. OTP Security Design
+
+### OTP Generation
+- Uses `crypto.randomInt(100000, 1000000)` — cryptographically secure random number (CSPRNG). Never use `Math.random()`.
+
+### OTP Hashing
+- HMAC-SHA256 keyed with `REWARD_OTP_SECRET` environment variable.
+- In production: throws `Error("REWARD_OTP_SECRET required in production")` if the secret is missing.
+- In dev/test: falls back to a hardcoded dev key with a prominent warning comment.
+
+### OTP Verification
+- `crypto.timingSafeEqual(Buffer, Buffer)` — prevents timing-based side-channel attacks.
+- All failure paths return the same generic error message ("Verification failed. Please try again.") to prevent enumeration.
+
+### Mobile Number Binding
+- `OtpVerification.mobileNumberHash` is checked on every verify call.
+- If the hash in the OTP record does not match the submitted phone number, the verification is rejected (prevents OTP session hijacking).
+
+---
+
+## 6. Billing Correctness
+
+### Why `SUM(billableCount)` not `COUNT(*)`
+
+The `BillingSummary` table is populated by `generateCampaignBillingSummary()` in `billing.service.ts`. It must aggregate using:
+
+```sql
+SELECT SUM("billableCount") FROM "ScanEvent" WHERE "campaignId" = $1
+```
+
+NOT:
+```sql
+SELECT COUNT(*) FROM "ScanEvent" WHERE "isBillable" = true AND "campaignId" = $1
+```
+
+The second form counts **rows** (buckets), not actual billable scan events. A single bucket can contain multiple billable scans.
+
+### Validation
+`scripts/test-billing-aggregation.ts` validates end-to-end:
+1. Creates a test campaign and QR code
+2. Fires 9 `aggregateScanEvent` calls (7 with `isBillable=true`, 2 with `isSuspicious=true`) into the same 30-second window
+3. Asserts exactly 1 collapsed ScanEvent row with `hitCount=9`, `billableCount=7`, `suspiciousCount=2`
+4. Calls `generateCampaignBillingSummary()` and asserts the resulting `BillingSummary` has `billableScanCount=7` and `engagementFeeTotal=10.50` (7 × $1.50)
+5. Cleans up all test data
+
+Run with: `npx tsx scripts/test-billing-aggregation.ts`

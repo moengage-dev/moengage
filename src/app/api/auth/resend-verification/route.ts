@@ -1,16 +1,11 @@
 // src/app/api/auth/resend-verification/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import crypto from "crypto";
 import { sendVerificationEmail } from "@/helpers/mailer";
-
-function generateOtp() {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-function hashOtp(otp: string) {
-  return crypto.createHash("sha256").update(otp).digest("hex");
-}
+import {
+  generateEmailVerificationOtp,
+  hashEmailVerificationOtp,
+} from "@/lib/auth/email-verification";
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,10 +27,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: "No account found for this email." },
-        { status: 404 },
-      );
+      return NextResponse.json({
+        ok: true,
+        message: "If an account exists, a verification code has been sent.",
+      });
     }
 
     if (user.isEmailVerified) {
@@ -45,8 +40,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const otp = generateOtp();
-    const tokenHash = hashOtp(otp);
+    const otp = generateEmailVerificationOtp();
+    const tokenHash = hashEmailVerificationOtp(normalizedEmail, otp);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     await prisma.$transaction([

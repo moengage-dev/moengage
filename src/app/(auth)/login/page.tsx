@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useEffect } from "react";
+import React, { Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, getSession } from "next-auth/react";
@@ -48,9 +48,9 @@ function LoginPageInner() {
   const signupHref = `/signup${nextParam ? `?next=${encodeURIComponent(nextParam)}` : ""}`;
 
   const [user, setUser] = React.useState({ email: "", password: "" });
-  const [buttonDisabled, setButtonDisabled] = React.useState(true);
   const [loading, setLoading] = React.useState(false);
   const [message, setMessage] = React.useState<Message | null>(null);
+  const buttonDisabled = !(user.email && user.password);
 
   const onLogin = async () => {
     setMessage(null);
@@ -150,10 +150,6 @@ function LoginPageInner() {
       setTimeout(checkSession, 500);
     }
   };
-
-  useEffect(() => {
-    setButtonDisabled(!(user.email && user.password));
-  }, [user]);
 
   const handleEnterSubmit = (
     event: React.KeyboardEvent<HTMLInputElement>,

@@ -12,6 +12,7 @@ export function generateCSV(data: any[], columns: string[]): string {
 
   return Papa.unparse(data, {
     columns: columns,
+    escapeFormulae: true,
   });
 }
 

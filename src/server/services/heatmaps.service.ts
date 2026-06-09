@@ -25,6 +25,10 @@ export interface ConsumerScanMarker {
   country: string;
   latitude: number | null;
   longitude: number | null;
+  hitCount: number;
+  repeatCount: number;
+  suspiciousCount: number;
+  billableCount: number;
   isRepeatScan: boolean;
   isBillable: boolean;
   isSuspicious: boolean;
@@ -112,6 +116,7 @@ export async function getAdminHeatmapData(filters: HeatmapFilters): Promise<Heat
     }
     if (filters.endDate) {
       const end = new Date(filters.endDate);
+      end.setHours(23, 59, 59, 999);
       scanDateFilter.lte = end;
       deliveryDateFilter.lte = end;
     }
@@ -204,6 +209,10 @@ export async function getAdminHeatmapData(filters: HeatmapFilters): Promise<Heat
     country: s.country ?? "",
     latitude: toNumber(s.latitude),
     longitude: toNumber(s.longitude),
+    hitCount: s.hitCount,
+    repeatCount: s.repeatCount,
+    suspiciousCount: s.suspiciousCount,
+    billableCount: s.billableCount,
     isRepeatScan: s.isRepeatScan,
     isBillable: s.isBillable,
     isSuspicious: s.isSuspicious,

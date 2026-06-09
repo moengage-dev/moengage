@@ -56,6 +56,7 @@ All accounts use the same password: **`DemoPass123!`**
 | `ADVERTISER_VIEWER` (Vodacom) | `advertiser.viewer@moengage.local` | Vodacom campaigns only |
 | `ADVERTISER_VIEWER` (NCBA) | `ncba.viewer@moengage.local` | NCBA Bank campaigns only |
 | `RETAIL_OPERATIONS` | `retail.ops@moengage.local` | Mo Beverages deliveries |
+| `RETAIL_OPERATIONS` | `bright.retail.ops@moengage.local` | Bright Foods deliveries |
 
 ---
 
@@ -112,7 +113,7 @@ Open these in a browser or mobile device to simulate the consumer experience:
 1. Open `http://localhost:3000/q/mo-xtra-vodacom-free-5gb` in a new tab
 2. The **campaign landing page** renders immediately
 3. Enter mobile: `+255799999999`
-4. Enter OTP: `123456` (simulated — any 6-digit code works in dev)
+4. Enter the generated OTP displayed in the demo helper (requires local development or `DEMO_OTP_ECHO=true`)
 5. Claim is **APPROVED** ✅
 
 **Business narrative:** *"When a consumer scans, a ScanEvent is logged instantly — no claim required. The consumer then enters their mobile number, receives a simulated OTP, and claims the reward. Mobile is hashed for privacy."*
@@ -122,16 +123,16 @@ Open these in a browser or mobile device to simulate the consumer experience:
 ### Step 5 — Attempt Duplicate Claim
 1. Stay on the same QR page or refresh
 2. Try the same mobile number `+255799999999`
-3. The system shows **"Already Claimed"** — claim is **DECLINED_DUPLICATE** ❌
+3. The duplicate is blocked. The public response remains generic so prior participation is not exposed.
 
-**Business narrative:** *"One mobile number = one reward per campaign. This protects advertisers from abuse and ensures accurate billing."*
+**Business narrative:** *"One mobile number can receive at most one approved reward per campaign. Duplicate approval is blocked without exposing claim history."*
 
 ---
 
 ### Step 6 — Show Admin Analytics (updated)
 1. Return to `/admin` and refresh
 2. Show the new ScanEvent in the Recent Scan Events table
-3. Note the `Billable: Yes` flag for normal scans
+3. Note the hit, suspicious, and billable counters for the aggregate scan bucket
 
 ---
 
@@ -140,8 +141,8 @@ Open these in a browser or mobile device to simulate the consumer experience:
 2. Show the pre-seeded suspicious scans:
    - `HIGH_FREQUENCY_VISITOR` — Bot/Script detected
    - `HIGH_FREQUENCY_IP` — Same IP with 20+ scans
-3. Show `IsBillable: No` for suspicious scans
-4. Demonstrate the **manual override** (mark as Safe / flag as Suspicious)
+3. Show the total, suspicious, and billable hit counts for each aggregate bucket
+4. Demonstrate the explicit whole-bucket manual override
 
 **Business narrative:** *"The platform automatically classifies scans. High-frequency visitors and IP addresses are flagged as non-billable. Admins can manually override any decision."*
 
@@ -154,7 +155,7 @@ Open these in a browser or mobile device to simulate the consumer experience:
    - NCBA: Separate campaign, separate billing row
 3. Highlight the `+2 non-billable` annotation on the Vodacom row
 
-**Business narrative:** *"Billing is calculated live from the database. Fixed fees come from estimated delivered units. Engagement fees only count verified, non-suspicious scans."*
+**Business narrative:** *"Billing is calculated live from database counters. Fixed fees come from estimated delivered units. Engagement fees only count billable consumer scan hits."*
 
 ---
 
@@ -222,7 +223,7 @@ Open these in a browser or mobile device to simulate the consumer experience:
 ## 6. Architecture Notes
 
 - **Next.js App Router** — all dashboard pages are server components with `requireRole()` guards
-- **Prisma + Supabase** — type-safe ORM, no raw SQL, migrations managed by Prisma
+- **Prisma + Supabase** — Prisma manages the schema and most queries; the scan hot path uses a parameterized PostgreSQL upsert for atomic bucket aggregation
 - **NextAuth v4** — JWT session with role and scope (brandId/advertiserId) embedded
 - **Role Scopes** — `getRoleScopeFilters()` in `src/lib/auth/role-scope.ts` generates Prisma `where` clauses from session
 - **Fraud Detection** — `scan-classification.service.ts` classifies scans before inserting ScanEvents

@@ -14,12 +14,25 @@ export async function getDeliveryQRCodePageData(
 ): Promise<ServiceResult> {
   const qrCode = await prisma.qRCode.findUnique({
     where: { code },
-    include: {
-      brand: true,
-      advertiser: true,
-      campaign: true,
-      product: true,
-      batch: true,
+    select: {
+      id: true,
+      code: true,
+      type: true,
+      status: true,
+      brandId: true,
+      campaignId: true,
+      productId: true,
+      batchId: true,
+      brand: { select: { name: true } },
+      campaign: { select: { name: true, offerTitle: true } },
+      product: { select: { name: true } },
+      batch: {
+        select: {
+          id: true,
+          batchCode: true,
+          unitsPerCarton: true,
+        },
+      },
     },
   });
 
@@ -64,7 +77,10 @@ export async function getDeliveryQRCodePageData(
   }
 
   // If user role is RETAIL_OPERATIONS, verify brandId matches
-  if (user.role === "RETAIL_OPERATIONS" && qrCode.brandId !== user.brandId) {
+  if (
+    user.role === "RETAIL_OPERATIONS" &&
+    (!user.brandId || qrCode.brandId !== user.brandId)
+  ) {
     return {
       ok: false,
       status: "UNAUTHORIZED",
@@ -119,7 +135,10 @@ export async function createDeliveryScan(
 
   // Enforce brand ownership: a RETAIL_OPERATIONS user may only log scans for
   // their own brand's delivery QR codes. ADMIN bypasses (mirrors page-load guard).
-  if (user.role === "RETAIL_OPERATIONS" && qrCode.brandId !== user.brandId) {
+  if (
+    user.role === "RETAIL_OPERATIONS" &&
+    (!user.brandId || qrCode.brandId !== user.brandId)
+  ) {
     return {
       ok: false,
       status: "UNAUTHORIZED",
@@ -146,6 +165,14 @@ export async function createDeliveryScan(
   const batch = qrCode.batch;
   const unitsPerCarton = batch.unitsPerCarton;
 
+  if (data.batchId !== qrCode.batchId) {
+    return {
+      ok: false,
+      status: "BATCH_MISMATCH",
+      error: "The submitted batch does not match this delivery QR code.",
+    };
+  }
+
   if (!unitsPerCarton || unitsPerCarton <= 0) {
     return {
       ok: false,
@@ -160,7 +187,16 @@ export async function createDeliveryScan(
     const result = await prisma.$transaction(async (tx) => {
       let retailerId = data.retailerId;
 
-      if (!retailerId) {
+      if (retailerId) {
+        const retailer = await tx.retailer.findUnique({
+          where: { id: retailerId },
+          select: { brandId: true },
+        });
+
+        if (!retailer || retailer.brandId !== qrCode.brandId) {
+          throw new Error("RETAILER_SCOPE_MISMATCH");
+        }
+      } else {
         // Create new Retailer
         const newRetailer = await tx.retailer.create({
           data: {
@@ -217,6 +253,13 @@ export async function createDeliveryScan(
       data: result,
     };
   } catch (error: any) {
+    if (error instanceof Error && error.message === "RETAILER_SCOPE_MISMATCH") {
+      return {
+        ok: false,
+        status: "UNAUTHORIZED_RETAILER",
+        error: "The selected retailer is not available for this brand.",
+      };
+    }
     console.error("Error creating delivery scan:", error);
     return {
       ok: false,
@@ -227,7 +270,12 @@ export async function createDeliveryScan(
 }
 
 export async function getRetailOperationsDashboardData(user: CurrentUser) {
-  const brandFilter = user.role === "RETAIL_OPERATIONS" ? { brandId: user.brandId } : {};
+  const brandFilter =
+    user.role === "RETAIL_OPERATIONS"
+      ? user.brandId
+        ? { brandId: user.brandId }
+        : { id: "__no_retail_scope__" }
+      : {};
 
   const [
     totalDeliveryScans,
@@ -273,7 +321,12 @@ export async function getRetailOperationsDashboardData(user: CurrentUser) {
 }
 
 export async function getRetailDeliveriesPageData(user: CurrentUser) {
-  const brandFilter = user.role === "RETAIL_OPERATIONS" ? { brandId: user.brandId } : {};
+  const brandFilter =
+    user.role === "RETAIL_OPERATIONS"
+      ? user.brandId
+        ? { brandId: user.brandId }
+        : { id: "__no_retail_scope__" }
+      : {};
 
   const [
     deliveryScans,
@@ -297,11 +350,13 @@ export async function getRetailDeliveriesPageData(user: CurrentUser) {
         },
       },
     }),
-    user.role === "RETAIL_OPERATIONS" && user.brandId
-      ? prisma.retailer.findMany({
-          where: { brandId: user.brandId },
-          orderBy: { name: "asc" },
-        })
+    user.role === "RETAIL_OPERATIONS"
+      ? user.brandId
+        ? prisma.retailer.findMany({
+            where: { brandId: user.brandId },
+            orderBy: { name: "asc" },
+          })
+        : Promise.resolve([])
       : prisma.retailer.findMany({
           orderBy: { name: "asc" },
         }),

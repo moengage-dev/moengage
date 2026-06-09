@@ -4,6 +4,12 @@ import { aggregateScanEvent } from "../src/server/services/scan-event-aggregatio
 import crypto from "crypto";
 
 async function main() {
+  if (process.env.ALLOW_MUTATING_DB_TESTS !== "true") {
+    throw new Error(
+      "Refusing to run a mutating database test. Set ALLOW_MUTATING_DB_TESTS=true only for a disposable database.",
+    );
+  }
+
   console.log("Starting concurrency test for scan aggregations...");
 
   // 1. Fetch an existing QR code or create a dummy one

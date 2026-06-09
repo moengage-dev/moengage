@@ -591,15 +591,41 @@ export async function generateQRCodeDownloadData(
 ): Promise<ServiceResult<{ code: string; content: string | Buffer }>> {
   const qr = await prisma.qRCode.findUnique({
     where: { id },
-    select: { code: true, destinationUrl: true, brandId: true, advertiserId: true },
+    select: {
+      code: true,
+      destinationUrl: true,
+      brandId: true,
+      advertiserId: true,
+      campaignId: true,
+    },
   });
   if (!qr) {
     return { ok: false, error: "QR Code not found" };
   }
 
-  if (user.role !== "ADMIN") {
-    if (user.role === "BRAND_ADMIN" && qr.brandId !== user.brandId) return { ok: false, error: "Unauthorized" };
-    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && qr.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+  let authorized = user.role === "ADMIN";
+
+  if (user.role === "BRAND_ADMIN") {
+    authorized = Boolean(user.brandId && qr.brandId === user.brandId);
+  } else if (user.role === "ADVERTISER_VIEWER") {
+    authorized = Boolean(
+      user.advertiserId && qr.advertiserId === user.advertiserId
+    );
+  } else if (user.role === "CAMPAIGN_MANAGER" && qr.campaignId) {
+    const assignment = await prisma.campaignAssignment.findUnique({
+      where: {
+        campaignId_userId: {
+          campaignId: qr.campaignId,
+          userId: user.id,
+        },
+      },
+      select: { id: true },
+    });
+    authorized = Boolean(assignment);
+  }
+
+  if (!authorized) {
+    return { ok: false, error: "Unauthorized" };
   }
 
   const url = qr.destinationUrl;

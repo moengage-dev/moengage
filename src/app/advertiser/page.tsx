@@ -195,9 +195,9 @@ export default async function AdvertiserDashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <AnalyticsTableSection
-          title="Recent Scan Events"
-          description="Latest consumer QR scans logged for your campaigns."
-          headers={["Date", "Campaign", "Product", "Location", "Device", "Repeat", "Billable"]}
+          title="Recent Scan Buckets"
+          description="Latest 30-second consumer scan buckets for your campaigns."
+          headers={["Date", "Campaign", "Product", "Location", "Device", "Hits", "Repeat", "Suspicious", "Billable"]}
           hasData={performance.recentScanEvents.length > 0}
         >
           {performance.recentScanEvents.map((s, idx) => (
@@ -213,16 +213,10 @@ export default async function AdvertiserDashboardPage() {
               <td className="py-3 px-3.5 uppercase text-[9px] tracking-wider text-slate-400">
                 {s.deviceType}
               </td>
-              <td className="py-3 px-3.5 text-right">
-                <Badge variant={s.isRepeatScan ? "secondary" : "outline"} className="text-[9px] px-1 py-0 h-4">
-                  {s.isRepeatScan ? "Repeat" : "First"}
-                </Badge>
-              </td>
-              <td className="py-3 px-3.5 text-right">
-                <Badge className={`text-[9px] px-1 py-0 h-4 ${s.isBillable ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-slate-800 text-slate-400 border-slate-700"}`}>
-                  {s.isBillable ? "Yes" : "No"}
-                </Badge>
-              </td>
+              <td className="py-3 px-3.5 text-right font-mono">{formatNumber(s.hitCount)}</td>
+              <td className="py-3 px-3.5 text-right font-mono">{formatNumber(s.repeatCount)}</td>
+              <td className="py-3 px-3.5 text-right font-mono">{formatNumber(s.suspiciousCount)}</td>
+              <td className="py-3 px-3.5 text-right font-mono">{formatNumber(s.billableCount)}</td>
             </tr>
           ))}
         </AnalyticsTableSection>

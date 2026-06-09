@@ -59,6 +59,10 @@ export type RecentScanRow = {
   productName: string;
   location: string;
   deviceType: string;
+  hitCount: number;
+  repeatCount: number;
+  suspiciousCount: number;
+  billableCount: number;
   isRepeatScan: boolean;
   isBillable: boolean;
 };
@@ -104,6 +108,13 @@ async function computeMetricsAndPerformance(filters: {
   rewardClaim: any;
   deliveryScan: any;
 }): Promise<AnalyticsDashboardData> {
+  const productWhere =
+    filters.campaign.brandId
+      ? { brandId: filters.campaign.brandId }
+      : Object.keys(filters.campaign).length > 0
+        ? { campaigns: { some: filters.campaign } }
+        : {};
+
   const [
     totalCampaigns,
     activeCampaigns,
@@ -126,7 +137,7 @@ async function computeMetricsAndPerformance(filters: {
   ] = await Promise.all([
     prisma.campaign.count({ where: filters.campaign }),
     prisma.campaign.count({ where: { ...filters.campaign, status: "ACTIVE" } }),
-    prisma.qRCode.count({ where: filters.qrCode }),
+    prisma.qRCode.count({ where: { ...filters.qrCode, status: "ACTIVE" } }),
     prisma.scanEvent.aggregate({
       _sum: {
         hitCount: true,
@@ -153,15 +164,17 @@ async function computeMetricsAndPerformance(filters: {
         brand: { select: { name: true } },
         advertiser: { select: { name: true } },
       },
+      orderBy: { createdAt: "desc" },
       take: 5,
     }),
 
     // Top products by scans (indirectly via product filter)
     prisma.product.findMany({
-      where: filters.campaign.brandId ? { brandId: filters.campaign.brandId } : {},
+      where: productWhere,
       include: {
         brand: { select: { name: true } },
       },
+      orderBy: { createdAt: "desc" },
       take: 5,
     }),
 
@@ -320,6 +333,10 @@ async function computeMetricsAndPerformance(filters: {
     productName: s.product?.name ?? "—",
     location: [s.suburb, s.city, s.country].filter(Boolean).join(", ") || "Unknown Location",
     deviceType: s.deviceType ?? "Unknown",
+    hitCount: s.hitCount,
+    repeatCount: s.repeatCount,
+    suspiciousCount: s.suspiciousCount,
+    billableCount: s.billableCount,
     isRepeatScan: s.isRepeatScan,
     isBillable: s.isBillable,
   }));

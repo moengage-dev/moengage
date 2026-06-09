@@ -4,6 +4,8 @@ import { PublicCampaignLanding } from "@/components/campaign/public-campaign-lan
 import { AlertTriangle, AlertCircle, Ban } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +15,14 @@ type Props = {
 
 export default async function ConsumerQRLandingPage({ params }: Props) {
   const { code } = await params;
+
+  // The route handler sets the durable visitor cookie on its redirect response.
+  // Direct landing requests without that cookie must pass through it first so
+  // refreshes aggregate into the same visitor bucket.
+  const cookieStore = await cookies();
+  if (!cookieStore.get("moengage_visitor_id")?.value) {
+    redirect(`/q/${code}`);
+  }
 
   const result = await getConsumerQRCodeByCode(code);
 
@@ -109,7 +119,22 @@ export default async function ConsumerQRLandingPage({ params }: Props) {
 
   return (
     <PublicCampaignLanding
-      qrCode={qrCode as any}
+      qrCode={{
+        code: qrCode.code,
+        label: qrCode.label,
+        brand: qrCode.brand,
+        advertiser: qrCode.advertiser,
+        product: qrCode.product,
+        campaign: qrCode.campaign
+          ? {
+              id: qrCode.campaign.id,
+              name: qrCode.campaign.name,
+              offerTitle: qrCode.campaign.offerTitle,
+              offerDescription: qrCode.campaign.offerDescription,
+              rewardType: qrCode.campaign.rewardType,
+            }
+          : null,
+      }}
       scanEventId={scanEventId}
       debugInfo={debugInfo}
     />

@@ -59,7 +59,11 @@ export async function getAdminBillingPageData(
   if (filters.startDate || filters.endDate) {
     where.generatedAt = {};
     if (filters.startDate) where.generatedAt.gte = new Date(filters.startDate);
-    if (filters.endDate) where.generatedAt.lte = new Date(filters.endDate);
+    if (filters.endDate) {
+      const end = new Date(filters.endDate);
+      end.setHours(23, 59, 59, 999);
+      where.generatedAt.lte = end;
+    }
   }
 
   const summaries = await prisma.billingSummary.findMany({

@@ -213,7 +213,9 @@ export async function GET(request: Request) {
           Advertiser: s.advertiser?.name || "—",
           QRCode: s.qrCode?.code || "—",
           Reason: s.suspiciousReason || "—",
-          VisitorID: s.anonymousVisitorId || "—",
+          VisitorID: s.anonymousVisitorId
+            ? `${s.anonymousVisitorId.slice(0, 8)}...`
+            : "—",
           MaskedIP: s.ipHash ? s.ipHash.slice(0, 8) + "..." : "—",
           Country: s.country || "—",
           Region: s.region || "—",
@@ -256,6 +258,8 @@ export async function GET(request: Request) {
     const headers = new Headers();
     headers.set("Content-Type", contentType);
     headers.set("Content-Disposition", `attachment; filename="${filename}"`);
+    headers.set("Cache-Control", "no-store");
+    headers.set("X-Content-Type-Options", "nosniff");
 
     return new NextResponse(fileBuffer as any, { headers });
   } catch (error) {

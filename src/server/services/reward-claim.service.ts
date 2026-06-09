@@ -62,7 +62,25 @@ export async function startRewardClaim(
   // Verify scan event exists and matches campaign
   const scanEvent = await prisma.scanEvent.findUnique({
     where: { id: scanEventId },
-    include: { campaign: true },
+    select: {
+      brandId: true,
+      advertiserId: true,
+      campaignId: true,
+      campaign: {
+        select: {
+          status: true,
+          startDate: true,
+          endDate: true,
+          rewardType: true,
+        },
+      },
+      qrCode: {
+        select: {
+          status: true,
+          type: true,
+        },
+      },
+    },
   });
   if (!scanEvent || scanEvent.campaignId !== campaignId) {
     console.warn("[startRewardClaim] Invalid scan event or campaign mismatch:", { scanEventId, campaignId });
@@ -73,9 +91,19 @@ export async function startRewardClaim(
     };
   }
 
-  // Verify campaign is active
-  if (!scanEvent.campaign || scanEvent.campaign.status !== "ACTIVE") {
-    console.warn("[startRewardClaim] Inactive campaign attempted:", campaignId);
+  const now = new Date();
+  const campaign = scanEvent.campaign;
+  const campaignIsEligible =
+    campaign?.status === "ACTIVE" &&
+    (!campaign.startDate || campaign.startDate <= now) &&
+    (!campaign.endDate || campaign.endDate >= now);
+  const qrIsEligible =
+    scanEvent.qrCode.status === "ACTIVE" &&
+    (scanEvent.qrCode.type === "CONSUMER_CAMPAIGN" ||
+      scanEvent.qrCode.type === "SAMPLE_LABEL");
+
+  if (!campaign || !campaignIsEligible || !qrIsEligible) {
+    console.warn("[startRewardClaim] Ineligible campaign or QR");
     return {
       ok: false,
       status: "VERIFICATION_FAILED",
@@ -120,50 +148,75 @@ export async function startRewardClaim(
   const codeHash = hashRewardOtp(otp);
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
-  // Log/Return dev OTP
-  const devOtp = process.env.NODE_ENV === "development" ? otp : undefined;
+  // The OTP is simulated — there is no real SMS provider in this MVP. To allow the
+  // reward flow to be completed during a hosted client demo (where NODE_ENV is
+  // "production"), the OTP may be echoed back ONLY when DEMO_OTP_ECHO is explicitly
+  // set to "true". It is always echoed in local development. This flag defaults to
+  // off so a real production deployment never leaks the code.
+  const echoOtp =
+    process.env.NODE_ENV === "development" ||
+    process.env.DEMO_OTP_ECHO === "true";
+  const devOtp = echoOtp ? otp : undefined;
   if (process.env.NODE_ENV === "development") {
     console.log(`[startRewardClaim] Dev OTP for ${normalizedMobile}: ${otp}`);
   }
 
-  // Create OtpVerification
-  const otpVerification = await prisma.otpVerification.create({
-    data: {
-      mobileNumberHash,
-      codeHash,
-      status: "PENDING",
-      isSimulated: true,
-      expiresAt,
-    },
-  });
+  let otpVerification: { id: string };
+  try {
+    otpVerification = await prisma.$transaction(async (tx) => {
+      const verification = await tx.otpVerification.create({
+        data: {
+          mobileNumberHash,
+          codeHash,
+          status: "PENDING",
+          isSimulated: true,
+          expiresAt,
+        },
+        select: { id: true },
+      });
 
-  // Create or Update STARTED RewardClaim record
-  if (existingApproved) {
-    // If a claim exists but is not approved (e.g. STARTED, FAILED), reuse the row
-    await prisma.rewardClaim.update({
-      where: { id: existingApproved.id },
-      data: {
-        scanEventId,
-        status: "STARTED",
-        otpVerificationId: otpVerification.id,
-      },
+      if (existingApproved) {
+        const claimUpdate = await tx.rewardClaim.updateMany({
+          where: {
+            id: existingApproved.id,
+            status: { not: "APPROVED" },
+          },
+          data: {
+            scanEventId,
+            status: "STARTED",
+            otpVerificationId: verification.id,
+          },
+        });
+
+        if (claimUpdate.count !== 1) {
+          throw new Error("Reward claim state changed during OTP issuance");
+        }
+      } else {
+        await tx.rewardClaim.create({
+          data: {
+            scanEventId,
+            campaignId,
+            brandId: scanEvent.brandId,
+            advertiserId: scanEvent.advertiserId,
+            otpVerificationId: verification.id,
+            mobileNumberLast4: getMobileNumberLast4(normalizedMobile),
+            mobileNumberHash,
+            status: "STARTED",
+            rewardType: campaign.rewardType,
+            providerStatus: "SIMULATED",
+          },
+        });
+      }
+
+      return verification;
     });
-  } else {
-    // Create new STARTED claim row
-    await prisma.rewardClaim.create({
-      data: {
-        scanEventId,
-        campaignId,
-        brandId: scanEvent.brandId,
-        advertiserId: scanEvent.advertiserId,
-        otpVerificationId: otpVerification.id,
-        mobileNumberLast4: getMobileNumberLast4(normalizedMobile),
-        mobileNumberHash,
-        status: "STARTED",
-        rewardType: scanEvent.campaign.rewardType,
-        providerStatus: "SIMULATED",
-      },
-    });
+  } catch (error) {
+    console.error("[startRewardClaim] Could not create reward claim:", error);
+    return {
+      ok: false,
+      status: "VERIFICATION_FAILED",
+      error: "Verification failed. Please try again.",
+    };
   }
 
   return {
@@ -205,6 +258,38 @@ export async function verifyRewardOtpAndClaim(
     };
   }
 
+  // Bind caller-controlled IDs to the STARTED claim created for this exact OTP.
+  // Without this check, an OTP issued for one scan/campaign could be replayed
+  // against a different campaign by changing request fields.
+  const pendingClaim = await prisma.rewardClaim.findUnique({
+    where: {
+      campaignId_mobileNumberHash: {
+        campaignId,
+        mobileNumberHash,
+      },
+    },
+    select: {
+      id: true,
+      scanEventId: true,
+      otpVerificationId: true,
+      status: true,
+    },
+  });
+
+  if (
+    !pendingClaim ||
+    pendingClaim.status !== "STARTED" ||
+    pendingClaim.scanEventId !== scanEventId ||
+    pendingClaim.otpVerificationId !== otpVerificationId
+  ) {
+    console.warn("[verify] OTP/claim binding mismatch");
+    return {
+      ok: false,
+      status: "VERIFICATION_FAILED",
+      error: "Verification failed. Please try again.",
+    };
+  }
+
   // Pre-flight Guard: Check if locked due to too many failed attempts
   if (otpVerification.status === "FAILED" || otpVerification.attemptCount >= MAX_OTP_ATTEMPTS) {
     console.warn("[verify] OTP verification locked or max attempts reached:", otpVerificationId);
@@ -228,6 +313,10 @@ export async function verifyRewardOtpAndClaim(
   // Check expired
   if (new Date() > otpVerification.expiresAt) {
     console.warn("[verify] OTP verification expired:", otpVerificationId);
+    await prisma.otpVerification.updateMany({
+      where: { id: otpVerificationId, status: "PENDING" },
+      data: { status: "EXPIRED" },
+    });
     return {
       ok: false,
       status: "VERIFICATION_FAILED",
@@ -247,20 +336,32 @@ export async function verifyRewardOtpAndClaim(
 
   // Verify OTP code hash
   if (!otpVerification.codeHash || !verifyRewardOtpHash(otp, otpVerification.codeHash)) {
-    const nextAttempts = otpVerification.attemptCount + 1;
-    const isFailed = nextAttempts >= MAX_OTP_ATTEMPTS;
-
-    console.warn(`[verify] Incorrect OTP code for verificationId: ${otpVerificationId}, attempt: ${nextAttempts}`);
-
-    // Increment attemptCount, and burn/fail the record if limit is reached
-    await prisma.otpVerification.update({
-      where: { id: otpVerificationId },
-      data: { 
+    const attemptUpdate = await prisma.otpVerification.updateMany({
+      where: {
+        id: otpVerificationId,
+        status: "PENDING",
+        attemptCount: { lt: MAX_OTP_ATTEMPTS },
+      },
+      data: {
         attemptCount: { increment: 1 },
-        status: isFailed ? "FAILED" : undefined
       },
     });
 
+    if (attemptUpdate.count === 1) {
+      const updatedVerification = await prisma.otpVerification.findUnique({
+        where: { id: otpVerificationId },
+        select: { attemptCount: true },
+      });
+
+      if ((updatedVerification?.attemptCount ?? MAX_OTP_ATTEMPTS) >= MAX_OTP_ATTEMPTS) {
+        await prisma.otpVerification.updateMany({
+          where: { id: otpVerificationId, status: "PENDING" },
+          data: { status: "FAILED" },
+        });
+      }
+    }
+
+    console.warn("[verify] Incorrect OTP code");
     return {
       ok: false,
       status: "VERIFICATION_FAILED",
@@ -270,77 +371,53 @@ export async function verifyRewardOtpAndClaim(
 
   try {
     const result = await prisma.$transaction(async (tx) => {
-      // Re-verify duplicate APPROVED claim inside transaction
-      const approvedClaim = await tx.rewardClaim.findUnique({
+      // Atomically burn the OTP. Concurrent verification requests cannot both
+      // transition the same PENDING record to VERIFIED.
+      const verificationUpdate = await tx.otpVerification.updateMany({
         where: {
-          campaignId_mobileNumberHash: {
-            campaignId,
-            mobileNumberHash,
-          },
+          id: otpVerificationId,
+          mobileNumberHash,
+          status: "PENDING",
+          attemptCount: { lt: MAX_OTP_ATTEMPTS },
+          expiresAt: { gt: new Date() },
         },
-      });
-
-      if (approvedClaim && approvedClaim.status === "APPROVED") {
-        return {
-          status: "DUPLICATE" as const,
-          error: "Duplicate claim detected inside transaction.",
-        };
-      }
-
-      // Update OtpVerification
-      await tx.otpVerification.update({
-        where: { id: otpVerificationId },
         data: {
           status: "VERIFIED",
           verifiedAt: new Date(),
         },
       });
 
-      if (approvedClaim) {
-        // Update existing STARTED row to APPROVED
-        const updatedClaim = await tx.rewardClaim.update({
-          where: { id: approvedClaim.id },
-          data: {
-            status: "APPROVED",
-            claimedAt: new Date(),
-            providerStatus: "SIMULATED",
-            providerResponse: { simulated: true, message: "Reward approved for demo." },
-            otpVerificationId,
-          },
-        });
-        return { status: "APPROVED" as const, rewardClaimId: updatedClaim.id };
-      } else {
-        // Fallback create APPROVED claim row
-        const campaign = await tx.campaign.findUnique({
-          where: { id: campaignId },
-          select: { brandId: true, advertiserId: true, rewardType: true },
-        });
-        if (!campaign) {
-          throw new Error("Campaign not found");
-        }
-
-        const newClaim = await tx.rewardClaim.create({
-          data: {
-            scanEventId,
-            campaignId,
-            brandId: campaign.brandId,
-            advertiserId: campaign.advertiserId,
-            otpVerificationId,
-            mobileNumberLast4: getMobileNumberLast4(normalizedMobile),
-            mobileNumberHash,
-            status: "APPROVED",
-            rewardType: campaign.rewardType,
-            providerStatus: "SIMULATED",
-            providerResponse: { simulated: true, message: "Reward approved for demo." },
-            claimedAt: new Date(),
-          },
-        });
-        return { status: "APPROVED" as const, rewardClaimId: newClaim.id };
+      if (verificationUpdate.count !== 1) {
+        return {
+          status: "INVALID" as const,
+        };
       }
+
+      const claimUpdate = await tx.rewardClaim.updateMany({
+        where: {
+          id: pendingClaim.id,
+          campaignId,
+          mobileNumberHash,
+          scanEventId,
+          otpVerificationId,
+          status: "STARTED",
+        },
+        data: {
+          status: "APPROVED",
+          claimedAt: new Date(),
+          providerStatus: "SIMULATED",
+          providerResponse: { simulated: true, message: "Reward approved for demo." },
+        },
+      });
+
+      if (claimUpdate.count !== 1) {
+        throw new Error("Reward claim state changed during verification");
+      }
+
+      return { status: "APPROVED" as const, rewardClaimId: pendingClaim.id };
     });
 
-    if (result.status === "DUPLICATE") {
-      console.warn(`[verify] Duplicate approved claim inside transaction for phoneHash: ${mobileNumberHash}`);
+    if (result.status === "INVALID") {
       return {
         ok: false,
         status: "VERIFICATION_FAILED",
@@ -356,14 +433,6 @@ export async function verifyRewardOtpAndClaim(
       },
     };
   } catch (e: any) {
-    if (e.code === "P2002") {
-      console.warn(`[verify] Unique constraint duplicate claim error: ${e.message}`);
-      return {
-        ok: false,
-        status: "VERIFICATION_FAILED",
-        error: "Verification failed. Please try again.",
-      };
-    }
     console.error("[verifyRewardOtpAndClaim] Error:", e);
     return {
       ok: false,

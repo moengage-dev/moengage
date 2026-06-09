@@ -45,6 +45,9 @@ type SuspiciousScanRow = {
   isSuspicious: boolean;
   suspiciousReason: string | null;
   isBillable: boolean;
+  hitCount: number;
+  suspiciousCount: number;
+  billableCount: number;
   brand: { name: string } | null;
   advertiser: { name: string } | null;
   campaign: { name: string } | null;
@@ -129,16 +132,25 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
     });
   };
 
-  const handleToggleSuspicious = async (scanId: string, currentSuspicious: boolean) => {
+  const handleToggleSuspicious = async (
+    scanId: string,
+    currentSuspicious: boolean,
+    hitCount: number,
+  ) => {
+    const action = currentSuspicious
+      ? "mark every hit in this aggregate bucket as safe"
+      : "mark every hit in this aggregate bucket as suspicious";
+
+    if (!window.confirm(`This will ${action} (${hitCount} total hits). Continue?`)) {
+      return;
+    }
+
     try {
-      const actionLabel = currentSuspicious ? "marking as safe" : "marking as suspicious";
-      toast.promise(toggleScanSuspicious(scanId, !currentSuspicious), {
-        loading: `${actionLabel.charAt(0).toUpperCase() + actionLabel.slice(1)}...`,
-        success: `Successfully updated scan status.`,
-        error: `Failed to update scan status.`,
-      });
+      await toggleScanSuspicious(scanId, !currentSuspicious);
+      toast.success("Aggregate scan bucket updated.");
+      router.refresh();
     } catch (err: any) {
-      toast.error(err.message || "An unexpected error occurred.");
+      toast.error(err.message || "Failed to update aggregate scan bucket.");
     }
   };
 
@@ -321,8 +333,8 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
       <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-xl">
         <CardHeader className="py-4">
           <CardTitle className="text-lg text-slate-100 flex items-center justify-between">
-            <span>Recent Flags Log</span>
-            <span className="text-xs font-normal text-slate-400">Showing last 100 scans</span>
+            <span>Recent Flagged Buckets</span>
+            <span className="text-xs font-normal text-slate-400">Showing last 100 aggregate buckets</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="px-0 sm:px-6">
@@ -337,7 +349,7 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
                   <TableHead className="text-slate-300">Visitor & IP Hash</TableHead>
                   <TableHead className="text-slate-300">Location</TableHead>
                   <TableHead className="text-slate-300">Device/Browser</TableHead>
-                  <TableHead className="text-slate-300">Billing</TableHead>
+                  <TableHead className="text-slate-300">Hit Counts</TableHead>
                   <TableHead className="text-slate-300 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -414,32 +426,34 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {scan.isBillable ? (
-                          <Badge className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/10 border-emerald-500/20 text-[10px]">
-                            Billable
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-800 text-[10px]">
-                            Non-Billable
-                          </Badge>
-                        )}
+                        <div className="text-xs text-slate-300 whitespace-nowrap">
+                          <div>Total: {scan.hitCount}</div>
+                          <div className="text-rose-400">Suspicious: {scan.suspiciousCount}</div>
+                          <div className="text-emerald-400">Billable: {scan.billableCount}</div>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleToggleSuspicious(scan.id, scan.isSuspicious)}
+                          onClick={() =>
+                            handleToggleSuspicious(
+                              scan.id,
+                              scan.isSuspicious,
+                              scan.hitCount,
+                            )
+                          }
                           className="h-8 gap-1.5 text-xs border border-slate-800 hover:bg-slate-800 text-slate-300 hover:text-slate-100"
                         >
                           {scan.isSuspicious ? (
                             <>
                               <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-                              <span>Mark Safe</span>
+                              <span>Mark All Safe</span>
                             </>
                           ) : (
                             <>
                               <ShieldAlert className="h-3.5 w-3.5 text-rose-400" />
-                              <span>Mark Abuse</span>
+                              <span>Flag All Hits</span>
                             </>
                           )}
                         </Button>

@@ -55,6 +55,44 @@ const limiters = redis ? {
       prefix: "ratelimit:verify:ip",
     }),
   },
+  auth: {
+    loginIp: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(10, "10 m"),
+      analytics: true,
+      prefix: "ratelimit:auth:login:ip",
+    }),
+    signupIp: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(5, "1 h"),
+      analytics: true,
+      prefix: "ratelimit:auth:signup:ip",
+    }),
+    sendIp: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(20, "10 m"),
+      analytics: true,
+      prefix: "ratelimit:auth:send:ip",
+    }),
+    emailCooldown: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(1, "60 s"),
+      analytics: true,
+      prefix: "ratelimit:auth:email:cooldown",
+    }),
+    verifyIp: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(30, "10 m"),
+      analytics: true,
+      prefix: "ratelimit:auth:verify:ip",
+    }),
+    verifyEmail: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(10, "10 m"),
+      analytics: true,
+      prefix: "ratelimit:auth:verify:email",
+    }),
+  },
 } : null;
 
 // Helper to normalize phone numbers
@@ -228,25 +266,96 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const authRateLimitedPaths = new Set([
+    "/api/auth/callback/credentials",
+    "/api/auth/signup",
+    "/api/auth/send-email-verification",
+    "/api/auth/resend-verification",
+    "/api/auth/verify-email",
+  ]);
+
+  if (authRateLimitedPaths.has(pathname)) {
+    if (!redis || !limiters) {
+      if (process.env.NODE_ENV === "production") {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "Service temporarily unavailable. Please try again later.",
+          },
+          { status: 503 },
+        );
+      }
+      console.warn("[proxy] Upstash Redis not configured. Bypassing auth rate limits (dev/test only).");
+      return NextResponse.next();
+    }
+
+    const xForwardedFor = request.headers.get("x-forwarded-for");
+    const ip =
+      (request as any).ip ||
+      xForwardedFor?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      "127.0.0.1";
+
+    let email = "";
+    try {
+      const body = await request.clone().json();
+      email = String(body?.email || "").trim().toLowerCase();
+    } catch {
+      try {
+        const formData = await request.clone().formData();
+        email = String(formData.get("email") || "").trim().toLowerCase();
+      } catch {
+        // Route-level validation handles malformed request bodies.
+      }
+    }
+
+    const reject = () =>
+      NextResponse.json(
+        {
+          ok: false,
+          error: "Too many requests. Please wait before trying again.",
+        },
+        { status: 429 },
+      );
+
+    if (pathname === "/api/auth/callback/credentials") {
+      const result = await limiters.auth.loginIp.limit(ip);
+      if (!result.success) return reject();
+    } else if (pathname === "/api/auth/signup") {
+      const result = await limiters.auth.signupIp.limit(ip);
+      if (!result.success) return reject();
+    } else if (
+      pathname === "/api/auth/send-email-verification" ||
+      pathname === "/api/auth/resend-verification"
+    ) {
+      const ipResult = await limiters.auth.sendIp.limit(ip);
+      if (!ipResult.success) return reject();
+
+      if (email) {
+        const emailHash = await sha256(email);
+        const cooldownResult = await limiters.auth.emailCooldown.limit(emailHash);
+        if (!cooldownResult.success) return reject();
+      }
+    } else {
+      const ipResult = await limiters.auth.verifyIp.limit(ip);
+      if (!ipResult.success) return reject();
+
+      if (email) {
+        const emailHash = await sha256(email);
+        const emailResult = await limiters.auth.verifyEmail.limit(emailHash);
+        if (!emailResult.success) return reject();
+      }
+    }
+
+    return NextResponse.next();
+  }
+
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
   }).catch(() => null);
 
   const role = token?.role as AppRole | undefined;
-
-  // Auth pages: redirect logged-in users to their dashboard
-  const isAuthPage =
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/signup") ||
-    pathname.startsWith("/verify-email") ||
-    pathname.startsWith("/forgot-password");
-
-  if (token && isAuthPage) {
-    return NextResponse.redirect(
-      new URL(getDefaultDashboard(role), request.url),
-    );
-  }
 
   // Legacy /dashboard route: redirect to role-specific dashboard
   if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
@@ -313,5 +422,10 @@ export const config = {
     "/retail/:path*",
     "/d/:path*",
     "/api/public/rewards/:path*",
+    "/api/auth/signup",
+    "/api/auth/callback/credentials",
+    "/api/auth/send-email-verification",
+    "/api/auth/resend-verification",
+    "/api/auth/verify-email",
   ],
 };

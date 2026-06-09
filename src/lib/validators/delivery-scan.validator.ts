@@ -24,7 +24,7 @@ const optionalDecimal = z.preprocess(
   (v) => {
     if (v == null || (typeof v === "string" && v.trim() === "")) return null;
     const parsed = Number(v);
-    return Number.isNaN(parsed) ? null : parsed;
+    return Number.isNaN(parsed) ? v : parsed;
   },
   z.number().nullable().optional()
 );
@@ -64,6 +64,22 @@ export const deliveryScanSchema = z
         code: z.ZodIssueCode.custom,
         message: "Retailer Name is required if no existing retailer is selected",
         path: ["retailerName"],
+      });
+    }
+
+    if (data.latitude != null && (data.latitude < -90 || data.latitude > 90)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Latitude must be between -90 and 90",
+        path: ["latitude"],
+      });
+    }
+
+    if (data.longitude != null && (data.longitude < -180 || data.longitude > 180)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Longitude must be between -180 and 180",
+        path: ["longitude"],
       });
     }
   });

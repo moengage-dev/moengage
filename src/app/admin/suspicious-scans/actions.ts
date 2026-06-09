@@ -10,10 +10,16 @@ export async function toggleScanSuspicious(scanEventId: string, markSuspicious: 
 
   const scan = await prisma.scanEvent.findUnique({
     where: { id: scanEventId },
-    select: { hitCount: true, isInternalTest: true },
+    select: {
+      hitCount: true,
+      isInternalTest: true,
+      qrCode: { select: { type: true } },
+    },
   });
 
-  if (!scan) return;
+  if (!scan) {
+    throw new Error("Aggregate scan bucket not found.");
+  }
 
   if (markSuspicious) {
     await prisma.scanEvent.update({
@@ -27,7 +33,8 @@ export async function toggleScanSuspicious(scanEventId: string, markSuspicious: 
       },
     });
   } else {
-    const isBillable = !scan.isInternalTest;
+    const isBillable =
+      !scan.isInternalTest && scan.qrCode.type !== "BATCH_DELIVERY";
     await prisma.scanEvent.update({
       where: { id: scanEventId },
       data: {

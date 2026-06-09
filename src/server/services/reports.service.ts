@@ -16,7 +16,9 @@ function buildDateFilter(options: BuildWhereOptions) {
     dateFilter.gte = new Date(options.startDate);
   }
   if (options.endDate) {
-    dateFilter.lte = new Date(options.endDate);
+    const end = new Date(options.endDate);
+    end.setHours(23, 59, 59, 999);
+    dateFilter.lte = end;
   }
   return Object.keys(dateFilter).length > 0 ? dateFilter : undefined;
 }
@@ -95,11 +97,15 @@ export async function getRewardClaimsData(filters: ReportParams) {
 export async function getDeliveryScansData(filters: ReportParams) {
   const createdAtFilter = buildDateFilter(filters);
   const whereClause: any = createdAtFilter ? { createdAt: createdAtFilter } : {};
-  
+
   if (filters.brandId) whereClause.brandId = filters.brandId;
   if (filters.campaignId) whereClause.campaignId = filters.campaignId;
-  // DeliveryScan does not have advertiserId in the schema.
-  // If an ADVERTISER_VIEWER attempts this report, it's blocked at the API level.
+  // DeliveryScan has no advertiserId column, so an ADVERTISER_VIEWER must be
+  // scoped through the related campaign. Without this, an advertiser hitting
+  // the endpoint directly would receive every brand's delivery scans (cross-tenant leak).
+  if (filters.advertiserId) {
+    whereClause.campaign = { advertiserId: filters.advertiserId };
+  }
 
   const deliveryScans = await prisma.deliveryScan.findMany({
     where: whereClause,
@@ -153,7 +159,11 @@ export async function getBillingSummaryData(filters: ReportParams) {
   if (filters.startDate || filters.endDate) {
     where.generatedAt = {};
     if (filters.startDate) where.generatedAt.gte = new Date(filters.startDate);
-    if (filters.endDate) where.generatedAt.lte = new Date(filters.endDate);
+    if (filters.endDate) {
+      const end = new Date(filters.endDate);
+      end.setHours(23, 59, 59, 999);
+      where.generatedAt.lte = end;
+    }
   }
 
   const summaries = await prisma.billingSummary.findMany({

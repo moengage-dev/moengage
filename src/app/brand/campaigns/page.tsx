@@ -1,8 +1,7 @@
-"use client";
-
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Clock } from "lucide-react";
 
 export default function Page() {
   return (
@@ -12,31 +11,24 @@ export default function Page() {
           <h1 className="text-3xl font-bold tracking-tight">Campaigns Management</h1>
           <p className="text-muted-foreground">Create and monitor consumer engagement campaigns for your products.</p>
         </div>
-        <Badge variant="secondary" className="w-fit bg-emerald-50 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700 border-emerald-200">
+        <Badge variant="secondary" className="w-fit bg-amber-50 text-amber-700 hover:bg-amber-50 hover:text-amber-700 border-amber-200">
           Coming soon
         </Badge>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Live Campaigns</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">4</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Budget</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$50,000</div>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="border-dashed">
+        <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <Clock className="h-6 w-6" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-base font-semibold">This module is coming soon</p>
+            <p className="max-w-md text-sm text-muted-foreground">
+              A brand-scoped campaign view will appear here. For live metrics, use your dashboard overview.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

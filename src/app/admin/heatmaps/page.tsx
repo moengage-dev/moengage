@@ -57,7 +57,7 @@ export default async function HeatmapsPage({ searchParams }: PageProps) {
       {/* Summary Cards */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
         <AnalyticsStatCard
-          title="Scan Locations"
+          title="Consumer Scans"
           value={formatNumber(summaryCounts.totalScanCount)}
           description="Total matched consumer scans"
           icon={<Scan className="h-4 w-4" />}

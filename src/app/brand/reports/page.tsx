@@ -23,7 +23,7 @@ export default async function BrandReportsPage() {
             <FileText className="h-8 w-8 text-primary" />
             Brand Reports
           </h1>
-          <p className="text-muted-foreground">Export and view your brand's campaign summaries, scan events, and claim logs.</p>
+          <p className="text-muted-foreground">Export and view your brand&apos;s campaign summaries, scan events, and claim logs.</p>
         </div>
       </div>
 

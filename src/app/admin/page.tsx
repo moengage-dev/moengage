@@ -305,9 +305,9 @@ export default async function AdminDashboardPage() {
         </LocalTableSection>
 
         <LocalTableSection
-          title="Recent Scan Events"
-          description="Latest consumer QR scans logged on the platform."
-          headers={["Date", "Campaign", "Product", "Location", "Device", "Repeat", "Billable"]}
+          title="Recent Scan Buckets"
+          description="Latest 30-second consumer scan buckets logged on the platform."
+          headers={["Date", "Campaign", "Product", "Location", "Device", "Hits", "Repeat", "Suspicious", "Billable"]}
           hasData={performance.recentScanEvents.length > 0}
         >
           {performance.recentScanEvents.map((s, idx) => (
@@ -323,24 +323,10 @@ export default async function AdminDashboardPage() {
               <td className="py-4 px-3 uppercase text-[9px] tracking-wider text-muted-foreground">
                 {s.deviceType}
               </td>
-              <td className="py-4 px-3 text-right">
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${
-                  s.isRepeatScan 
-                    ? "bg-[#FFE394]/30 text-[#6B5215] border-[#FFE394]/40" 
-                    : "bg-[#8BDFDD]/20 text-[#1E5C5A] border-[#8BDFDD]/35"
-                }`}>
-                  {s.isRepeatScan ? "Repeat" : "First"}
-                </span>
-              </td>
-              <td className="py-4 px-3 text-right">
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${
-                  s.isBillable 
-                    ? "bg-[#8BDFDD]/20 text-[#1E5C5A] border-[#8BDFDD]/35" 
-                    : "bg-[#F48F68]/20 text-[#8C3A1B] border-[#F48F68]/25"
-                }`}>
-                  {s.isBillable ? "Yes" : "No"}
-                </span>
-              </td>
+              <td className="py-4 px-3 text-right font-mono">{formatNumber(s.hitCount)}</td>
+              <td className="py-4 px-3 text-right font-mono">{formatNumber(s.repeatCount)}</td>
+              <td className="py-4 px-3 text-right font-mono">{formatNumber(s.suspiciousCount)}</td>
+              <td className="py-4 px-3 text-right font-mono">{formatNumber(s.billableCount)}</td>
             </tr>
           ))}
         </LocalTableSection>

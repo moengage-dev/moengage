@@ -5,7 +5,6 @@ import React from "react";
 import { ConsumerScanMarker, DeliveryMarker } from "@/server/services/heatmaps.service";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { formatNumber, formatDateTime } from "@/lib/format";
 import { Scan, Truck, MapPin } from "lucide-react";
 
@@ -37,7 +36,7 @@ export function HeatmapDataTables({ scanMarkers, deliveryMarkers }: HeatmapDataT
             <CardTitle className="text-md font-semibold text-slate-200">Consumer Engagement Scans</CardTitle>
           </div>
           <CardDescription className="text-slate-400 text-xs mt-1">
-            Geographic log of individual consumer scans matching the current filters.
+            Geographic log of 30-second scan buckets matching the current filters.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -49,15 +48,17 @@ export function HeatmapDataTables({ scanMarkers, deliveryMarkers }: HeatmapDataT
                   <TableHead className="text-slate-300 font-semibold text-xs py-3 px-4">Campaign</TableHead>
                   <TableHead className="text-slate-300 font-semibold text-xs py-3 px-4">Product</TableHead>
                   <TableHead className="text-slate-300 font-semibold text-xs py-3 px-4">Location</TableHead>
-                  <TableHead className="text-slate-300 font-semibold text-xs py-3 px-4">Type</TableHead>
-                  <TableHead className="text-slate-300 font-semibold text-xs py-3 px-4">Billable</TableHead>
+                  <TableHead className="text-slate-300 font-semibold text-xs py-3 px-4 text-right">Hits</TableHead>
+                  <TableHead className="text-slate-300 font-semibold text-xs py-3 px-4 text-right">Repeat</TableHead>
+                  <TableHead className="text-slate-300 font-semibold text-xs py-3 px-4 text-right">Suspicious</TableHead>
+                  <TableHead className="text-slate-300 font-semibold text-xs py-3 px-4 text-right">Billable</TableHead>
                   <TableHead className="text-slate-300 font-semibold text-xs py-3 px-4">Coordinates</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {scanMarkers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-slate-500 text-sm">
+                    <TableCell colSpan={9} className="text-center py-8 text-slate-500 text-sm">
                       No scan events found.
                     </TableCell>
                   </TableRow>
@@ -76,16 +77,10 @@ export function HeatmapDataTables({ scanMarkers, deliveryMarkers }: HeatmapDataT
                       <TableCell className="py-2.5 px-4 text-slate-400 truncate max-w-[120px]" title={[marker.suburb, marker.city, marker.country].filter(Boolean).join(", ")}>
                         {[marker.suburb, marker.city].filter(Boolean).join(", ") || "Unknown"}
                       </TableCell>
-                      <TableCell className="py-2.5 px-4">
-                        <Badge variant={marker.isRepeatScan ? "secondary" : "outline"} className="text-[9px] px-1 py-0 h-4 leading-none">
-                          {marker.isRepeatScan ? "Repeat" : "First"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-2.5 px-4">
-                        <Badge className={`text-[9px] px-1 py-0 h-4 leading-none ${marker.isBillable ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-slate-800 text-slate-450 border-slate-700"}`}>
-                          {marker.isBillable ? "Yes" : "No"}
-                        </Badge>
-                      </TableCell>
+                      <TableCell className="py-2.5 px-4 text-right font-mono">{formatNumber(marker.hitCount)}</TableCell>
+                      <TableCell className="py-2.5 px-4 text-right font-mono">{formatNumber(marker.repeatCount)}</TableCell>
+                      <TableCell className="py-2.5 px-4 text-right font-mono">{formatNumber(marker.suspiciousCount)}</TableCell>
+                      <TableCell className="py-2.5 px-4 text-right font-mono">{formatNumber(marker.billableCount)}</TableCell>
                       <TableCell className="py-2.5 px-4">
                         {formatCoordinates(marker.latitude, marker.longitude)}
                       </TableCell>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useEffect } from "react";
+import React, { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -57,13 +57,13 @@ function SignupPageInner() {
     password: "",
   });
 
-  const [buttonDisabled, setButtonDisabled] = React.useState(true);
   const [loading, setLoading] = React.useState(false);
   const [message, setMessage] = React.useState<Message | null>(null);
-
-  useEffect(() => {
-    setButtonDisabled(!(user.name.trim() && user.email.trim() && user.password.length >= 8));
-  }, [user]);
+  const buttonDisabled = !(
+    user.name.trim() &&
+    user.email.trim() &&
+    user.password.length >= 8
+  );
 
   const onSignup = async () => {
     setMessage(null);

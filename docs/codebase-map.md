@@ -1,10 +1,11 @@
 # MoEngage Codebase Map
 
 > Auto-generated from Graphify analysis + manual codebase inspection.
-> Last updated: 2026-06-05.
+> Last updated: 2026-06-06.
 > Graphify outputs: `graphify-out/graph.html` (interactive), `graphify-out/graph.json`, `graphify-out/GRAPH_REPORT.md`.
 > Architecture documentation: `docs/scan-aggregation-architecture.md`.
 > Concurrency test: `scripts/test-concurrency.ts`.
+> Billing aggregation validation: `scripts/test-billing-aggregation.ts`.
 
 ---
 
@@ -156,12 +157,14 @@ src/
     └── next-auth.d.ts        ← NextAuth session type augmentation
 
 scripts/
-  └── test-concurrency.ts     ← ⭐ NEW: concurrency proof script (100 parallel writes → 1 collapsed row)
+  ├── test-concurrency.ts            ← Concurrency proof: fires 100 parallel aggregateScanEvent calls, asserts 1 collapsed row
+  └── test-billing-aggregation.ts    ← Billing validation: 9 scans (7 billable, 2 suspicious) → BillingSummary check
 
 docs/
   ├── codebase-map.md                   ← this file
-  ├── scan-aggregation-architecture.md  ← ⭐ NEW: architecture rationale document
-  └── code-audit.md
+  ├── scan-aggregation-architecture.md  ← Architecture rationale: bucket model, ON CONFLICT, Upstash Redis
+  ├── code-audit.md                     ← First Opus audit (Graphify session)
+  └── opus-production-audit.md         ← Second Opus audit (production hardening — CB/H/M severity findings + applied fixes)
 ```
 
 ---
@@ -201,7 +204,7 @@ docs/
 | `batches.service.ts` | CRUD for Batch + closeBatch |
 | `users.service.ts` | CRUD for User (bcrypt hash, last-admin guard) |
 | `qr-codes.service.ts` | CRUD for QRCode + generateQRCodeDownloadData |
-| `delivery-scan.service.ts` | Delivery QR scan: logs DeliveryScan, calculates estimatedUnitsDelivered |
+| `delivery-scan.service.ts` | Delivery QR scan: logs DeliveryScan, calculates estimatedUnitsDelivered. RETAIL_OPERATIONS brand-ownership guard applied (IDOR fix). |
 
 ### Validators (`src/lib/validators/`)
 
@@ -289,7 +292,10 @@ Upstash Redis (global, persistent across all Vercel Edge instances):
   Error response:
     HTTP 429 { ok: false, error: "RATE_LIMIT_EXCEEDED", message: "..." }
 
-  Fallback: If UPSTASH_REDIS_REST_URL/TOKEN not set, logs warning + bypasses (dev mode only).
+  Fail-closed production behaviour:
+    If UPSTASH_REDIS_REST_URL/TOKEN are not set:
+      - NODE_ENV === "production"  → returns HTTP 503 { ok: false, error: "SERVICE_UNAVAILABLE" }
+      - dev/test only              → logs warning and bypasses rate limiting
 
 ⚠️  WHY NOT IN-MEMORY MAP:
     Vercel Edge runs in isolated containers per region and cold-start.
@@ -461,10 +467,15 @@ GET/POST /d/[code]                   ← RETAIL_OPERATIONS role required (enforc
 
 ```
 Each role has its own analytics page using the same shared components:
-  /admin          → getAnalyticsDashboardData()
-  /brand          → getAnalyticsDashboardData() (scoped to brandId)
-  /campaign-manager → getAnalyticsDashboardData() (scoped to assigned campaigns)
-  /advertiser     → getAnalyticsDashboardData() (scoped to advertiserId)
+  /admin            → getAnalyticsDashboardData() (no filter — global view)
+  /brand            → getAnalyticsDashboardData() (scoped to brandId — fail closed if null)
+  /campaign-manager → getAnalyticsDashboardData() (scoped by CampaignAssignment.campaignId list — fail closed if empty)
+  /advertiser       → getAnalyticsDashboardData() (scoped to advertiserId — fail closed if null)
+
+⚠️  CAMPAIGN_MANAGER scoping uses CampaignAssignment table (not advertiserId which is always null for CMs):
+    campaignIds = SELECT campaignId FROM CampaignAssignment WHERE userId = user.id
+    All filters then use: { campaignId: { in: campaignIds } }
+    Returns EMPTY_ANALYTICS_DATA if no campaigns are assigned.
 
 src/server/services/analytics.service.ts
   computeMetricsAndPerformance()   ← parallelised Promise.all fetches
@@ -521,8 +532,9 @@ GET /api/reports               ← streams generated report file as download
 
 ⚠️  NOTE: getScanEventsData() returns physical ScanEvent bucket rows.
     Each row represents a collapsed 30-second window, NOT a single user scan.
-    hitCount on each row shows how many actual scans that bucket received.
-    Report consumers should display hitCount alongside the row, not treat 1 row = 1 scan.
+    The CSV/PDF export includes: HitCount, RepeatCount, SuspiciousCount, BillableCount per row.
+    Report consumers should treat each row as a bucket, not 1 row = 1 scan.
+    Billing uses SUM(billableCount), not a row count or IsRepeat/IsBillable boolean column count.
 ```
 
 ### Suspicious Scans
@@ -605,10 +617,17 @@ Brand ────────────────────────�
 
 **Unique constraint**: `@@unique([qrCodeId, fingerprintKey, windowStartedAt], name: "scan_event_window_unique")`
 
-**Indexes**:
+**Indexes** (single-column and compound):
 - `@@index([qrCodeId, windowStartedAt])`
 - `@@index([qrCodeId, createdAt])`
 - `@@index([fingerprintKey, lastScanAt])`
+- `@@index([campaignId, anonymousVisitorId, createdAt])` ← ⭐ classification hot-path
+- `@@index([campaignId, ipHash, createdAt])` ← ⭐ classification hot-path
+- `@@index([anonymousVisitorId, createdAt])` ← ⭐ classification hot-path
+- `@@index([ipHash, createdAt])` ← ⭐ classification hot-path
+
+> These 4 composite indexes were added in migration `20260605220051_add_scan_classification_composite_indexes`.
+> On production apply them with `CREATE INDEX CONCURRENTLY` to avoid table lock (see migration SQL comments).
 
 ### Model Summary
 
@@ -852,10 +871,23 @@ External services:
 - Do not mix these two flows.
 
 ### OTP Security
-- Rate limiting at the **Edge** (proxy.ts via Upstash Redis) is the first gate.
+- Rate limiting at the **Edge** (proxy.ts via Upstash Redis) is the first gate; fails **closed** in production (503) if Upstash env vars are missing.
 - Route handlers (`start/route.ts`, `verify/route.ts`) enforce their own validation and are secure even if the proxy matcher is bypassed.
 - `reward-claim.service.ts` enforces DB-level 60s cooldown, 3-attempt lockout, and phone enumeration prevention.
+- OTP generation uses `crypto.randomInt(100000, 1000000)` (CSPRNG — never `Math.random()`).
+- OTP hashing uses HMAC-SHA256 keyed with `REWARD_OTP_SECRET` env var (required in production; throws if missing).
+- OTP verification uses `crypto.timingSafeEqual()` (timing-attack safe).
+- All OTP failure paths return generic "Verification failed. Please try again." — no enumeration leakage.
 - Never use in-memory `Map` for rate limiting — Vercel Edge instances do not share memory.
+- **Simulated OTP delivery:** there is no real SMS provider. The OTP is echoed to the consumer UI only in local dev, or when `DEMO_OTP_ECHO === "true"` (explicit, default-off flag for hosted demos). Real production leaves it unset → the OTP is never returned to the client.
+
+### Stub / "Coming soon" Pages (NOT yet wired to real data)
+These role sub-pages render an honest "coming soon" empty state — no fabricated metrics. The primary role dashboards (`/brand`, `/advertiser`, `/campaign-manager`, `/retail`) and the billing/reports pages ARE wired to real scoped data.
+- `/brand/{campaigns,products,batches,qr-codes,delivery,heatmaps}`
+- `/advertiser/{campaigns,heatmaps}`
+- `/campaign-manager/{campaigns,qr-codes,analytics}`
+- `/retail/scan`
+- The full geographic heatmap (real data) exists only at `/admin/heatmaps`.
 
 ### Prisma Conventions
 - Import PrismaClient exclusively from `src/lib/prisma.ts` (singleton).
@@ -880,7 +912,121 @@ External services:
 
 ---
 
-## 9. Physical Row Count Warning Reference
+## 9. Seed / Demo Data Reference
+
+Run `npm run db:seed` to wipe all app data and create fresh demo records.
+
+### Seed Behaviour
+
+`prisma/seed.ts` calls `resetDemoData()` first (hard-deletes all rows in dependency order) then rebuilds the full demo dataset. **Do not run against production.**
+
+### Demo Login Credentials
+
+| Role | Email | Password |
+|---|---|---|
+| ADMIN | `admin@moengage.local` | `DemoPass123!` |
+| BRAND_ADMIN | `brand.admin@moengage.local` | `DemoPass123!` |
+| CAMPAIGN_MANAGER | `campaign.manager@moengage.local` | `DemoPass123!` |
+| ADVERTISER_VIEWER | `advertiser.viewer@moengage.local` | `DemoPass123!` |
+| ADVERTISER_VIEWER | `ncba.viewer@moengage.local` | `DemoPass123!` |
+| RETAIL_OPERATIONS | `retail.ops@moengage.local` | `DemoPass123!` |
+
+### Seeded Entities
+
+**Brands (2):**
+- Mo Beverages (`mo-beverages`) — FMCG Beverages
+- Bright Foods (`bright-foods`) — FMCG Snacks
+
+**Advertisers (3):**
+- Vodacom (`vodacom`) — Telecom
+- NCBA Bank (`ncba-bank`) — Banking & Fintech
+- SafeGuard Insurance (`safeguard-insurance`) — Insurance
+
+**Products (3):**
+- Mo Xtra 330ml Can (`MO-XTRA-330`, Mo Beverages)
+- Mo Malto 330ml Can (`MO-MALTO-330`, Mo Beverages)
+- Bright Crisp Maize Snack 80g (`BF-CRISP-080`, Bright Foods)
+
+**Campaigns (3):**
+- **Vodacom Free 5GB Data** — Mo Beverages × Vodacom, ACTIVE, reward FREE_DATA
+- **NCBA Cashback** — Bright Foods × NCBA, ACTIVE, reward CASHBACK
+- **SafeGuard 30-Day Cover** — Mo Beverages × SafeGuard, PAUSED, reward INSURANCE
+
+CampaignAssignment: campaign.manager has both ACTIVE campaigns assigned.
+
+**Batches (3):**
+- `MOXTRA-VODACOM-DAR-001` — Dar es Salaam, 2400 units (100 cartons × 24)
+- `MOXTRA-VODACOM-NBI-001` — Nairobi, 1200 units
+- `BFCRISP-NCBA-MSA-001` — Mombasa, 3000 units (100 cartons × 30)
+
+**QR Codes (7):**
+
+| Code | Type | Status | Campaign |
+|---|---|---|---|
+| `mo-xtra-vodacom-free-5gb` | CONSUMER_CAMPAIGN | ACTIVE | Vodacom 5GB |
+| `bright-crisp-ncba-cashback` | CONSUMER_CAMPAIGN | ACTIVE | NCBA Cashback |
+| `sample-label-mo-xtra-vodacom` | SAMPLE_LABEL | ACTIVE | Vodacom 5GB |
+| `delivery-moxtra-vodacom-dar-001` | BATCH_DELIVERY | ACTIVE | Vodacom 5GB / Dar |
+| `delivery-moxtra-vodacom-nbi-001` | BATCH_DELIVERY | ACTIVE | Vodacom 5GB / Nairobi |
+| `delivery-bfcrisp-ncba-msa-001` | BATCH_DELIVERY | ACTIVE | NCBA Cashback / Mombasa |
+| `paused-safeguard-cover-mo-malto` | CONSUMER_CAMPAIGN | PAUSED | SafeGuard |
+
+**Demo QR scan URLs:**
+```
+Consumer Active: {APP_BASE_URL}/q/mo-xtra-vodacom-free-5gb
+Consumer Active: {APP_BASE_URL}/q/bright-crisp-ncba-cashback
+Consumer Paused: {APP_BASE_URL}/q/paused-safeguard-cover-mo-malto
+Delivery Dar:    {APP_BASE_URL}/d/delivery-moxtra-vodacom-dar-001
+Delivery Nbi:    {APP_BASE_URL}/d/delivery-moxtra-vodacom-nbi-001
+Delivery Msa:    {APP_BASE_URL}/d/delivery-bfcrisp-ncba-msa-001
+```
+
+**Retailers (4):**
+- Kariakoo Demo Outlet (RETAILER, Dar es Salaam, TZ)
+- Mlimani City Demo Retailer (SUPERMARKET, Dar es Salaam, TZ)
+- Nairobi CBD Wholesale (WHOLESALER, Nairobi, KE)
+- Mombasa Old Town Kiosk (KIOSK, Mombasa, KE)
+
+**Scan Buckets (4 collapsed ScanEvent rows):**
+
+| Visitor ID | QR | hitCount | billableCount | suspiciousCount | Notes |
+|---|---|---|---|---|---|
+| `demo-vodacom-mixed-visitor` | Vodacom 5GB | 9 | 7 | 2 | `HIGH_FREQUENCY_VISITOR` flag |
+| `demo-vodacom-normal-visitor` | Vodacom 5GB | 3 | 3 | 0 | Normal Kenya scan |
+| `internal-qa-tester` | Vodacom 5GB | 2 | 0 | 0 | INTERNAL_TEST_QR (non-billable) |
+| `demo-ncba-visitor` | NCBA Cashback | 5 | 5 | 0 | Normal Mombasa scan |
+
+**Reward Claims (4):**
+- Vodacom `+2557000000**01` → APPROVED
+- Vodacom `+2557000000**02` → APPROVED
+- Vodacom `+2557000000**03` → DECLINED_DUPLICATE (demo duplicate rejection)
+- NCBA `+2547000000**10` → APPROVED
+
+**Delivery Scans (4):**
+- Kariakoo outlet: 40 cartons × 24 = 960 units (72 hours ago)
+- Mlimani City: 25 cartons × 24 = 600 units (60 hours ago)
+- Nairobi CBD: 30 cartons × 24 = 720 units (48 hours ago)
+- Mombasa kiosk: 50 cartons × 30 = 1500 units (24 hours ago)
+
+**Billing Summaries (2):**
+- Vodacom campaign: 14 total scans, 10 billable, 2 suspicious, $45.90 total
+- NCBA campaign: 5 total scans, 5 billable, 0 suspicious, $22.63 total
+
+### Validation Scripts
+
+```bash
+# Concurrency correctness (100 parallel writes → 1 collapsed row, no races)
+npx tsx scripts/test-concurrency.ts
+
+# Billing aggregation correctness (7 billable + 2 suspicious → correct BillingSummary)
+npx tsx scripts/test-billing-aggregation.ts
+```
+
+Both scripts create isolated test data and clean up after themselves. Safe to run against a dev DB. **Do not run against production.**
+
+---
+
+## 10. Physical Row Count Warning Reference
 
 The following places **must not** use `COUNT(*)` or `prisma.scanEvent.count()` to represent scan volume:
 
@@ -899,20 +1045,37 @@ The following places **must not** use `COUNT(*)` or `prisma.scanEvent.count()` t
 
 ---
 
-## 10. Next Likely Features
+## 11. Next Likely Features
 
-Based on CLAUDE.md and project state:
+Based on CLAUDE.md and project state as of 2026-06-06:
 
+**Completed (this session):**
+- ✅ Critical/high security fixes from `docs/opus-production-audit.md` applied:
+  - Rate limiter fails closed in production (CB-1)
+  - Campaign Manager analytics scoped by CampaignAssignment (CB-2)
+  - 4 composite ScanEvent indexes (H-2)
+  - CSPRNG + HMAC OTP + timing-safe comparison (H-4)
+  - Test fallbacks gated to non-production (M-2)
+  - `REWARD_OTP_SECRET` env var enforced in production
+
+**Still pending (require manual action):**
+1. **Apply composite indexes CONCURRENTLY on production** — run the 4 `CREATE INDEX CONCURRENTLY` statements from `migration.sql` comments, then `npm run prisma:deploy`
+2. **Set `REWARD_OTP_SECRET` in Vercel** — `openssl rand -base64 32`; hard throws in production if missing
+3. **Set Upstash env vars in Vercel** — `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`; 503 if missing in production
+4. **Set `PG_SSL_REJECT_UNAUTHORIZED=true`** with Supabase CA cert
+5. **Verify `DATABASE_URL` is pooled endpoint (port 6543)**; `DIRECT_URL` is direct (port 5432)
+6. **M-1: visitor cookie not persisting across redirect** — cookie is set in `q/[code]/route.ts` but may not persist; needs `set-cookie` on the redirect response directly
+
+**Next feature work:**
 1. **Billing Summary Polish** — connect real computed billing data from `billing.service.ts` to the billing pages
 2. **Brand/Advertiser Scoped Reports** — finish role-scoped report generation for `/brand/reports` and `/advertiser/reports`
 3. **Fraud & Suspicious Scan Rules** — extend `scan-classification.service.ts` with geo-anomaly and repeat-mobile rules
-4. **Production Deployment Hardening** — env var validation, error boundary pages, Supabase connection pooling
-5. **QA / Testing Pass** — integration tests for public scan + reward claim flows; extend `scripts/test-concurrency.ts` patterns
-6. **Investor Demo Polish** — seed data improvements, demo walkthrough script (`DEMO_WALKTHROUGH.md` exists)
+4. **QA / Testing Pass** — integration tests for public scan + reward claim flows; extend `scripts/test-concurrency.ts` patterns
+5. **Investor Demo Polish** — demo walkthrough script, demo QR URL print sheet
 
 ---
 
-## 11. Graphify Graph Reference
+## 12. Graphify Graph Reference
 
 The machine-readable knowledge graph of this codebase is stored at:
 

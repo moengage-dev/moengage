@@ -2,16 +2,11 @@
 // Alias route for /api/auth/resend-verification — the frontend calls this path
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import crypto from "crypto";
 import { sendVerificationEmail } from "@/helpers/mailer";
-
-function generateOtp() {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-function hashOtp(otp: string) {
-  return crypto.createHash("sha256").update(otp).digest("hex");
-}
+import {
+  generateEmailVerificationOtp,
+  hashEmailVerificationOtp,
+} from "@/lib/auth/email-verification";
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,8 +42,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const otp = generateOtp();
-    const tokenHash = hashOtp(otp);
+    const otp = generateEmailVerificationOtp();
+    const tokenHash = hashEmailVerificationOtp(normalizedEmail, otp);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     await prisma.$transaction([

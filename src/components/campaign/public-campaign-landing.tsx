@@ -24,14 +24,8 @@ import { getFriendlyErrorMessage } from "@/components/experience/client-utils";
 
 type Props = {
   qrCode: {
-    id: string;
     code: string;
     label: string | null;
-    brandId: string | null;
-    advertiserId: string | null;
-    campaignId: string | null;
-    productId: string | null;
-    batchId: string | null;
     brand?: { name: string } | null;
     advertiser?: { name: string } | null;
     product?: { name: string } | null;
@@ -61,14 +55,15 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
   >("initial");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const brandName = qrCode.brand?.name ?? "Mo Beverages";
-  const advertiserName = qrCode.advertiser?.name ?? "Vodacom";
+  const brandName = qrCode.brand?.name ?? "Brand Promotion";
+  const advertiserName = qrCode.advertiser?.name ?? null;
   const productName = qrCode.product?.name ?? null;
   const offerTitle = qrCode.campaign?.offerTitle ?? "Special Promotion Offer";
   const offerDescription =
     qrCode.campaign?.offerDescription ?? "Scan this code to view and unlock exciting brand rewards.";
   const rewardType = qrCode.campaign?.rewardType ?? "VOUCHER";
   const campaignId = qrCode.campaign?.id ?? "";
+  const canClaimReward = Boolean(scanEventId && campaignId);
 
   // 1. Start Reward Claim (Send OTP)
   async function handleSendOtp(e: React.FormEvent) {
@@ -193,9 +188,11 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
           <h1 className="text-3xl font-bold tracking-tight text-[#2C2621] mt-2">
             {brandName}
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Powered by <span className="font-semibold text-[#2C2621]">{advertiserName}</span>
-          </p>
+          {advertiserName && (
+            <p className="text-sm text-muted-foreground">
+              Powered by <span className="font-semibold text-[#2C2621]">{advertiserName}</span>
+            </p>
+          )}
         </div>
 
         {/* Campaign Offer Details Card */}
@@ -231,6 +228,18 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
                   <p className="text-sm font-semibold">Scan event warning</p>
                   <p className="text-xs opacity-90">
                     Your scan was not recorded. You can still view this offer, but reward claiming is disabled. Please try scanning the code again.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {scanEventId && !campaignId && (
+              <div className="bg-brand-coral/15 border border-brand-coral/20 rounded-xl p-4 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-[#8C3A1B] shrink-0 mt-0.5" />
+                <div className="space-y-1 text-[#8C3A1B]">
+                  <p className="text-sm font-semibold">Reward unavailable</p>
+                  <p className="text-xs opacity-90">
+                    This QR code is not linked to a reward campaign. You can still view the promotion details.
                   </p>
                 </div>
               </div>
@@ -285,7 +294,7 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
                         id="mobileNumber"
                         type="tel"
                         value={mobileNumber}
-                        disabled={uiState === "sending_otp" || !scanEventId}
+                        disabled={uiState === "sending_otp" || !canClaimReward}
                         onChange={(e) => setMobileNumber(e.target.value)}
                         placeholder="+255700000000"
                         className="bg-[#FFF6DE]/30 border-border/80 focus-visible:ring-brand-teal text-[#2C2621] rounded-xl py-6"
@@ -305,7 +314,7 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
 
                   <Button
                     type="submit"
-                    disabled={uiState === "sending_otp" || !scanEventId}
+                    disabled={uiState === "sending_otp" || !canClaimReward}
                     className="w-full bg-brand-coral hover:bg-brand-coral/90 text-white font-bold py-6 rounded-xl transition-all duration-300 hover:scale-[1.01] shadow-sm"
                   >
                     {uiState === "sending_otp" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -336,11 +345,11 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
                     </p>
                   </div>
 
-                  {/* Dev-only simulated OTP helper */}
+                  {/* Simulated OTP helper (dev or explicit demo mode only) */}
                   {devOtp && (
                     <div className="bg-brand-teal/10 border border-brand-teal/20 rounded-xl p-3 text-center">
                       <p className="text-xs text-[#1E5C5A] font-medium">
-                        Simulated Dev OTP: <span className="font-mono bg-background px-2 py-0.5 rounded border border-border/50 font-bold">{devOtp}</span>
+                        Simulated OTP (demo): <span className="font-mono bg-background px-2 py-0.5 rounded border border-border/50 font-bold">{devOtp}</span>
                       </p>
                     </div>
                   )}

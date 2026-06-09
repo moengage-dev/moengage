@@ -9,9 +9,7 @@ import crypto from "crypto";
 const databaseUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
 
 if (!databaseUrl) {
-  throw new Error(
-    "DIRECT_URL or DATABASE_URL is required to seed the database.",
-  );
+  throw new Error("DIRECT_URL or DATABASE_URL is required to seed the database.");
 }
 
 const pool = new Pool({
@@ -33,8 +31,20 @@ function sha256(value: string) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
+function last4(mobile: string) {
+  return mobile.replace(/\D/g, "").slice(-4);
+}
+
+function bucketTime(date: Date) {
+  return new Date(Math.floor(date.getTime() / 30_000) * 30_000);
+}
+
+function hoursAgo(hours: number) {
+  return new Date(Date.now() - hours * 60 * 60 * 1000);
+}
+
 async function resetDemoData() {
-  console.log("Resetting demo data...");
+  console.log("Resetting all demo data...");
 
   await prisma.reportExport.deleteMany();
   await prisma.billingSummary.deleteMany();
@@ -53,6 +63,86 @@ async function resetDemoData() {
   await prisma.user.deleteMany();
   await prisma.advertiser.deleteMany();
   await prisma.brand.deleteMany();
+
+  console.log("Existing data cleared.");
+}
+
+async function createScanBucket(input: {
+  qrCodeId: string;
+  brandId?: string | null;
+  advertiserId?: string | null;
+  campaignId?: string | null;
+  productId?: string | null;
+  batchId?: string | null;
+  anonymousVisitorId: string;
+  ipSeed: string;
+  userAgent: string;
+  deviceType: string;
+  os: string;
+  browser: string;
+  country: string;
+  region: string;
+  city: string;
+  suburb: string;
+  latitude: string;
+  longitude: string;
+  createdAt: Date;
+  hitCount: number;
+  repeatCount: number;
+  suspiciousCount: number;
+  billableCount: number;
+  isSuspicious?: boolean;
+  suspiciousReason?: string | null;
+  isInternalTest?: boolean;
+}) {
+  const windowStartedAt = bucketTime(input.createdAt);
+  const isRepeatScan = input.repeatCount > 0;
+  const isSuspicious = input.isSuspicious ?? input.suspiciousCount > 0;
+  const isBillable = input.billableCount > 0;
+  const isInternalTest = input.isInternalTest ?? false;
+
+  return prisma.scanEvent.create({
+    data: {
+      qrCodeId: input.qrCodeId,
+      brandId: input.brandId,
+      advertiserId: input.advertiserId,
+      campaignId: input.campaignId,
+      productId: input.productId,
+      batchId: input.batchId,
+
+      anonymousVisitorId: input.anonymousVisitorId,
+      sessionId: `seed-session-${crypto.randomUUID()}`,
+      ipHash: sha256(input.ipSeed),
+      userAgent: input.userAgent,
+      deviceType: input.deviceType,
+      os: input.os,
+      browser: input.browser,
+
+      country: input.country,
+      region: input.region,
+      city: input.city,
+      suburb: input.suburb,
+      latitude: input.latitude,
+      longitude: input.longitude,
+      locationSource: "DEMO_SEED",
+
+      isRepeatScan,
+      isSuspicious,
+      suspiciousReason: input.suspiciousReason ?? null,
+      isBillable,
+      isInternalTest,
+
+      fingerprintKey: `visitor:${input.anonymousVisitorId}`,
+      windowStartedAt,
+      firstScanAt: input.createdAt,
+      lastScanAt: new Date(input.createdAt.getTime() + Math.min(input.hitCount, 29) * 1000),
+      hitCount: input.hitCount,
+      repeatCount: input.repeatCount,
+      suspiciousCount: input.suspiciousCount,
+      billableCount: input.billableCount,
+      createdAt: input.createdAt,
+    },
+  });
 }
 
 async function main() {
@@ -60,9 +150,7 @@ async function main() {
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
 
-  // ─── BRANDS ───────────────────────────────────────────────────────────────
   console.log("Creating brands...");
-
   const moBeverages = await prisma.brand.create({
     data: {
       name: "Mo Beverages",
@@ -77,15 +165,13 @@ async function main() {
     data: {
       name: "Bright Foods",
       slug: "bright-foods",
-      industry: "FMCG Food & Snacks",
+      industry: "FMCG Snacks",
       websiteUrl: "https://brightfoods.local",
       status: "ACTIVE",
     },
   });
 
-  // ─── ADVERTISERS ──────────────────────────────────────────────────────────
   console.log("Creating advertisers...");
-
   const vodacom = await prisma.advertiser.create({
     data: {
       name: "Vodacom",
@@ -100,7 +186,7 @@ async function main() {
   const ncba = await prisma.advertiser.create({
     data: {
       name: "NCBA Bank",
-      slug: "ncba",
+      slug: "ncba-bank",
       industry: "Banking & Fintech",
       contactName: "NCBA Demo Contact",
       contactEmail: "demo.ncba@moengage.local",
@@ -119,9 +205,7 @@ async function main() {
     },
   });
 
-  // ─── PRODUCTS ─────────────────────────────────────────────────────────────
   console.log("Creating products...");
-
   const moXtra = await prisma.product.create({
     data: {
       brandId: moBeverages.id,
@@ -158,9 +242,7 @@ async function main() {
     },
   });
 
-  // ─── USERS ────────────────────────────────────────────────────────────────
   console.log("Creating users...");
-
   const admin = await prisma.user.create({
     data: {
       name: "Platform Admin",
@@ -173,7 +255,7 @@ async function main() {
     },
   });
 
-  const brandAdmin = await prisma.user.create({
+  await prisma.user.create({
     data: {
       name: "Mo Beverages Brand Admin",
       email: "brand.admin@moengage.local",
@@ -199,7 +281,7 @@ async function main() {
     },
   });
 
-  const advertiserViewer = await prisma.user.create({
+  await prisma.user.create({
     data: {
       name: "Vodacom Advertiser Viewer",
       email: "advertiser.viewer@moengage.local",
@@ -212,7 +294,7 @@ async function main() {
     },
   });
 
-  const ncbaViewer = await prisma.user.create({
+  await prisma.user.create({
     data: {
       name: "NCBA Advertiser Viewer",
       email: "ncba.viewer@moengage.local",
@@ -238,10 +320,20 @@ async function main() {
     },
   });
 
-  // ─── CAMPAIGNS ────────────────────────────────────────────────────────────
-  console.log("Creating campaigns...");
+  const brightRetailOps = await prisma.user.create({
+    data: {
+      name: "Bright Foods Retail Operations",
+      email: "bright.retail.ops@moengage.local",
+      passwordHash,
+      role: "RETAIL_OPERATIONS",
+      brandId: brightFoods.id,
+      isActive: true,
+      isEmailVerified: true,
+      emailVerifiedAt: new Date(),
+    },
+  });
 
-  // Campaign 1: Active – Vodacom Free 5GB Data (Mo Beverages)
+  console.log("Creating campaigns...");
   const campaignVodacom = await prisma.campaign.create({
     data: {
       brandId: moBeverages.id,
@@ -265,7 +357,6 @@ async function main() {
     },
   });
 
-  // Campaign 2: Active – NCBA Cashback (Bright Foods)
   const campaignNCBA = await prisma.campaign.create({
     data: {
       brandId: brightFoods.id,
@@ -276,7 +367,7 @@ async function main() {
       slug: "ncba-cashback-bright-foods",
       offerTitle: "Scan to Earn KES 50 Cashback",
       offerDescription:
-        "Scan any Bright Crisp pack, register your mobile, and receive simulated KES 50 cashback to your M-Pesa wallet.",
+        "Scan a Bright Crisp pack, enter mobile number, verify OTP, and claim simulated cashback.",
       rewardType: "CASHBACK",
       status: "ACTIVE",
       startDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
@@ -289,7 +380,6 @@ async function main() {
     },
   });
 
-  // Campaign 3: Paused – SafeGuard Insurance (Mo Beverages / Mo Malto)
   const campaignSafeguard = await prisma.campaign.create({
     data: {
       brandId: moBeverages.id,
@@ -300,7 +390,7 @@ async function main() {
       slug: "safeguard-free-30-day-cover",
       offerTitle: "Scan to Activate Free 30-Day Insurance",
       offerDescription:
-        "Eligible Mo Malto consumers can register for a complimentary 30-day personal accident cover from SafeGuard. Demo only.",
+        "Eligible Mo Malto consumers can register for a complimentary 30-day personal accident cover. Demo only.",
       rewardType: "INSURANCE",
       status: "PAUSED",
       startDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
@@ -313,17 +403,15 @@ async function main() {
     },
   });
 
-  // ─── CAMPAIGN ASSIGNMENTS ─────────────────────────────────────────────────
   await prisma.campaignAssignment.create({
     data: { campaignId: campaignVodacom.id, userId: campaignManager.id },
   });
+
   await prisma.campaignAssignment.create({
     data: { campaignId: campaignNCBA.id, userId: campaignManager.id },
   });
 
-  // ─── BATCHES ──────────────────────────────────────────────────────────────
   console.log("Creating batches...");
-
   const batchDarVodacom = await prisma.batch.create({
     data: {
       brandId: moBeverages.id,
@@ -366,9 +454,7 @@ async function main() {
     },
   });
 
-  // ─── QR CODES ─────────────────────────────────────────────────────────────
   console.log("Creating QR codes...");
-
   const consumerQrVodacom = await prisma.qRCode.create({
     data: {
       code: "mo-xtra-vodacom-free-5gb",
@@ -382,7 +468,7 @@ async function main() {
       createdById: admin.id,
       label: "Mo Xtra – Vodacom Free 5GB Consumer QR",
       destinationUrl: `${APP_BASE_URL}/q/mo-xtra-vodacom-free-5gb`,
-      scanCount: 0,
+      scanCount: 12,
     },
   });
 
@@ -399,7 +485,7 @@ async function main() {
       createdById: admin.id,
       label: "Bright Crisp – NCBA Cashback Consumer QR",
       destinationUrl: `${APP_BASE_URL}/q/bright-crisp-ncba-cashback`,
-      scanCount: 0,
+      scanCount: 5,
     },
   });
 
@@ -416,7 +502,23 @@ async function main() {
       createdById: admin.id,
       label: "Sample Wrapped Can Label QR",
       destinationUrl: `${APP_BASE_URL}/q/sample-label-mo-xtra-vodacom`,
-      scanCount: 0,
+    },
+  });
+
+  const internalTestQr = await prisma.qRCode.create({
+    data: {
+      code: "internal-test-mo-xtra-vodacom",
+      type: "INTERNAL_TEST",
+      status: "ACTIVE",
+      brandId: moBeverages.id,
+      advertiserId: vodacom.id,
+      campaignId: campaignVodacom.id,
+      productId: moXtra.id,
+      batchId: batchDarVodacom.id,
+      createdById: admin.id,
+      label: "Internal QA Test QR",
+      destinationUrl: `${APP_BASE_URL}/q/internal-test-mo-xtra-vodacom`,
+      scanCount: 2,
     },
   });
 
@@ -433,11 +535,11 @@ async function main() {
       createdById: admin.id,
       label: "Mo Xtra Vodacom – Dar es Salaam Delivery QR",
       destinationUrl: `${APP_BASE_URL}/d/delivery-moxtra-vodacom-dar-001`,
-      scanCount: 0,
+      scanCount: 2,
     },
   });
 
-  const deliveryQrNbi = await prisma.qRCode.create({
+  const deliveryQrNairobi = await prisma.qRCode.create({
     data: {
       code: "delivery-moxtra-vodacom-nbi-001",
       type: "BATCH_DELIVERY",
@@ -450,11 +552,11 @@ async function main() {
       createdById: admin.id,
       label: "Mo Xtra Vodacom – Nairobi Delivery QR",
       destinationUrl: `${APP_BASE_URL}/d/delivery-moxtra-vodacom-nbi-001`,
-      scanCount: 0,
+      scanCount: 1,
     },
   });
 
-  const deliveryQrMsa = await prisma.qRCode.create({
+  const deliveryQrMombasa = await prisma.qRCode.create({
     data: {
       code: "delivery-bfcrisp-ncba-msa-001",
       type: "BATCH_DELIVERY",
@@ -467,28 +569,10 @@ async function main() {
       createdById: admin.id,
       label: "Bright Crisp NCBA – Mombasa Delivery QR",
       destinationUrl: `${APP_BASE_URL}/d/delivery-bfcrisp-ncba-msa-001`,
-      scanCount: 0,
+      scanCount: 1,
     },
   });
 
-  // Internal test QR (non-billable)
-  await prisma.qRCode.create({
-    data: {
-      code: "internal-test-mo-xtra-qa",
-      type: "INTERNAL_TEST",
-      status: "ACTIVE",
-      brandId: moBeverages.id,
-      campaignId: campaignVodacom.id,
-      productId: moXtra.id,
-      batchId: batchDarVodacom.id,
-      createdById: admin.id,
-      label: "QA Internal Test QR – Mo Xtra",
-      destinationUrl: `${APP_BASE_URL}/q/internal-test-mo-xtra-qa`,
-      scanCount: 0,
-    },
-  });
-
-  // Paused QR (shows inactive state)
   await prisma.qRCode.create({
     data: {
       code: "paused-safeguard-cover-mo-malto",
@@ -501,14 +585,11 @@ async function main() {
       createdById: admin.id,
       label: "SafeGuard Insurance – Mo Malto QR (Paused)",
       destinationUrl: `${APP_BASE_URL}/q/paused-safeguard-cover-mo-malto`,
-      scanCount: 0,
     },
   });
 
-  // ─── RETAILERS ────────────────────────────────────────────────────────────
   console.log("Creating retailers...");
-
-  const retailerKariakoo = await prisma.retailer.create({
+  const kariakoo = await prisma.retailer.create({
     data: {
       brandId: moBeverages.id,
       name: "Kariakoo Demo Outlet",
@@ -523,7 +604,7 @@ async function main() {
     },
   });
 
-  const retailerMlimani = await prisma.retailer.create({
+  const mlimani = await prisma.retailer.create({
     data: {
       brandId: moBeverages.id,
       name: "Mlimani City Demo Retailer",
@@ -538,7 +619,7 @@ async function main() {
     },
   });
 
-  const retailerNairobiCBD = await prisma.retailer.create({
+  const nairobiCBD = await prisma.retailer.create({
     data: {
       brandId: moBeverages.id,
       name: "Nairobi CBD Wholesale",
@@ -553,7 +634,7 @@ async function main() {
     },
   });
 
-  const retailerMombasa = await prisma.retailer.create({
+  const mombasaKiosk = await prisma.retailer.create({
     data: {
       brandId: brightFoods.id,
       name: "Mombasa Old Town Kiosk",
@@ -568,346 +649,127 @@ async function main() {
     },
   });
 
-  const retailerWestlands = await prisma.retailer.create({
-    data: {
-      brandId: moBeverages.id,
-      name: "Westlands Supermarket",
-      type: "SUPERMARKET",
-      country: "Kenya",
-      region: "Nairobi",
-      city: "Nairobi",
-      suburb: "Westlands",
-      address: "Demo address, Westlands",
-      latitude: "-1.2656000",
-      longitude: "36.8062000",
-    },
+  console.log("Creating aggregated scan buckets...");
+
+  const scanVodacomMixed = await createScanBucket({
+    qrCodeId: consumerQrVodacom.id,
+    brandId: moBeverages.id,
+    advertiserId: vodacom.id,
+    campaignId: campaignVodacom.id,
+    productId: moXtra.id,
+    batchId: batchDarVodacom.id,
+    anonymousVisitorId: "demo-vodacom-mixed-visitor",
+    ipSeed: "demo-ip-mixed",
+    userAgent: "Mozilla/5.0 (Android 13; Mobile) Chrome/120.0",
+    deviceType: "Mobile",
+    os: "Android",
+    browser: "Chrome",
+    country: "Tanzania",
+    region: "Dar es Salaam",
+    city: "Dar es Salaam",
+    suburb: "Kariakoo",
+    latitude: "-6.8235000",
+    longitude: "39.2695000",
+    createdAt: hoursAgo(6),
+    hitCount: 9,
+    repeatCount: 8,
+    suspiciousCount: 2,
+    billableCount: 7,
+    isSuspicious: true,
+    suspiciousReason: "HIGH_FREQUENCY_VISITOR",
   });
 
-  // ─── SCAN EVENTS ──────────────────────────────────────────────────────────
-  console.log("Creating scan events...");
-
-  const now = new Date();
-  const hoursAgo = (h: number) => new Date(now.getTime() - h * 3600 * 1000);
-
-  const createScanHelper = async (args: { data: any }) => {
-    const data = args.data;
-    const fingerprintKey = data.anonymousVisitorId || data.ipHash || `seed-${Math.random()}`;
-    const windowStartedAt = data.createdAt || new Date();
-    return prisma.scanEvent.create({
-      data: {
-        ...data,
-        fingerprintKey,
-        windowStartedAt,
-        firstScanAt: windowStartedAt,
-        lastScanAt: windowStartedAt,
-        hitCount: 1,
-        repeatCount: data.isRepeatScan ? 1 : 0,
-        suspiciousCount: data.isSuspicious ? 1 : 0,
-        billableCount: data.isBillable ? 1 : 0,
-      }
-    });
-  };
-
-  // --- Vodacom campaign scans ---
-
-  // Visitor A – first unique scan (billable)
-  const scanV1 = await createScanHelper({
-    data: {
-      qrCodeId: consumerQrVodacom.id,
-      brandId: moBeverages.id,
-      advertiserId: vodacom.id,
-      campaignId: campaignVodacom.id,
-      productId: moXtra.id,
-      batchId: batchDarVodacom.id,
-      anonymousVisitorId: "demo-visitor-001",
-      sessionId: "demo-session-001",
-      ipHash: sha256("demo-ip-001"),
-      userAgent: "Mozilla/5.0 (Android 13; Mobile) Chrome/120.0",
-      deviceType: "Mobile",
-      os: "Android",
-      browser: "Chrome",
-      country: "Tanzania",
-      region: "Dar es Salaam",
-      city: "Dar es Salaam",
-      suburb: "Kariakoo",
-      latitude: "-6.8235000",
-      longitude: "39.2695000",
-      locationSource: "DEMO_SEED",
-      isRepeatScan: false,
-      isSuspicious: false,
-      isBillable: true,
-      isInternalTest: false,
-      createdAt: hoursAgo(48),
-    },
+  const scanVodacomNormal = await createScanBucket({
+    qrCodeId: consumerQrVodacom.id,
+    brandId: moBeverages.id,
+    advertiserId: vodacom.id,
+    campaignId: campaignVodacom.id,
+    productId: moXtra.id,
+    batchId: batchNairobiVodacom.id,
+    anonymousVisitorId: "demo-vodacom-normal-visitor",
+    ipSeed: "demo-ip-normal",
+    userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Safari/604.1",
+    deviceType: "Mobile",
+    os: "iOS",
+    browser: "Safari",
+    country: "Kenya",
+    region: "Nairobi",
+    city: "Nairobi",
+    suburb: "CBD",
+    latitude: "-1.2830000",
+    longitude: "36.8219000",
+    createdAt: hoursAgo(12),
+    hitCount: 3,
+    repeatCount: 2,
+    suspiciousCount: 0,
+    billableCount: 3,
   });
 
-  // Visitor A – repeat scan (still billable, but marked repeat)
-  await createScanHelper({
-    data: {
-      qrCodeId: consumerQrVodacom.id,
-      brandId: moBeverages.id,
-      advertiserId: vodacom.id,
-      campaignId: campaignVodacom.id,
-      productId: moXtra.id,
-      batchId: batchDarVodacom.id,
-      anonymousVisitorId: "demo-visitor-001",
-      sessionId: "demo-session-002",
-      ipHash: sha256("demo-ip-001"),
-      userAgent: "Mozilla/5.0 (Android 13; Mobile) Chrome/120.0",
-      deviceType: "Mobile",
-      os: "Android",
-      browser: "Chrome",
-      country: "Tanzania",
-      region: "Dar es Salaam",
-      city: "Dar es Salaam",
-      suburb: "Kariakoo",
-      latitude: "-6.8235000",
-      longitude: "39.2695000",
-      locationSource: "DEMO_SEED",
-      isRepeatScan: true,
-      isSuspicious: false,
-      isBillable: true,
-      isInternalTest: false,
-      createdAt: hoursAgo(47),
-    },
+  await createScanBucket({
+    qrCodeId: internalTestQr.id,
+    brandId: moBeverages.id,
+    advertiserId: vodacom.id,
+    campaignId: campaignVodacom.id,
+    productId: moXtra.id,
+    batchId: batchDarVodacom.id,
+    anonymousVisitorId: "internal-qa-tester",
+    ipSeed: "internal-qa-ip",
+    userAgent: "Mozilla/5.0 QA-Internal-Test",
+    deviceType: "Desktop",
+    os: "macOS",
+    browser: "Chrome",
+    country: "Kenya",
+    region: "Nairobi",
+    city: "Nairobi",
+    suburb: "Westlands",
+    latitude: "-1.2656000",
+    longitude: "36.8062000",
+    createdAt: hoursAgo(18),
+    hitCount: 2,
+    repeatCount: 0,
+    suspiciousCount: 0,
+    billableCount: 0,
+    suspiciousReason: "INTERNAL_TEST_QR",
+    isInternalTest: true,
   });
 
-  // Visitor B – unique scan from different location (billable)
-  const scanV2 = await createScanHelper({
-    data: {
-      qrCodeId: consumerQrVodacom.id,
-      brandId: moBeverages.id,
-      advertiserId: vodacom.id,
-      campaignId: campaignVodacom.id,
-      productId: moXtra.id,
-      batchId: batchDarVodacom.id,
-      anonymousVisitorId: "demo-visitor-002",
-      sessionId: "demo-session-003",
-      ipHash: sha256("demo-ip-002"),
-      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Safari/604.1",
-      deviceType: "Mobile",
-      os: "iOS",
-      browser: "Safari",
-      country: "Tanzania",
-      region: "Dar es Salaam",
-      city: "Dar es Salaam",
-      suburb: "Mlimani City",
-      latitude: "-6.7700000",
-      longitude: "39.2200000",
-      locationSource: "DEMO_SEED",
-      isRepeatScan: false,
-      isSuspicious: false,
-      isBillable: true,
-      isInternalTest: false,
-      createdAt: hoursAgo(36),
-    },
+  const scanNCBA = await createScanBucket({
+    qrCodeId: consumerQrNCBA.id,
+    brandId: brightFoods.id,
+    advertiserId: ncba.id,
+    campaignId: campaignNCBA.id,
+    productId: brightCrisp.id,
+    batchId: batchBrightNCBA.id,
+    anonymousVisitorId: "demo-ncba-visitor",
+    ipSeed: "demo-ip-ncba",
+    userAgent: "Mozilla/5.0 (Android 12; Mobile) Chrome/119.0",
+    deviceType: "Mobile",
+    os: "Android",
+    browser: "Chrome",
+    country: "Kenya",
+    region: "Coast",
+    city: "Mombasa",
+    suburb: "Old Town",
+    latitude: "-4.0580000",
+    longitude: "39.6650000",
+    createdAt: hoursAgo(9),
+    hitCount: 5,
+    repeatCount: 1,
+    suspiciousCount: 0,
+    billableCount: 5,
   });
 
-  // Visitor C – unique scan, desktop (billable)
-  const scanV3 = await createScanHelper({
-    data: {
-      qrCodeId: consumerQrVodacom.id,
-      brandId: moBeverages.id,
-      advertiserId: vodacom.id,
-      campaignId: campaignVodacom.id,
-      productId: moXtra.id,
-      batchId: batchNairobiVodacom.id,
-      anonymousVisitorId: "demo-visitor-003",
-      sessionId: "demo-session-004",
-      ipHash: sha256("demo-ip-003"),
-      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/121.0",
-      deviceType: "Desktop",
-      os: "Windows",
-      browser: "Chrome",
-      country: "Kenya",
-      region: "Nairobi",
-      city: "Nairobi",
-      suburb: "CBD",
-      latitude: "-1.2830000",
-      longitude: "36.8219000",
-      locationSource: "DEMO_SEED",
-      isRepeatScan: false,
-      isSuspicious: false,
-      isBillable: true,
-      isInternalTest: false,
-      createdAt: hoursAgo(24),
-    },
-  });
-
-  // Visitor D – suspicious: high-frequency visitor (non-billable)
-  await createScanHelper({
-    data: {
-      qrCodeId: consumerQrVodacom.id,
-      brandId: moBeverages.id,
-      advertiserId: vodacom.id,
-      campaignId: campaignVodacom.id,
-      productId: moXtra.id,
-      batchId: batchDarVodacom.id,
-      anonymousVisitorId: "demo-suspicious-visitor-001",
-      sessionId: "demo-session-sus-001",
-      ipHash: sha256("demo-ip-suspicious-001"),
-      userAgent: "python-requests/2.31.0",
-      deviceType: "Bot/Script",
-      os: "Unknown",
-      browser: "Unknown",
-      country: "Tanzania",
-      region: "Dar es Salaam",
-      city: "Dar es Salaam",
-      suburb: "Unknown",
-      latitude: "-6.8235000",
-      longitude: "39.2695000",
-      locationSource: "DEMO_SEED",
-      isRepeatScan: true,
-      isSuspicious: true,
-      suspiciousReason: "HIGH_FREQUENCY_VISITOR",
-      isBillable: false,
-      isInternalTest: false,
-      createdAt: hoursAgo(12),
-    },
-  });
-
-  // Visitor E – suspicious: same IP, high frequency (non-billable)
-  await createScanHelper({
-    data: {
-      qrCodeId: consumerQrVodacom.id,
-      brandId: moBeverages.id,
-      advertiserId: vodacom.id,
-      campaignId: campaignVodacom.id,
-      productId: moXtra.id,
-      batchId: batchDarVodacom.id,
-      anonymousVisitorId: "demo-suspicious-visitor-002",
-      sessionId: "demo-session-sus-002",
-      ipHash: sha256("demo-ip-suspicious-001"),
-      userAgent: "python-requests/2.31.0",
-      deviceType: "Bot/Script",
-      os: "Unknown",
-      browser: "Unknown",
-      country: "Tanzania",
-      region: "Dar es Salaam",
-      city: "Dar es Salaam",
-      suburb: "Unknown",
-      latitude: "-6.8235000",
-      longitude: "39.2695000",
-      locationSource: "DEMO_SEED",
-      isRepeatScan: true,
-      isSuspicious: true,
-      suspiciousReason: "HIGH_FREQUENCY_VISITOR, HIGH_FREQUENCY_IP",
-      isBillable: false,
-      isInternalTest: false,
-      createdAt: hoursAgo(11),
-    },
-  });
-
-  // Internal test scan (non-billable, not suspicious)
-  await createScanHelper({
-    data: {
-      qrCodeId: consumerQrVodacom.id,
-      brandId: moBeverages.id,
-      advertiserId: vodacom.id,
-      campaignId: campaignVodacom.id,
-      productId: moXtra.id,
-      batchId: batchDarVodacom.id,
-      anonymousVisitorId: "internal-qa-tester",
-      sessionId: "demo-session-internal-001",
-      ipHash: sha256("internal-ip-001"),
-      userAgent: "Mozilla/5.0 QA-Internal-Test",
-      deviceType: "Desktop",
-      os: "macOS",
-      browser: "Chrome",
-      country: "Kenya",
-      region: "Nairobi",
-      city: "Nairobi",
-      suburb: "Westlands",
-      latitude: "-1.2656000",
-      longitude: "36.8062000",
-      locationSource: "DEMO_SEED",
-      isRepeatScan: false,
-      isSuspicious: false,
-      suspiciousReason: "INTERNAL_TEST_QR",
-      isBillable: false,
-      isInternalTest: true,
-      createdAt: hoursAgo(6),
-    },
-  });
-
-  // --- NCBA campaign scans ---
-
-  // Visitor F – NCBA unique scan (billable)
-  const scanNCBA1 = await createScanHelper({
-    data: {
-      qrCodeId: consumerQrNCBA.id,
-      brandId: brightFoods.id,
-      advertiserId: ncba.id,
-      campaignId: campaignNCBA.id,
-      productId: brightCrisp.id,
-      batchId: batchBrightNCBA.id,
-      anonymousVisitorId: "demo-visitor-010",
-      sessionId: "demo-session-ncba-001",
-      ipHash: sha256("demo-ip-010"),
-      userAgent: "Mozilla/5.0 (Android 12; Mobile) Chrome/119.0",
-      deviceType: "Mobile",
-      os: "Android",
-      browser: "Chrome",
-      country: "Kenya",
-      region: "Coast",
-      city: "Mombasa",
-      suburb: "Old Town",
-      latitude: "-4.0580000",
-      longitude: "39.6650000",
-      locationSource: "DEMO_SEED",
-      isRepeatScan: false,
-      isSuspicious: false,
-      isBillable: true,
-      isInternalTest: false,
-      createdAt: hoursAgo(20),
-    },
-  });
-
-  // Visitor G – NCBA scan from Nairobi (billable)
-  await createScanHelper({
-    data: {
-      qrCodeId: consumerQrNCBA.id,
-      brandId: brightFoods.id,
-      advertiserId: ncba.id,
-      campaignId: campaignNCBA.id,
-      productId: brightCrisp.id,
-      batchId: batchBrightNCBA.id,
-      anonymousVisitorId: "demo-visitor-011",
-      sessionId: "demo-session-ncba-002",
-      ipHash: sha256("demo-ip-011"),
-      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6) Safari/604.1",
-      deviceType: "Mobile",
-      os: "iOS",
-      browser: "Safari",
-      country: "Kenya",
-      region: "Nairobi",
-      city: "Nairobi",
-      suburb: "Westlands",
-      latitude: "-1.2656000",
-      longitude: "36.8062000",
-      locationSource: "DEMO_SEED",
-      isRepeatScan: false,
-      isSuspicious: false,
-      isBillable: true,
-      isInternalTest: false,
-      createdAt: hoursAgo(10),
-    },
-  });
-
-  // ─── REWARD CLAIMS ────────────────────────────────────────────────────────
   console.log("Creating reward claims...");
-
-  // Vodacom – Approved claim (Visitor A)
-  const mobileA = "+255700000001";
+  const mobileVodacomA = "+255700000001";
   await prisma.rewardClaim.create({
     data: {
-      scanEventId: scanV1.id,
+      scanEventId: scanVodacomMixed.id,
       campaignId: campaignVodacom.id,
       brandId: moBeverages.id,
       advertiserId: vodacom.id,
-      mobileNumber: mobileA,
-      mobileNumberHash: sha256(mobileA),
-      mobileNumberLast4: "0001",
+      mobileNumber: mobileVodacomA,
+      mobileNumberHash: sha256(mobileVodacomA),
+      mobileNumberLast4: last4(mobileVodacomA),
       status: "APPROVED",
       rewardType: "FREE_DATA",
       providerStatus: "SIMULATED",
@@ -915,22 +777,21 @@ async function main() {
         message: "Demo: 5GB free data reward provisioned.",
         reference: "DEMO-VDC-001",
       },
-      claimedAt: hoursAgo(47),
-      createdAt: hoursAgo(47),
+      claimedAt: hoursAgo(5),
+      createdAt: hoursAgo(5),
     },
   });
 
-  // Vodacom – Duplicate claim attempt (Visitor B, same campaign – different mobile, approved)
-  const mobileB = "+255700000002";
+  const mobileVodacomB = "+255700000002";
   await prisma.rewardClaim.create({
     data: {
-      scanEventId: scanV2.id,
+      scanEventId: scanVodacomNormal.id,
       campaignId: campaignVodacom.id,
       brandId: moBeverages.id,
       advertiserId: vodacom.id,
-      mobileNumber: mobileB,
-      mobileNumberHash: sha256(mobileB),
-      mobileNumberLast4: "0002",
+      mobileNumber: mobileVodacomB,
+      mobileNumberHash: sha256(mobileVodacomB),
+      mobileNumberLast4: last4(mobileVodacomB),
       status: "APPROVED",
       rewardType: "FREE_DATA",
       providerStatus: "SIMULATED",
@@ -938,65 +799,61 @@ async function main() {
         message: "Demo: 5GB free data reward provisioned.",
         reference: "DEMO-VDC-002",
       },
-      claimedAt: hoursAgo(35),
-      createdAt: hoursAgo(35),
+      claimedAt: hoursAgo(11),
+      createdAt: hoursAgo(11),
     },
   });
 
-  // Vodacom – DECLINED DUPLICATE (Visitor C, same mobile as A attempting again)
-  // We use scanV3 but same mobile hash as mobileA to simulate the duplicate
+  const mobileDeclined = "+255700000003";
   await prisma.rewardClaim.create({
     data: {
-      scanEventId: scanV3.id,
+      scanEventId: scanVodacomNormal.id,
       campaignId: campaignVodacom.id,
       brandId: moBeverages.id,
       advertiserId: vodacom.id,
-      mobileNumberHash: sha256("+255700000003"),
-      mobileNumberLast4: "0003",
+      mobileNumberHash: sha256(mobileDeclined),
+      mobileNumberLast4: last4(mobileDeclined),
       status: "DECLINED_DUPLICATE",
-      declineReason: "Mobile number +2557000***003 has already claimed a reward for this campaign.",
+      declineReason: "Demo duplicate claim attempt rejected.",
       rewardType: "FREE_DATA",
       providerStatus: "SIMULATED",
       providerResponse: {
         message: "Demo: Duplicate claim rejected.",
       },
-      createdAt: hoursAgo(23),
+      createdAt: hoursAgo(10),
     },
   });
 
-  // NCBA – Approved claim
-  const mobileNCBA1 = "+254700000010";
+  const mobileNCBA = "+254700000010";
   await prisma.rewardClaim.create({
     data: {
-      scanEventId: scanNCBA1.id,
+      scanEventId: scanNCBA.id,
       campaignId: campaignNCBA.id,
       brandId: brightFoods.id,
       advertiserId: ncba.id,
-      mobileNumber: mobileNCBA1,
-      mobileNumberHash: sha256(mobileNCBA1),
-      mobileNumberLast4: "0010",
+      mobileNumber: mobileNCBA,
+      mobileNumberHash: sha256(mobileNCBA),
+      mobileNumberLast4: last4(mobileNCBA),
       status: "APPROVED",
       rewardType: "CASHBACK",
       providerStatus: "SIMULATED",
       providerResponse: {
-        message: "Demo: KES 50 cashback simulated via M-Pesa.",
+        message: "Demo: KES 50 cashback simulated.",
         reference: "DEMO-NCBA-001",
       },
-      claimedAt: hoursAgo(19),
-      createdAt: hoursAgo(19),
+      claimedAt: hoursAgo(8),
+      createdAt: hoursAgo(8),
     },
   });
 
-  // ─── DELIVERY SCANS ───────────────────────────────────────────────────────
   console.log("Creating delivery scans...");
-
   await prisma.deliveryScan.create({
     data: {
       qrCodeId: deliveryQrDar.id,
       brandId: moBeverages.id,
       campaignId: campaignVodacom.id,
       batchId: batchDarVodacom.id,
-      retailerId: retailerKariakoo.id,
+      retailerId: kariakoo.id,
       scannedByUserId: retailOps.id,
       cartonsDelivered: 40,
       unitsPerCarton: 24,
@@ -1019,7 +876,7 @@ async function main() {
       brandId: moBeverages.id,
       campaignId: campaignVodacom.id,
       batchId: batchDarVodacom.id,
-      retailerId: retailerMlimani.id,
+      retailerId: mlimani.id,
       scannedByUserId: retailOps.id,
       cartonsDelivered: 25,
       unitsPerCarton: 24,
@@ -1038,11 +895,11 @@ async function main() {
 
   await prisma.deliveryScan.create({
     data: {
-      qrCodeId: deliveryQrNbi.id,
+      qrCodeId: deliveryQrNairobi.id,
       brandId: moBeverages.id,
       campaignId: campaignVodacom.id,
       batchId: batchNairobiVodacom.id,
-      retailerId: retailerNairobiCBD.id,
+      retailerId: nairobiCBD.id,
       scannedByUserId: retailOps.id,
       cartonsDelivered: 30,
       unitsPerCarton: 24,
@@ -1061,35 +918,12 @@ async function main() {
 
   await prisma.deliveryScan.create({
     data: {
-      qrCodeId: deliveryQrNbi.id,
-      brandId: moBeverages.id,
-      campaignId: campaignVodacom.id,
-      batchId: batchNairobiVodacom.id,
-      retailerId: retailerWestlands.id,
-      scannedByUserId: retailOps.id,
-      cartonsDelivered: 20,
-      unitsPerCarton: 24,
-      estimatedUnitsDelivered: 480,
-      country: "Kenya",
-      region: "Nairobi",
-      city: "Nairobi",
-      suburb: "Westlands",
-      latitude: "-1.2656000",
-      longitude: "36.8062000",
-      locationSource: "DEMO_SEED",
-      notes: "Westlands supermarket top-up.",
-      createdAt: hoursAgo(36),
-    },
-  });
-
-  await prisma.deliveryScan.create({
-    data: {
-      qrCodeId: deliveryQrMsa.id,
+      qrCodeId: deliveryQrMombasa.id,
       brandId: brightFoods.id,
       campaignId: campaignNCBA.id,
       batchId: batchBrightNCBA.id,
-      retailerId: retailerMombasa.id,
-      scannedByUserId: retailOps.id,
+      retailerId: mombasaKiosk.id,
+      scannedByUserId: brightRetailOps.id,
       cartonsDelivered: 50,
       unitsPerCarton: 30,
       estimatedUnitsDelivered: 1500,
@@ -1105,28 +939,26 @@ async function main() {
     },
   });
 
-  // ─── BILLING SUMMARIES ────────────────────────────────────────────────────
   console.log("Creating billing summaries...");
-
   await prisma.billingSummary.create({
     data: {
       brandId: moBeverages.id,
       advertiserId: vodacom.id,
       campaignId: campaignVodacom.id,
       fixedFeePerUnit: "0.0200",
-      estimatedUnitsPlaced: 2760,
-      fixedFeeTotal: "55.2000",
+      estimatedUnitsPlaced: 2280,
+      fixedFeeTotal: "45.6000",
       engagementFeePerScan: "0.0300",
-      totalScanCount: 7,
+      totalScanCount: 14,
       uniqueScanCount: 3,
-      repeatScanCount: 1,
+      repeatScanCount: 10,
       suspiciousScanCount: 2,
-      internalTestScanCount: 1,
-      billableScanCount: 4,
-      engagementFeeTotal: "0.1200",
+      internalTestScanCount: 2,
+      billableScanCount: 10,
+      engagementFeeTotal: "0.3000",
       approvedRewardClaims: 2,
       duplicateRewardDeclines: 1,
-      totalAmount: "55.3200",
+      totalAmount: "45.9000",
       currency: "USD",
     },
   });
@@ -1140,67 +972,41 @@ async function main() {
       estimatedUnitsPlaced: 1500,
       fixedFeeTotal: "22.5000",
       engagementFeePerScan: "0.0250",
-      totalScanCount: 2,
-      uniqueScanCount: 2,
-      repeatScanCount: 0,
+      totalScanCount: 5,
+      uniqueScanCount: 1,
+      repeatScanCount: 1,
       suspiciousScanCount: 0,
       internalTestScanCount: 0,
-      billableScanCount: 2,
-      engagementFeeTotal: "0.0500",
+      billableScanCount: 5,
+      engagementFeeTotal: "0.1250",
       approvedRewardClaims: 1,
       duplicateRewardDeclines: 0,
-      totalAmount: "22.5500",
+      totalAmount: "22.6250",
       currency: "USD",
     },
   });
 
-  // ─── DONE ─────────────────────────────────────────────────────────────────
   console.log("\n✅ Seed complete.\n");
+
   console.log("Demo login credentials:");
   console.table([
-    {
-      role: "ADMIN",
-      email: "admin@moengage.local",
-      password: DEMO_PASSWORD,
-    },
-    {
-      role: "BRAND_ADMIN",
-      email: "brand.admin@moengage.local",
-      password: DEMO_PASSWORD,
-      scope: "Mo Beverages",
-    },
-    {
-      role: "CAMPAIGN_MANAGER",
-      email: "campaign.manager@moengage.local",
-      password: DEMO_PASSWORD,
-      scope: "Vodacom + NCBA campaigns",
-    },
-    {
-      role: "ADVERTISER_VIEWER (Vodacom)",
-      email: "advertiser.viewer@moengage.local",
-      password: DEMO_PASSWORD,
-      scope: "Vodacom",
-    },
-    {
-      role: "ADVERTISER_VIEWER (NCBA)",
-      email: "ncba.viewer@moengage.local",
-      password: DEMO_PASSWORD,
-      scope: "NCBA Bank",
-    },
-    {
-      role: "RETAIL_OPERATIONS",
-      email: "retail.ops@moengage.local",
-      password: DEMO_PASSWORD,
-      scope: "Mo Beverages deliveries",
-    },
+    { role: "ADMIN", email: "admin@moengage.local", password: DEMO_PASSWORD },
+    { role: "BRAND_ADMIN", email: "brand.admin@moengage.local", password: DEMO_PASSWORD },
+    { role: "CAMPAIGN_MANAGER", email: "campaign.manager@moengage.local", password: DEMO_PASSWORD },
+    { role: "ADVERTISER_VIEWER", email: "advertiser.viewer@moengage.local", password: DEMO_PASSWORD },
+    { role: "ADVERTISER_VIEWER", email: "ncba.viewer@moengage.local", password: DEMO_PASSWORD },
+    { role: "RETAIL_OPERATIONS", email: "retail.ops@moengage.local", password: DEMO_PASSWORD },
+    { role: "RETAIL_OPERATIONS", email: "bright.retail.ops@moengage.local", password: DEMO_PASSWORD },
   ]);
 
   console.log("\nPublic QR scan URLs:");
-  console.log(`  Consumer (Active): ${APP_BASE_URL}/q/mo-xtra-vodacom-free-5gb`);
-  console.log(`  Consumer (Active): ${APP_BASE_URL}/q/bright-crisp-ncba-cashback`);
-  console.log(`  Consumer (Paused): ${APP_BASE_URL}/q/paused-safeguard-cover-mo-malto`);
-  console.log(`  Delivery (Dar):    ${APP_BASE_URL}/d/delivery-moxtra-vodacom-dar-001`);
-  console.log(`  Delivery (Nbi):    ${APP_BASE_URL}/d/delivery-moxtra-vodacom-nbi-001`);
+  console.log(`Consumer Active: ${APP_BASE_URL}/q/mo-xtra-vodacom-free-5gb`);
+  console.log(`Consumer Active: ${APP_BASE_URL}/q/bright-crisp-ncba-cashback`);
+  console.log(`Consumer Paused: ${APP_BASE_URL}/q/paused-safeguard-cover-mo-malto`);
+  console.log(`Internal Test:   ${APP_BASE_URL}/q/internal-test-mo-xtra-vodacom`);
+  console.log(`Delivery Dar:    ${APP_BASE_URL}/d/delivery-moxtra-vodacom-dar-001`);
+  console.log(`Delivery Nbi:    ${APP_BASE_URL}/d/delivery-moxtra-vodacom-nbi-001`);
+  console.log(`Delivery Msa:    ${APP_BASE_URL}/d/delivery-bfcrisp-ncba-msa-001`);
 }
 
 main()

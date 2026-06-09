@@ -10,12 +10,32 @@ import { aggregateScanEvent } from "./scan-event-aggregation.service";
 export async function getConsumerQRCodeByCode(code: string) {
   const qrCode = await prisma.qRCode.findUnique({
     where: { code },
-    include: {
-      brand: true,
-      advertiser: true,
-      campaign: true,
-      product: true,
-      batch: true,
+    select: {
+      id: true,
+      code: true,
+      type: true,
+      status: true,
+      label: true,
+      brandId: true,
+      advertiserId: true,
+      campaignId: true,
+      productId: true,
+      batchId: true,
+      brand: { select: { name: true } },
+      advertiser: { select: { name: true } },
+      product: { select: { name: true } },
+      campaign: {
+        select: {
+          id: true,
+          name: true,
+          offerTitle: true,
+          offerDescription: true,
+          rewardType: true,
+          status: true,
+          startDate: true,
+          endDate: true,
+        },
+      },
     },
   });
 
@@ -36,6 +56,18 @@ export async function getConsumerQRCodeByCode(code: string) {
     return { status: "WRONG_TYPE" as const, qrCode };
   }
 
+  if (qrCode.type !== "INTERNAL_TEST") {
+    const now = new Date();
+    if (
+      !qrCode.campaign ||
+      qrCode.campaign.status !== "ACTIVE" ||
+      (qrCode.campaign.startDate && qrCode.campaign.startDate > now) ||
+      (qrCode.campaign.endDate && qrCode.campaign.endDate < now)
+    ) {
+      return { status: "INACTIVE" as const, qrCode };
+    }
+  }
+
   return { status: "VALID" as const, qrCode };
 }
 
@@ -53,22 +85,12 @@ export async function logConsumerScan(qrCode: {
   let requestHeaders;
   try {
     requestHeaders = await headers();
-  } catch (e) {
+  } catch (error) {
     if (process.env.NODE_ENV === "production") {
-      // In production, headers() must always be available within a request context.
-      // If it throws, something is fundamentally wrong — re-throw so the caller's
-      // try/catch in the page suppresses the error and the scan is simply not logged.
-      throw e;
+      throw error;
     }
-    // Dev/test only: use stub headers to allow running outside a request context.
-    requestHeaders = new Headers({
-      "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1",
-      "x-forwarded-for": "192.168.1.1",
-      "x-vercel-ip-country": "TZ",
-      "x-vercel-ip-city": "Dar es Salaam",
-      "x-vercel-ip-latitude": "-6.8235",
-      "x-vercel-ip-longitude": "39.2695",
-    });
+    // Non-request test calls get no inferred identity or geography.
+    requestHeaders = new Headers();
   }
   const userAgent = requestHeaders.get("user-agent") || null;
 
@@ -102,39 +124,45 @@ export async function logConsumerScan(qrCode: {
 
   const isInternalTest = qrCode.type === "INTERNAL_TEST";
 
-  // Create scan event using PostgreSQL ON CONFLICT DO UPDATE aggregation query
-  const scanResult = await aggregateScanEvent({
-    qrCodeId: qrCode.id,
-    brandId: qrCode.brandId,
-    advertiserId: qrCode.advertiserId,
-    campaignId: qrCode.campaignId,
-    productId: qrCode.productId,
-    batchId: qrCode.batchId,
-    anonymousVisitorId,
-    sessionId: null,
-    ipHash: location.ipHash,
-    userAgent,
-    deviceType: device.deviceType,
-    os: device.os,
-    browser: device.browser,
-    country: location.country,
-    region: location.region,
-    city: location.city,
-    suburb: location.suburb,
-    latitude: location.latitude,
-    longitude: location.longitude,
-    locationSource: location.locationSource,
-    isRepeatScan: classification.isRepeatScan,
-    isSuspicious: classification.isSuspicious,
-    suspiciousReason: classification.suspiciousReason,
-    isBillable: classification.isBillable,
-    isInternalTest,
-  });
+  // Keep the aggregate event and denormalized QR total consistent.
+  const scanResult = await prisma.$transaction(async (tx) => {
+    const result = await aggregateScanEvent(
+      {
+        qrCodeId: qrCode.id,
+        brandId: qrCode.brandId,
+        advertiserId: qrCode.advertiserId,
+        campaignId: qrCode.campaignId,
+        productId: qrCode.productId,
+        batchId: qrCode.batchId,
+        anonymousVisitorId,
+        sessionId: null,
+        ipHash: location.ipHash,
+        userAgent,
+        deviceType: device.deviceType,
+        os: device.os,
+        browser: device.browser,
+        country: location.country,
+        region: location.region,
+        city: location.city,
+        suburb: location.suburb,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        locationSource: location.locationSource,
+        isRepeatScan: classification.isRepeatScan,
+        isSuspicious: classification.isSuspicious,
+        suspiciousReason: classification.suspiciousReason,
+        isBillable: classification.isBillable,
+        isInternalTest,
+      },
+      tx,
+    );
 
-  // Increment QRCode scan count
-  await prisma.qRCode.update({
-    where: { id: qrCode.id },
-    data: { scanCount: { increment: 1 } },
+    await tx.qRCode.update({
+      where: { id: qrCode.id },
+      data: { scanCount: { increment: 1 } },
+    });
+
+    return result;
   });
 
   return {
