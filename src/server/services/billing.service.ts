@@ -221,7 +221,7 @@ export async function generateCampaignBillingSummary(
   });
 
   // Duplicate Reward Claims
-  const duplicateRewardDeclines = await prisma.rewardClaim.count({
+  const duplicateRewardDeclines = await prisma.rewardClaimAttempt.count({
     where: { campaignId, status: "DECLINED_DUPLICATE" },
   });
 

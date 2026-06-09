@@ -19,13 +19,18 @@ import {
   verifyRewardOtpHash,
   MAX_OTP_ATTEMPTS,
 } from "@/lib/rewards/otp";
+import type { RewardRequestMetadata } from "@/lib/rewards/request-metadata";
 
 export type ServiceResult<T = any> =
   | { ok: true; status: string; data: T }
   | { ok: false; status: string; error: string };
 
 export async function startRewardClaim(
-  input: StartRewardClaimValues
+  input: StartRewardClaimValues,
+  requestMetadata: RewardRequestMetadata = {
+    ipHash: null,
+    userAgent: null,
+  },
 ): Promise<ServiceResult<{ otpVerificationId: string; devOtp?: string }>> {
   const parsed = startRewardClaimSchema.safeParse(input);
   if (!parsed.success) {
@@ -39,25 +44,6 @@ export async function startRewardClaim(
   const { scanEventId, campaignId, mobileNumber } = parsed.data;
   const normalizedMobile = normalizeMobileNumber(mobileNumber);
   const mobileNumberHash = hashMobileNumber(normalizedMobile);
-
-  // 1. Prevent OTP resend loops via database-level cooldown check (60 seconds)
-  const sixtySecondsAgo = new Date(Date.now() - 60 * 1000);
-  const recentVerification = await prisma.otpVerification.findFirst({
-    where: {
-      mobileNumberHash,
-      createdAt: { gte: sixtySecondsAgo },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  if (recentVerification) {
-    console.warn(`[startRewardClaim] Cooldown block for phoneHash: ${mobileNumberHash}`);
-    return {
-      ok: false,
-      status: "COOLDOWN_ACTIVE",
-      error: "Please wait 60 seconds before requesting a new verification code.",
-    };
-  }
 
   // Verify scan event exists and matches campaign
   const scanEvent = await prisma.scanEvent.findUnique({
@@ -121,17 +107,38 @@ export async function startRewardClaim(
     },
   });
 
-  // User Enumeration Prevention: Pretend we sent OTP for duplicate claims but create a failed OTP verification record
+  // Keep the response indistinguishable from a normal OTP send while recording
+  // the duplicate as an analytics event, not as a second RewardClaim row.
   if (existingApproved && existingApproved.status === "APPROVED") {
     console.warn(`[startRewardClaim] Duplicate approved claim attempt (silenced success response): phoneHash=${mobileNumberHash}`);
-    const fakeVerification = await prisma.otpVerification.create({
-      data: {
-        mobileNumberHash,
-        codeHash: "LOCKED_HASH_THAT_NEVER_MATCHES",
-        status: "FAILED",
-        isSimulated: true,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-      },
+    const fakeVerification = await prisma.$transaction(async (tx) => {
+      const verification = await tx.otpVerification.create({
+        data: {
+          mobileNumberHash,
+          codeHash: "LOCKED_HASH_THAT_NEVER_MATCHES",
+          status: "FAILED",
+          isSimulated: true,
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        },
+        select: { id: true },
+      });
+
+      await tx.rewardClaimAttempt.create({
+        data: {
+          campaignId,
+          brandId: scanEvent.brandId,
+          advertiserId: scanEvent.advertiserId,
+          scanEventId,
+          mobileNumberHash,
+          mobileNumberLast4: getMobileNumberLast4(normalizedMobile),
+          status: "DECLINED_DUPLICATE",
+          failureReason: "A reward was already approved for this campaign and mobile number.",
+          ipHash: requestMetadata.ipHash,
+          userAgent: requestMetadata.userAgent,
+        },
+      });
+
+      return verification;
     });
 
     return {
@@ -140,6 +147,27 @@ export async function startRewardClaim(
       data: {
         otpVerificationId: fakeVerification.id,
       },
+    };
+  }
+
+  // Prevent OTP resend loops for claims that have not already been approved.
+  // Duplicate attempts that reach this service are recorded above instead of
+  // being hidden by the resend cooldown.
+  const sixtySecondsAgo = new Date(Date.now() - 60 * 1000);
+  const recentVerification = await prisma.otpVerification.findFirst({
+    where: {
+      mobileNumberHash,
+      createdAt: { gte: sixtySecondsAgo },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (recentVerification) {
+    console.warn(`[startRewardClaim] Cooldown block for phoneHash: ${mobileNumberHash}`);
+    return {
+      ok: false,
+      status: "COOLDOWN_ACTIVE",
+      error: "Please wait 60 seconds before requesting a new verification code.",
     };
   }
 
@@ -230,7 +258,11 @@ export async function startRewardClaim(
 }
 
 export async function verifyRewardOtpAndClaim(
-  input: VerifyRewardOtpValues
+  input: VerifyRewardOtpValues,
+  requestMetadata: RewardRequestMetadata = {
+    ipHash: null,
+    userAgent: null,
+  },
 ): Promise<ServiceResult<{ rewardClaimId: string }>> {
   const parsed = verifyRewardOtpSchema.safeParse(input);
   if (!parsed.success) {
@@ -273,6 +305,9 @@ export async function verifyRewardOtpAndClaim(
       scanEventId: true,
       otpVerificationId: true,
       status: true,
+      brandId: true,
+      advertiserId: true,
+      mobileNumberLast4: true,
     },
   });
 
@@ -413,6 +448,22 @@ export async function verifyRewardOtpAndClaim(
       if (claimUpdate.count !== 1) {
         throw new Error("Reward claim state changed during verification");
       }
+
+      await tx.rewardClaimAttempt.create({
+        data: {
+          campaignId,
+          brandId: pendingClaim.brandId,
+          advertiserId: pendingClaim.advertiserId,
+          scanEventId,
+          mobileNumberHash,
+          mobileNumberLast4:
+            pendingClaim.mobileNumberLast4 ??
+            getMobileNumberLast4(normalizedMobile),
+          status: "APPROVED",
+          ipHash: requestMetadata.ipHash,
+          userAgent: requestMetadata.userAgent,
+        },
+      });
 
       return { status: "APPROVED" as const, rewardClaimId: pendingClaim.id };
     });

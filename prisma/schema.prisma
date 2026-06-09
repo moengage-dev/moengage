@@ -167,17 +167,18 @@ model Brand {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users            User[]           @relation("BrandUsers")
-  products         Product[]
-  campaigns        Campaign[]
-  batches          Batch[]
-  qrCodes          QRCode[]
-  retailers        Retailer[]
-  scanEvents       ScanEvent[]
-  rewardClaims     RewardClaim[]
-  deliveryScans    DeliveryScan[]
-  billingSummaries BillingSummary[]
-  reportExports    ReportExport[]
+  users               User[]               @relation("BrandUsers")
+  products            Product[]
+  campaigns           Campaign[]
+  batches             Batch[]
+  qrCodes             QRCode[]
+  retailers           Retailer[]
+  scanEvents          ScanEvent[]
+  rewardClaims        RewardClaim[]
+  rewardClaimAttempts RewardClaimAttempt[]
+  deliveryScans       DeliveryScan[]
+  billingSummaries    BillingSummary[]
+  reportExports       ReportExport[]
 
   @@index([status])
 }
@@ -196,13 +197,14 @@ model Advertiser {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users            User[]           @relation("AdvertiserUsers")
-  campaigns        Campaign[]
-  qrCodes          QRCode[]
-  scanEvents       ScanEvent[]
-  rewardClaims     RewardClaim[]
-  billingSummaries BillingSummary[]
-  reportExports    ReportExport[]
+  users               User[]               @relation("AdvertiserUsers")
+  campaigns           Campaign[]
+  qrCodes             QRCode[]
+  scanEvents          ScanEvent[]
+  rewardClaims        RewardClaim[]
+  rewardClaimAttempts RewardClaimAttempt[]
+  billingSummaries    BillingSummary[]
+  reportExports       ReportExport[]
 
   @@index([status])
 }
@@ -263,14 +265,15 @@ model Campaign {
   product    Product?   @relation(fields: [productId], references: [id], onDelete: SetNull)
   createdBy  User?      @relation("CampaignCreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
 
-  batches          Batch[]
-  qrCodes          QRCode[]
-  scanEvents       ScanEvent[]
-  rewardClaims     RewardClaim[]
-  deliveryScans    DeliveryScan[]
-  billingSummaries BillingSummary[]
-  reportExports    ReportExport[]
-  assignments      CampaignAssignment[]
+  batches             Batch[]
+  qrCodes             QRCode[]
+  scanEvents          ScanEvent[]
+  rewardClaims        RewardClaim[]
+  rewardClaimAttempts RewardClaimAttempt[]
+  deliveryScans       DeliveryScan[]
+  billingSummaries    BillingSummary[]
+  reportExports       ReportExport[]
+  assignments         CampaignAssignment[]
 
   @@index([brandId])
   @@index([advertiserId])
@@ -380,14 +383,14 @@ model ScanEvent {
   isBillable       Boolean @default(true)
   isInternalTest   Boolean @default(false)
 
-  fingerprintKey    String
-  windowStartedAt   DateTime
-  firstScanAt       DateTime       @default(now())
-  lastScanAt        DateTime       @default(now())
-  hitCount          Int            @default(1)
-  repeatCount       Int            @default(0)
-  suspiciousCount   Int            @default(0)
-  billableCount     Int            @default(1)
+  fingerprintKey  String
+  windowStartedAt DateTime
+  firstScanAt     DateTime @default(now())
+  lastScanAt      DateTime @default(now())
+  hitCount        Int      @default(1)
+  repeatCount     Int      @default(0)
+  suspiciousCount Int      @default(0)
+  billableCount   Int      @default(1)
 
   createdAt DateTime @default(now())
 
@@ -398,7 +401,8 @@ model ScanEvent {
   product    Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
   batch      Batch?      @relation(fields: [batchId], references: [id], onDelete: SetNull)
 
-  rewardClaims RewardClaim[]
+  rewardClaims        RewardClaim[]
+  rewardClaimAttempts RewardClaimAttempt[]
 
   @@unique([qrCodeId, fingerprintKey, windowStartedAt], name: "scan_event_window_unique")
   @@index([qrCodeId])
@@ -454,6 +458,37 @@ model RewardClaim {
 
   @@unique([campaignId, mobileNumberHash])
   @@index([scanEventId])
+  @@index([campaignId])
+  @@index([brandId])
+  @@index([advertiserId])
+  @@index([mobileNumberHash])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model RewardClaimAttempt {
+  id String @id @default(cuid())
+
+  campaignId   String
+  brandId      String?
+  advertiserId String?
+  scanEventId  String?
+
+  mobileNumberHash  String
+  mobileNumberLast4 String?
+
+  status        RewardClaimStatus
+  failureReason String?
+  ipHash        String?
+  userAgent     String?
+
+  createdAt DateTime @default(now())
+
+  campaign   Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  brand      Brand?      @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  advertiser Advertiser? @relation(fields: [advertiserId], references: [id], onDelete: SetNull)
+  scanEvent  ScanEvent?  @relation(fields: [scanEventId], references: [id], onDelete: SetNull)
+
   @@index([campaignId])
   @@index([brandId])
   @@index([advertiserId])

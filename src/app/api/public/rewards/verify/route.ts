@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyRewardOtpAndClaim } from "@/server/services/reward-claim.service";
 import { normalizeMobileNumber } from "@/lib/rewards/mobile-hash";
+import { getRewardRequestMetadata } from "@/lib/rewards/request-metadata";
 
 const mobileRegex = /^\+?[1-9]\d{6,14}$/;
 
@@ -36,13 +37,16 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedPhone = normalizeMobileNumber(mobileNumber);
-    const result = await verifyRewardOtpAndClaim({
-      otpVerificationId,
-      scanEventId,
-      campaignId,
-      mobileNumber: normalizedPhone,
-      otp: otp.trim(),
-    });
+    const result = await verifyRewardOtpAndClaim(
+      {
+        otpVerificationId,
+        scanEventId,
+        campaignId,
+        mobileNumber: normalizedPhone,
+        otp: otp.trim(),
+      },
+      getRewardRequestMetadata(request),
+    );
 
     if (!result.ok) {
       return NextResponse.json(

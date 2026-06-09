@@ -48,6 +48,7 @@ async function resetDemoData() {
 
   await prisma.reportExport.deleteMany();
   await prisma.billingSummary.deleteMany();
+  await prisma.rewardClaimAttempt.deleteMany();
   await prisma.rewardClaim.deleteMany();
   await prisma.emailVerificationToken.deleteMany();
   await prisma.otpVerification.deleteMany();
@@ -781,6 +782,20 @@ async function main() {
       createdAt: hoursAgo(5),
     },
   });
+  await prisma.rewardClaimAttempt.create({
+    data: {
+      scanEventId: scanVodacomMixed.id,
+      campaignId: campaignVodacom.id,
+      brandId: moBeverages.id,
+      advertiserId: vodacom.id,
+      mobileNumberHash: sha256(mobileVodacomA),
+      mobileNumberLast4: last4(mobileVodacomA),
+      status: "APPROVED",
+      ipHash: sha256("demo-reward-ip-vodacom-a"),
+      userAgent: "Mozilla/5.0 Demo Reward Claim",
+      createdAt: hoursAgo(5),
+    },
+  });
 
   const mobileVodacomB = "+255700000002";
   await prisma.rewardClaim.create({
@@ -803,9 +818,23 @@ async function main() {
       createdAt: hoursAgo(11),
     },
   });
+  await prisma.rewardClaimAttempt.create({
+    data: {
+      scanEventId: scanVodacomNormal.id,
+      campaignId: campaignVodacom.id,
+      brandId: moBeverages.id,
+      advertiserId: vodacom.id,
+      mobileNumberHash: sha256(mobileVodacomB),
+      mobileNumberLast4: last4(mobileVodacomB),
+      status: "APPROVED",
+      ipHash: sha256("demo-reward-ip-vodacom-b"),
+      userAgent: "Mozilla/5.0 Demo Reward Claim",
+      createdAt: hoursAgo(11),
+    },
+  });
 
   const mobileDeclined = "+255700000003";
-  await prisma.rewardClaim.create({
+  await prisma.rewardClaimAttempt.create({
     data: {
       scanEventId: scanVodacomNormal.id,
       campaignId: campaignVodacom.id,
@@ -814,12 +843,9 @@ async function main() {
       mobileNumberHash: sha256(mobileDeclined),
       mobileNumberLast4: last4(mobileDeclined),
       status: "DECLINED_DUPLICATE",
-      declineReason: "Demo duplicate claim attempt rejected.",
-      rewardType: "FREE_DATA",
-      providerStatus: "SIMULATED",
-      providerResponse: {
-        message: "Demo: Duplicate claim rejected.",
-      },
+      failureReason: "A reward was already approved for this campaign and mobile number.",
+      ipHash: sha256("demo-reward-ip-duplicate"),
+      userAgent: "Mozilla/5.0 Demo Duplicate Reward Attempt",
       createdAt: hoursAgo(10),
     },
   });
@@ -842,6 +868,20 @@ async function main() {
         reference: "DEMO-NCBA-001",
       },
       claimedAt: hoursAgo(8),
+      createdAt: hoursAgo(8),
+    },
+  });
+  await prisma.rewardClaimAttempt.create({
+    data: {
+      scanEventId: scanNCBA.id,
+      campaignId: campaignNCBA.id,
+      brandId: brightFoods.id,
+      advertiserId: ncba.id,
+      mobileNumberHash: sha256(mobileNCBA),
+      mobileNumberLast4: last4(mobileNCBA),
+      status: "APPROVED",
+      ipHash: sha256("demo-reward-ip-ncba"),
+      userAgent: "Mozilla/5.0 Demo Reward Claim",
       createdAt: hoursAgo(8),
     },
   });

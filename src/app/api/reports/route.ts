@@ -141,15 +141,27 @@ export async function GET(request: Request) {
         const rawData = await getRewardClaimsData(filters);
         const data = rawData.map((r) => ({
           ID: r.id,
+          RecordType: r.recordType,
           Campaign: r.campaign?.name || "—",
           MobileLast4: r.mobileNumberLast4 || "—",
           Status: r.status,
-          RewardType: r.rewardType,
-          ProviderStatus: r.providerStatus,
+          FailureReason: r.failureReason || "—",
+          RewardType: r.rewardType || "—",
+          ProviderStatus: r.providerStatus || "—",
           CreatedAt: formatDateTime(r.createdAt),
         }));
 
-        const columns = ["ID", "Campaign", "MobileLast4", "Status", "RewardType", "ProviderStatus", "CreatedAt"];
+        const columns = [
+          "ID",
+          "RecordType",
+          "Campaign",
+          "MobileLast4",
+          "Status",
+          "FailureReason",
+          "RewardType",
+          "ProviderStatus",
+          "CreatedAt",
+        ];
         fileBuffer = generateCSV(data, columns);
         contentType = "text/csv";
         filename = `Reward_Claims_${new Date().toISOString().split("T")[0]}.csv`;

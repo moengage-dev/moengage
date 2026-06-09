@@ -81,17 +81,63 @@ export async function getRewardClaimsData(filters: ReportParams) {
   const whereClause: any = createdAtFilter ? { createdAt: createdAtFilter } : {};
   applyRoleScope(whereClause, filters, false);
 
-  const rewardClaims = await prisma.rewardClaim.findMany({
-    where: whereClause,
-    include: {
-      campaign: { select: { name: true } },
-      brand: { select: { name: true } },
-      advertiser: { select: { name: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const duplicateAttemptWhere: any = {
+    ...whereClause,
+    status: "DECLINED_DUPLICATE",
+  };
 
-  return rewardClaims;
+  const [rewardClaims, duplicateAttempts] = await Promise.all([
+    prisma.rewardClaim.findMany({
+      where: {
+        ...whereClause,
+        status: { not: "DECLINED_DUPLICATE" },
+      },
+      include: {
+        campaign: { select: { name: true } },
+        brand: { select: { name: true } },
+        advertiser: { select: { name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.rewardClaimAttempt.findMany({
+      where: duplicateAttemptWhere,
+      include: {
+        campaign: { select: { name: true } },
+        brand: { select: { name: true } },
+        advertiser: { select: { name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  return [
+    ...rewardClaims.map((claim) => ({
+      id: claim.id,
+      recordType: "CLAIM" as const,
+      campaign: claim.campaign,
+      brand: claim.brand,
+      advertiser: claim.advertiser,
+      mobileNumberLast4: claim.mobileNumberLast4,
+      status: claim.status,
+      failureReason: claim.declineReason,
+      rewardType: claim.rewardType,
+      providerStatus: claim.providerStatus,
+      createdAt: claim.createdAt,
+    })),
+    ...duplicateAttempts.map((attempt) => ({
+      id: attempt.id,
+      recordType: "ATTEMPT" as const,
+      campaign: attempt.campaign,
+      brand: attempt.brand,
+      advertiser: attempt.advertiser,
+      mobileNumberLast4: attempt.mobileNumberLast4,
+      status: attempt.status,
+      failureReason: attempt.failureReason,
+      rewardType: null,
+      providerStatus: null,
+      createdAt: attempt.createdAt,
+    })),
+  ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 export async function getDeliveryScansData(filters: ReportParams) {
