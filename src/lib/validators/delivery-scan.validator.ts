@@ -54,6 +54,7 @@ export const deliveryScanSchema = z
       z.number({ message: "Cartons delivered must be a number" })
         .int("Cartons delivered must be an integer")
         .positive("Cartons delivered must be greater than 0")
+        .max(100000, "Cartons delivered looks too large")
     ),
     notes: optionalString,
   })

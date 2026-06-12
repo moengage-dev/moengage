@@ -123,9 +123,9 @@ Open these in a browser or mobile device to simulate the consumer experience:
 ### Step 5 — Attempt Duplicate Claim
 1. Stay on the same QR page or refresh
 2. Try the same mobile number `+255799999999`
-3. The duplicate is blocked. The public response remains generic so prior participation is not exposed.
+3. The duplicate is blocked immediately on the mobile-number step. The UI clearly states: "This mobile number is not eligible for another claim on this campaign."
 
-**Business narrative:** *"One mobile number can receive at most one approved reward per campaign. Duplicate approval is blocked without exposing claim history."*
+**Business narrative:** *"One mobile number can receive at most one approved reward per campaign. Duplicate attempts are blocked before OTP is issued and logged for advertiser reporting."*
 
 ---
 

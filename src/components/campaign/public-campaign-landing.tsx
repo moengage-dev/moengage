@@ -49,9 +49,9 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
   const [mobileNumber, setMobileNumber] = useState("");
   const [otp, setOtp] = useState("");
   const [otpVerificationId, setOtpVerificationId] = useState("");
-  const [devOtp, setDevOtp] = useState("");
+  const [demoOtp, setDemoOtp] = useState("");
   const [uiState, setUiState] = useState<
-    "initial" | "sending_otp" | "otp_sent" | "verifying_otp" | "approved" | "duplicate" | "error"
+    "initial" | "sending_otp" | "otp_sent" | "verifying_otp" | "approved" | "error"
   >("initial");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -98,7 +98,7 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
         if (data.status === "DUPLICATE_CLAIM") {
           setOtp("");
           setOtpVerificationId("");
-          setDevOtp("");
+          setDemoOtp("");
           setErrorMessage(getFriendlyErrorMessage(data.status));
           setUiState("error");
         } else {
@@ -111,8 +111,8 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
       }
 
       setOtpVerificationId(data.otpVerificationId);
-      if (data.devOtp) {
-        setDevOtp(data.devOtp);
+      if (data.demoOtp) {
+        setDemoOtp(data.demoOtp);
       }
       setUiState("otp_sent");
     } catch (err) {
@@ -148,9 +148,7 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
 
       const data = await response.json();
       if (!response.ok || !data.ok) {
-        if (data.status === "DUPLICATE") {
-          setUiState("duplicate");
-        } else if (data.status === "EXPIRED_OTP") {
+        if (data.status === "EXPIRED_OTP") {
           setErrorMessage("This OTP code has expired. Please request a new one.");
           setUiState("otp_sent");
         } else {
@@ -174,7 +172,7 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
     setMobileNumber("");
     setOtp("");
     setOtpVerificationId("");
-    setDevOtp("");
+    setDemoOtp("");
     setErrorMessage("");
     setUiState("initial");
   }
@@ -268,23 +266,6 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
                 </div>
               )}
 
-              {/* Duplicate View */}
-              {uiState === "duplicate" && (
-                <div className="text-center py-6 space-y-4 animate-in fade-in zoom-in-95 duration-300">
-                  <div className="mx-auto w-16 h-16 bg-brand-coral/15 border border-brand-coral/20 text-[#8C3A1B] rounded-full flex items-center justify-center">
-                    <AlertTriangle className="h-10 w-10" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-bold text-[#2C2621]">Duplicate Claim</h3>
-                    <p className="text-xs text-muted-foreground">
-                      This mobile number has already claimed this campaign reward.
-                    </p>
-                  </div>
-                  <Button onClick={handleReset} variant="outline" size="sm" className="border-border text-muted-foreground hover:text-[#2C2621]">
-                    Try another number
-                  </Button>
-                </div>
-              )}
 
               {/* Initial Form: Get Mobile Number */}
               {(uiState === "initial" || uiState === "sending_otp" || uiState === "error") && (
@@ -350,10 +331,10 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
                   </div>
 
                   {/* Simulated OTP helper (dev or explicit demo mode only) */}
-                  {devOtp && (
+                  {demoOtp && (
                     <div className="bg-brand-teal/10 border border-brand-teal/20 rounded-xl p-3 text-center">
                       <p className="text-xs text-[#1E5C5A] font-medium">
-                        Simulated OTP (demo): <span className="font-mono bg-background px-2 py-0.5 rounded border border-border/50 font-bold">{devOtp}</span>
+                        Simulated OTP (demo): <span className="font-mono bg-background px-2 py-0.5 rounded border border-border/50 font-bold">{demoOtp}</span>
                       </p>
                     </div>
                   )}

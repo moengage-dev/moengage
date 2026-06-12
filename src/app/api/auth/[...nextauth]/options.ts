@@ -109,12 +109,42 @@ export const authOptions: NextAuthOptions = {
         token.name = authUser.name;
         token.brandId = authUser.brandId;
         token.advertiserId = authUser.advertiserId;
+        token.lastChecked = Date.now();
+      } else if (token.id) {
+        const now = Date.now();
+        const lastChecked = (token.lastChecked as number) || 0;
+
+        // Revalidate every 5 minutes
+        if (now - lastChecked > 5 * 60 * 1000) {
+          try {
+            const dbUser = await prisma.user.findUnique({
+              where: { id: token.id as string },
+              select: { isActive: true, role: true, brandId: true, advertiserId: true },
+            });
+
+            if (!dbUser || !dbUser.isActive) {
+              token.error = "InactiveUser";
+            } else {
+              token.role = dbUser.role;
+              token.brandId = dbUser.brandId;
+              token.advertiserId = dbUser.advertiserId;
+              token.lastChecked = now;
+            }
+          } catch (err) {
+            console.error("JWT revalidation error:", err);
+          }
+        }
       }
 
       return token;
     },
 
     async session({ session, token }) {
+      if (token.error === "InactiveUser") {
+        // Return an empty object so the session is invalidated
+        return {} as any;
+      }
+
       if (!session.user) {
         return session;
       }

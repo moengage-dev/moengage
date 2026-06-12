@@ -1,7 +1,6 @@
 // src/server/services/public-scan.service.ts
 import prisma from "@/lib/prisma";
-import { headers } from "next/headers";
-import { getOrCreateAnonymousVisitorId } from "@/lib/scans/anonymous-visitor";
+import { headers, cookies } from "next/headers";
 import { parseUserAgent } from "@/lib/scans/device-parser";
 import { getApproximateLocationFromHeaders } from "@/lib/scans/ip-location";
 import { classifyConsumerScan } from "./scan-classification.service";
@@ -81,7 +80,13 @@ export async function logConsumerScan(qrCode: {
   type: string;
   status: string;
 }) {
-  const anonymousVisitorId = await getOrCreateAnonymousVisitorId();
+  let anonymousVisitorId = null;
+  try {
+    const cookieStore = await cookies();
+    anonymousVisitorId = cookieStore.get("moengage_visitor_id")?.value ?? null;
+  } catch {
+    // Ignore error outside request context
+  }
   let requestHeaders;
   try {
     requestHeaders = await headers();

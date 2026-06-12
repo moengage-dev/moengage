@@ -152,7 +152,7 @@ async function computeMetricsAndPerformance(filters: {
       where: { ...filters.scanEvent, anonymousVisitorId: { not: null } },
     }),
     prisma.rewardClaim.count({ where: { ...filters.rewardClaim, status: "APPROVED" } }),
-    prisma.rewardClaim.count({ where: { ...filters.rewardClaim, status: "DECLINED_DUPLICATE" } }),
+    prisma.rewardClaimAttempt.count({ where: { ...filters.rewardClaim, status: "DECLINED_DUPLICATE" } }),
     prisma.deliveryScan.count({ where: filters.deliveryScan }),
     prisma.deliveryScan.aggregate({ _sum: { cartonsDelivered: true }, where: filters.deliveryScan }),
     prisma.deliveryScan.aggregate({ _sum: { estimatedUnitsDelivered: true }, where: filters.deliveryScan }),
@@ -236,7 +236,7 @@ async function computeMetricsAndPerformance(filters: {
           prisma.rewardClaim.count({
             where: { ...filters.rewardClaim, campaignId: c.id, status: "APPROVED" },
           }),
-          prisma.rewardClaim.count({
+          prisma.rewardClaimAttempt.count({
             where: { ...filters.rewardClaim, campaignId: c.id, status: "DECLINED_DUPLICATE" },
           }),
           prisma.deliveryScan.count({ where: { ...filters.deliveryScan, campaignId: c.id } }),

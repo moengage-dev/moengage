@@ -50,8 +50,8 @@ export async function updateUserAction(
 
 export async function deactivateUserAction(id: string): Promise<ActionResult> {
   try {
-    await requireRole(["ADMIN"]);
-    const result = await deactivateUser(id);
+    const user = await requireRole(["ADMIN"]);
+    const result = await deactivateUser(id, user.id);
     if (!result.ok) return { ok: false, error: result.error };
     revalidatePath("/admin/users");
     return { ok: true, message: "User deactivated." };

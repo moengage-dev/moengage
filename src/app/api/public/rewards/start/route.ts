@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       ok: true,
       status: result.status,
       otpVerificationId: result.data.otpVerificationId,
-      devOtp: result.data.devOtp,
+      demoOtp: result.data.demoOtp,
     });
   } catch (e) {
     console.error("[api/public/rewards/start] Error:", e);

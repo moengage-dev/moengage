@@ -266,7 +266,7 @@ export async function updateUser(
   return { ok: true, data: toUserRow(user) };
 }
 
-export async function deactivateUser(id: string): Promise<ServiceResult> {
+export async function deactivateUser(id: string, performedByUserId: string): Promise<ServiceResult> {
   // Last-admin guard
   const user = await prisma.user.findUnique({
     where: { id },
@@ -290,6 +290,17 @@ export async function deactivateUser(id: string): Promise<ServiceResult> {
     where: { id },
     data: { isActive: false },
   });
+
+  await prisma.auditLog.create({
+    data: {
+      userId: performedByUserId,
+      action: "DEACTIVATE_USER",
+      entityType: "User",
+      entityId: id,
+      metadata: { before: true, after: false },
+    }
+  });
+
   return { ok: true, data: undefined };
 }
 

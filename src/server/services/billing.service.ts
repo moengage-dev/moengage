@@ -256,14 +256,34 @@ export async function generateCampaignBillingSummary(
   };
 
   if (existing) {
-    return await prisma.billingSummary.update({
+    const updated = await prisma.billingSummary.update({
       where: { id: existing.id },
       data: summaryData,
     });
+    await prisma.auditLog.create({
+      data: {
+        userId: generatedByUserId,
+        action: "GENERATE_BILLING_SUMMARY",
+        entityType: "BillingSummary",
+        entityId: updated.id,
+        metadata: { campaignId },
+      }
+    });
+    return updated;
   } else {
-    return await prisma.billingSummary.create({
+    const created = await prisma.billingSummary.create({
       data: summaryData,
     });
+    await prisma.auditLog.create({
+      data: {
+        userId: generatedByUserId,
+        action: "GENERATE_BILLING_SUMMARY",
+        entityType: "BillingSummary",
+        entityId: created.id,
+        metadata: { campaignId },
+      }
+    });
+    return created;
   }
 }
 
@@ -275,4 +295,13 @@ export async function regenerateAllCampaignBillingSummaries(generatedByUserId: s
   for (const c of campaigns) {
     await generateCampaignBillingSummary(c.id, generatedByUserId);
   }
+
+  await prisma.auditLog.create({
+    data: {
+      userId: generatedByUserId,
+      action: "REGENERATE_ALL_BILLING",
+      entityType: "BillingSummary",
+      metadata: { totalCampaigns: campaigns.length },
+    }
+  });
 }

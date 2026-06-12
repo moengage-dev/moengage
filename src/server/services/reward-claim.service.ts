@@ -31,7 +31,7 @@ export async function startRewardClaim(
     ipHash: null,
     userAgent: null,
   },
-): Promise<ServiceResult<{ otpVerificationId: string; devOtp?: string }>> {
+): Promise<ServiceResult<{ otpVerificationId: string; demoOtp?: string }>> {
   const parsed = startRewardClaimSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -171,7 +171,7 @@ export async function startRewardClaim(
   const echoOtp =
     process.env.NODE_ENV === "development" ||
     process.env.DEMO_OTP_ECHO === "true";
-  const devOtp = echoOtp ? otp : undefined;
+  const demoOtp = echoOtp ? otp : undefined;
   if (process.env.NODE_ENV === "development") {
     console.log(`[startRewardClaim] Dev OTP for ${normalizedMobile}: ${otp}`);
   }
@@ -239,7 +239,7 @@ export async function startRewardClaim(
     status: "OTP_SENT",
     data: {
       otpVerificationId: otpVerification.id,
-      devOtp,
+      demoOtp,
     },
   };
 }

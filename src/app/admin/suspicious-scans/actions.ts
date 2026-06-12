@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { revalidatePath } from "next/cache";
 
 export async function toggleScanSuspicious(scanEventId: string, markSuspicious: boolean) {
-  await requireRole(["ADMIN"]);
+  const user = await requireRole(["ADMIN"]);
 
   const scan = await prisma.scanEvent.findUnique({
     where: { id: scanEventId },
@@ -46,6 +46,15 @@ export async function toggleScanSuspicious(scanEventId: string, markSuspicious: 
       },
     });
   }
+  await prisma.auditLog.create({
+    data: {
+      userId: user.id,
+      action: "OVERRIDE_SUSPICIOUS_SCAN",
+      entityType: "ScanEvent",
+      entityId: scanEventId,
+      metadata: { before: !markSuspicious, after: markSuspicious },
+    }
+  });
 
   revalidatePath("/admin/suspicious-scans");
   revalidatePath("/admin/billing");

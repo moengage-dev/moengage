@@ -181,6 +181,14 @@ export async function createDeliveryScan(
     };
   }
 
+  if (data.cartonsDelivered > 100000) {
+    return {
+      ok: false,
+      status: "INVALID_INPUT",
+      error: "Cartons delivered looks too large",
+    };
+  }
+
   const estimatedUnitsDelivered = data.cartonsDelivered * unitsPerCarton;
 
   try {
@@ -270,12 +278,16 @@ export async function createDeliveryScan(
 }
 
 export async function getRetailOperationsDashboardData(user: CurrentUser) {
-  const brandFilter =
-    user.role === "RETAIL_OPERATIONS"
-      ? user.brandId
-        ? { brandId: user.brandId }
-        : { id: "__no_retail_scope__" }
-      : {};
+  if (user.role === "RETAIL_OPERATIONS" && !user.brandId) {
+    return {
+      totalDeliveryScans: 0,
+      totalCartonsDelivered: 0,
+      totalEstimatedUnitsDelivered: 0,
+      recentDeliveryScans: [],
+    };
+  }
+
+  const brandFilter = user.role === "RETAIL_OPERATIONS" ? { brandId: user.brandId! } : {};
 
   const [
     totalDeliveryScans,
@@ -321,12 +333,17 @@ export async function getRetailOperationsDashboardData(user: CurrentUser) {
 }
 
 export async function getRetailDeliveriesPageData(user: CurrentUser) {
-  const brandFilter =
-    user.role === "RETAIL_OPERATIONS"
-      ? user.brandId
-        ? { brandId: user.brandId }
-        : { id: "__no_retail_scope__" }
-      : {};
+  if (user.role === "RETAIL_OPERATIONS" && !user.brandId) {
+    return {
+      deliveryScans: [],
+      retailers: [],
+      totalDeliveryScans: 0,
+      totalCartonsDelivered: 0,
+      totalEstimatedUnitsDelivered: 0,
+    };
+  }
+
+  const brandFilter = user.role === "RETAIL_OPERATIONS" ? { brandId: user.brandId! } : {};
 
   const [
     deliveryScans,
@@ -351,12 +368,10 @@ export async function getRetailDeliveriesPageData(user: CurrentUser) {
       },
     }),
     user.role === "RETAIL_OPERATIONS"
-      ? user.brandId
-        ? prisma.retailer.findMany({
-            where: { brandId: user.brandId },
-            orderBy: { name: "asc" },
-          })
-        : Promise.resolve([])
+      ? prisma.retailer.findMany({
+          where: { brandId: user.brandId! },
+          orderBy: { name: "asc" },
+        })
       : prisma.retailer.findMany({
           orderBy: { name: "asc" },
         }),
