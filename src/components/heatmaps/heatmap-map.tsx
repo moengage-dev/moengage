@@ -27,26 +27,26 @@ export function HeatmapMap({ scanMarkers, deliveryMarkers }: HeatmapMapProps) {
   // Render graceful fallback if key is missing
   if (!maptilerKey) {
     return (
-      <Card className="bg-slate-900 border-slate-800 shadow-xl overflow-hidden">
-        <CardContent className="flex flex-col items-center justify-center min-h-[420px] text-center p-8">
-          <div className="p-4 bg-slate-950 rounded-full border border-slate-850 mb-4 text-amber-500/90 animate-pulse">
+      <Card className="bg-card border-border/50 shadow-sm rounded-2xl overflow-hidden">
+        <CardContent className="flex flex-col items-center justify-center min-h-[420px] text-center p-8 bg-gradient-to-b from-transparent to-muted/20">
+          <div className="p-4 bg-muted/50 rounded-full border border-border/60 mb-4 text-[#F48F68] animate-pulse">
             <AlertTriangle className="h-10 w-10" />
           </div>
-          <h3 className="text-xl font-semibold text-slate-200 tracking-tight">Map Tiles Not Configured</h3>
-          <p className="text-slate-400 text-sm max-w-lg mt-3 leading-relaxed">
+          <h3 className="text-xl font-semibold text-[#2C2621] tracking-tight">Map Tiles Not Configured</h3>
+          <p className="text-muted-foreground text-sm max-w-lg mt-3 leading-relaxed">
             The interactive map layer is disabled because the MapTiler key is not configured in your environment.
-            To enable base map tiles, please set the <code className="px-1.5 py-0.5 bg-slate-950 rounded text-amber-400 text-xs font-mono font-bold">NEXT_PUBLIC_MAPTILER_KEY</code> environment variable.
+            To enable base map tiles, please set the <code className="px-1.5 py-0.5 bg-muted rounded text-[#1E5C5A] text-xs font-mono font-bold">NEXT_PUBLIC_MAPTILER_KEY</code> environment variable.
           </p>
-          <div className="mt-6 flex flex-wrap gap-4 justify-center bg-slate-950 border border-slate-850 rounded-lg p-4 max-w-md w-full">
-            <div className="text-left text-xs text-slate-350 space-y-1 w-full">
-              <span className="font-semibold text-slate-400 block mb-1.5 uppercase tracking-wider text-[10px]">Unmapped Coordinates (Seed Data):</span>
-              <div className="flex justify-between border-b border-slate-900 pb-1">
+          <div className="mt-6 flex flex-wrap gap-4 justify-center bg-card border border-border/50 rounded-xl p-5 max-w-md w-full shadow-sm">
+            <div className="text-left text-xs text-muted-foreground space-y-1.5 w-full">
+              <span className="font-semibold text-[#2C2621] block mb-2 uppercase tracking-wider text-[10px]">Unmapped Coordinates (Seed Data):</span>
+              <div className="flex justify-between border-b border-border/40 pb-1.5">
                 <span>Consumer Scan Markers:</span>
-                <span className="font-semibold text-indigo-400">{validScanMarkers.length} Mapped</span>
+                <span className="font-semibold text-indigo-600">{validScanMarkers.length} Mapped</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between pt-0.5">
                 <span>Delivery Drops:</span>
-                <span className="font-semibold text-emerald-400">{validDeliveryMarkers.length} Mapped</span>
+                <span className="font-semibold text-emerald-600">{validDeliveryMarkers.length} Mapped</span>
               </div>
             </div>
           </div>
@@ -77,37 +77,37 @@ export function HeatmapMap({ scanMarkers, deliveryMarkers }: HeatmapMapProps) {
   const mapStyleUrl = `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${maptilerKey}`;
 
   return (
-    <div className="relative rounded-lg overflow-hidden border border-slate-800 bg-slate-950 shadow-xl h-[500px] w-full">
-      {/* CSS Overrides to style Maplibre Popups darkly */}
+    <div className="relative rounded-2xl overflow-hidden border border-border/50 bg-background shadow-sm h-[500px] w-full">
+      {/* CSS Overrides to style Maplibre Popups cleanly */}
       <style jsx global>{`
         .maplibregl-popup-content {
-          background-color: #0f172a !important; /* slate-900 */
-          color: #f1f5f9 !important; /* slate-100 */
-          border: 1px solid #1e293b !important; /* slate-800 */
-          border-radius: 0.5rem !important;
+          background-color: #ffffff !important;
+          color: #1e293b !important;
+          border: 1px solid #e2e8f0 !important;
+          border-radius: 0.75rem !important;
           padding: 0 !important;
-          box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5) !important;
+          box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
         }
         .maplibregl-popup-anchor-top .maplibregl-popup-tip {
-          border-bottom-color: #1e293b !important;
+          border-bottom-color: #e2e8f0 !important;
         }
         .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
-          border-top-color: #1e293b !important;
+          border-top-color: #e2e8f0 !important;
         }
         .maplibregl-popup-anchor-left .maplibregl-popup-tip {
-          border-right-color: #1e293b !important;
+          border-right-color: #e2e8f0 !important;
         }
         .maplibregl-popup-anchor-right .maplibregl-popup-tip {
-          border-left-color: #1e293b !important;
+          border-left-color: #e2e8f0 !important;
         }
         .maplibregl-popup-close-button {
-          color: #94a3b8 !important; /* slate-400 */
+          color: #94a3b8 !important;
           padding: 4px 8px !important;
           font-size: 14px !important;
           outline: none !important;
         }
         .maplibregl-popup-close-button:hover {
-          color: #f1f5f9 !important;
+          color: #0f172a !important;
           background: transparent !important;
         }
       `}</style>
@@ -182,83 +182,83 @@ export function HeatmapMap({ scanMarkers, deliveryMarkers }: HeatmapMapProps) {
             offset={12}
             onClose={() => setSelectedMarker(null)}
           >
-            <div className="p-4 space-y-2 text-xs w-[240px]">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+            <div className="p-4 space-y-2 text-xs w-[240px] bg-white rounded-xl">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
                 <span
                   className={`font-semibold px-2 py-0.5 rounded text-[10px] uppercase tracking-wider ${
                     selectedMarker.type === "SCAN"
-                      ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
-                      : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                      : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                   }`}
                 >
                   {selectedMarker.type === "SCAN" ? "Consumer Scan" : "Delivery"}
                 </span>
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-slate-500">
                   {new Date(selectedMarker.createdAt).toLocaleDateString()}
                 </span>
               </div>
-              <div className="space-y-1 text-slate-300">
+              <div className="space-y-1 text-slate-600">
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Campaign:</span>
-                  <span className="font-medium text-slate-200 text-right truncate max-w-[140px]" title={selectedMarker.campaignName}>
+                  <span className="text-slate-500">Campaign:</span>
+                  <span className="font-medium text-slate-900 text-right truncate max-w-[140px]" title={selectedMarker.campaignName}>
                     {selectedMarker.campaignName}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Product:</span>
-                  <span className="font-medium text-slate-200 text-right truncate max-w-[145px]" title={selectedMarker.productName}>
+                  <span className="text-slate-500">Product:</span>
+                  <span className="font-medium text-slate-900 text-right truncate max-w-[145px]" title={selectedMarker.productName}>
                     {selectedMarker.productName}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Batch Code:</span>
-                  <span className="font-mono text-[10px] text-slate-200">{selectedMarker.batchCode}</span>
+                  <span className="text-slate-500">Batch Code:</span>
+                  <span className="font-mono text-[10px] text-slate-900">{selectedMarker.batchCode}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Location:</span>
-                  <span className="font-medium text-slate-200 text-right">
+                  <span className="text-slate-500">Location:</span>
+                  <span className="font-medium text-slate-900 text-right">
                     {[selectedMarker.suburb, selectedMarker.city].filter(Boolean).join(", ") || "Unknown"}
                   </span>
                 </div>
 
                 {selectedMarker.type === "SCAN" ? (
-                  <div className="border-t border-slate-800 pt-2 mt-2 space-y-1.5">
+                  <div className="border-t border-slate-200 pt-2 mt-2 space-y-1.5">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Scan Hits:</span>
-                      <span className="font-mono text-slate-200">
+                      <span className="text-slate-500">Scan Hits:</span>
+                      <span className="font-mono text-slate-900">
                         {(selectedMarker as ConsumerScanMarker).hitCount}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Billable Hits:</span>
-                      <span className="font-mono font-semibold text-emerald-400">
+                      <span className="text-slate-500">Billable Hits:</span>
+                      <span className="font-mono font-semibold text-emerald-600">
                         {(selectedMarker as ConsumerScanMarker).billableCount}
                       </span>
                     </div>
                     {(selectedMarker as ConsumerScanMarker).isSuspicious && (
-                      <div className="flex items-center gap-1 text-rose-400 font-semibold mt-1">
+                      <div className="flex items-center gap-1 text-rose-600 font-semibold mt-1">
                         <AlertTriangle className="h-3 w-3" />
                         <span>Suspicious Activity</span>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="border-t border-slate-800 pt-2 mt-2 space-y-1.5">
+                  <div className="border-t border-slate-200 pt-2 mt-2 space-y-1.5">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Retailer:</span>
-                      <span className="font-medium text-slate-200 truncate max-w-[140px]" title={(selectedMarker as DeliveryMarker).retailerName}>
+                      <span className="text-slate-500">Retailer:</span>
+                      <span className="font-medium text-slate-900 truncate max-w-[140px]" title={(selectedMarker as DeliveryMarker).retailerName}>
                         {(selectedMarker as DeliveryMarker).retailerName}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Cartons:</span>
-                      <span className="font-mono text-slate-250">
+                      <span className="text-slate-500">Cartons:</span>
+                      <span className="font-mono text-slate-900">
                         {(selectedMarker as DeliveryMarker).cartonsDelivered}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Est. Units:</span>
-                      <span className="font-mono font-semibold text-teal-400">
+                      <span className="text-slate-500">Est. Units:</span>
+                      <span className="font-mono font-semibold text-teal-600">
                         {(selectedMarker as DeliveryMarker).estimatedUnitsDelivered}
                       </span>
                     </div>
@@ -271,8 +271,8 @@ export function HeatmapMap({ scanMarkers, deliveryMarkers }: HeatmapMapProps) {
       </Map>
 
       {/* Map Legend Overlay */}
-      <div className="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-lg p-3 text-[11px] text-slate-300 shadow-xl space-y-2 pointer-events-none">
-        <span className="font-semibold text-slate-200 uppercase tracking-wider text-[9px] block border-b border-slate-800 pb-1 mb-1.5">Legend</span>
+      <div className="absolute bottom-4 left-4 bg-card/95 backdrop-blur-md border border-border/50 rounded-xl p-3.5 text-xs text-muted-foreground shadow-sm space-y-2 pointer-events-none">
+        <span className="font-semibold text-[#2C2621] uppercase tracking-wider text-[10px] block border-b border-border/40 pb-1.5 mb-2">Legend</span>
         <div className="flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-indigo-500 border border-indigo-400" />
           <span>Consumer Scans ({totalMappedScanHits} hits)</span>

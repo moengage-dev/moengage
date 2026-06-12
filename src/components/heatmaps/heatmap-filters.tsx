@@ -93,148 +93,147 @@ export function HeatmapFilters({ options, initialFilters }: HeatmapFiltersProps)
   };
 
   return (
-    <Card className="bg-slate-900 border-slate-800">
-      <CardContent className="pt-6">
-        <form onSubmit={handleApply} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
-            
-            {/* Brand Filter */}
-            <div className="space-y-2">
-              <Label className="text-slate-350 text-xs">Brand</Label>
-              <Select value={brandId} onValueChange={setBrandId}>
-                <SelectTrigger className="bg-slate-950 border-slate-800 text-slate-200 h-9">
-                  <SelectValue placeholder="All Brands" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-950 border-slate-800 text-slate-200">
-                  <SelectItem value="all">All Brands</SelectItem>
-                  {options.brands.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+    <div className="bg-card rounded-2xl p-6 border border-border/50 shadow-sm">
+      <div className="flex items-center gap-2 pb-4">
+        <Filter className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-semibold tracking-tight text-[#2C2621]">Heatmap Filters</h3>
+      </div>
+      <form onSubmit={handleApply} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 items-end">
+        
+        {/* Brand Filter */}
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs font-semibold text-muted-foreground">Brand</Label>
+          <Select value={brandId} onValueChange={setBrandId}>
+            <SelectTrigger className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+              <SelectValue placeholder="All Brands" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Brands</SelectItem>
+              {options.brands.map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-            {/* Advertiser Filter */}
-            <div className="space-y-2">
-              <Label className="text-slate-350 text-xs">Advertiser</Label>
-              <Select value={advertiserId} onValueChange={setAdvertiserId}>
-                <SelectTrigger className="bg-slate-950 border-slate-800 text-slate-200 h-9">
-                  <SelectValue placeholder="All Advertisers" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-950 border-slate-800 text-slate-200">
-                  <SelectItem value="all">All Advertisers</SelectItem>
-                  {options.advertisers.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        {/* Advertiser Filter */}
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs font-semibold text-muted-foreground">Advertiser</Label>
+          <Select value={advertiserId} onValueChange={setAdvertiserId}>
+            <SelectTrigger className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+              <SelectValue placeholder="All Advertisers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Advertisers</SelectItem>
+              {options.advertisers.map((a) => (
+                <SelectItem key={a.id} value={a.id}>
+                  {a.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-            {/* Campaign Filter */}
-            <div className="space-y-2">
-              <Label className="text-slate-350 text-xs">Campaign</Label>
-              <Select value={campaignId} onValueChange={setCampaignId}>
-                <SelectTrigger className="bg-slate-950 border-slate-800 text-slate-200 h-9">
-                  <SelectValue placeholder="All Campaigns" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-950 border-slate-800 text-slate-200">
-                  <SelectItem value="all">All Campaigns</SelectItem>
-                  {options.campaigns.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        {/* Campaign Filter */}
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs font-semibold text-muted-foreground">Campaign</Label>
+          <Select value={campaignId} onValueChange={setCampaignId}>
+            <SelectTrigger className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+              <SelectValue placeholder="All Campaigns" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Campaigns</SelectItem>
+              {options.campaigns.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-            {/* Product Filter */}
-            <div className="space-y-2">
-              <Label className="text-slate-350 text-xs">Product</Label>
-              <Select value={productId} onValueChange={setProductId}>
-                <SelectTrigger className="bg-slate-950 border-slate-800 text-slate-200 h-9">
-                  <SelectValue placeholder="All Products" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-950 border-slate-800 text-slate-200">
-                  <SelectItem value="all">All Products</SelectItem>
-                  {options.products.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        {/* Product Filter */}
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs font-semibold text-muted-foreground">Product</Label>
+          <Select value={productId} onValueChange={setProductId}>
+            <SelectTrigger className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+              <SelectValue placeholder="All Products" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Products</SelectItem>
+              {options.products.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-            {/* Batch Filter */}
-            <div className="space-y-2">
-              <Label className="text-slate-350 text-xs">Batch</Label>
-              <Select value={batchId} onValueChange={setBatchId}>
-                <SelectTrigger className="bg-slate-950 border-slate-800 text-slate-200 h-9">
-                  <SelectValue placeholder="All Batches" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-950 border-slate-800 text-slate-200">
-                  <SelectItem value="all">All Batches</SelectItem>
-                  {options.batches.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        {/* Batch Filter */}
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs font-semibold text-muted-foreground">Batch</Label>
+          <Select value={batchId} onValueChange={setBatchId}>
+            <SelectTrigger className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+              <SelectValue placeholder="All Batches" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Batches</SelectItem>
+              {options.batches.map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-            {/* Start Date */}
-            <div className="space-y-2">
-              <Label htmlFor="startDate" className="text-slate-355 text-xs">Start Date</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="bg-slate-955 border-slate-800 text-slate-200 h-9 focus-visible:ring-indigo-500"
-              />
-            </div>
+        {/* Start Date */}
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="startDate" className="text-xs font-semibold text-muted-foreground">Start Date</Label>
+          <Input
+            id="startDate"
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="bg-background border-input text-foreground h-9 focus-visible:ring-ring"
+          />
+        </div>
 
-            {/* End Date */}
-            <div className="space-y-2">
-              <Label htmlFor="endDate" className="text-slate-355 text-xs">End Date</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="bg-slate-955 border-slate-800 text-slate-200 h-9 focus-visible:ring-indigo-500"
-              />
-            </div>
+        {/* End Date */}
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="endDate" className="text-xs font-semibold text-muted-foreground">End Date</Label>
+          <Input
+            id="endDate"
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="bg-background border-input text-foreground h-9 focus-visible:ring-ring"
+          />
+        </div>
 
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-800/60">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClear}
-              className="border-slate-850 hover:bg-slate-850 text-slate-400 hover:text-slate-200 h-9"
-            >
-              <X className="mr-2 h-4 w-4" />
-              Clear
-            </Button>
-            <Button
-              type="submit"
-              className="bg-indigo-600 hover:bg-indigo-550 text-white h-9"
-            >
-              <Filter className="mr-2 h-4 w-4" />
-              Apply Filters
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+        {/* Action Buttons */}
+        <div className="flex gap-2 lg:col-span-3 xl:col-span-7 mt-2 justify-end pt-2 border-t border-border/40">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleClear}
+            className="text-muted-foreground hover:text-foreground h-9"
+          >
+            <X className="mr-2 h-4 w-4" />
+            Clear
+          </Button>
+          <Button
+            type="submit"
+            className="bg-[#1E5C5A] hover:bg-[#15413F] text-white h-9"
+          >
+            <Filter className="mr-2 h-4 w-4" />
+            Apply Filters
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 }

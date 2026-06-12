@@ -46,7 +46,7 @@ export default async function HeatmapsPage({ searchParams }: PageProps) {
   const { filterOptions, consumerEngagementMarkers, deliveryDistributionMarkers, summaryCounts } = data;
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-[#FFF6DE] p-8 md:p-12 space-y-10">
       <DashboardSectionHeader
         title="Heatmaps"
         description="Compare consumer engagement scans and delivery distribution activity."
@@ -55,7 +55,7 @@ export default async function HeatmapsPage({ searchParams }: PageProps) {
       />
 
       {/* Summary Cards */}
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
         <AnalyticsStatCard
           title="Consumer Scans"
           value={formatNumber(summaryCounts.totalScanCount)}
