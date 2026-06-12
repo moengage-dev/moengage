@@ -286,20 +286,21 @@ export async function deactivateUser(id: string, performedByUserId: string): Pro
     }
   }
 
-  await prisma.user.update({
-    where: { id },
-    data: { isActive: false },
-  });
-
-  await prisma.auditLog.create({
-    data: {
-      userId: performedByUserId,
-      action: "DEACTIVATE_USER",
-      entityType: "User",
-      entityId: id,
-      metadata: { before: true, after: false },
-    }
-  });
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id },
+      data: { isActive: false },
+    }),
+    prisma.auditLog.create({
+      data: {
+        userId: performedByUserId,
+        action: "DEACTIVATE_USER",
+        entityType: "User",
+        entityId: id,
+        metadata: { before: true, after: false },
+      },
+    }),
+  ]);
 
   return { ok: true, data: undefined };
 }

@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { requireRole } from "@/lib/auth/require-role";
 import { getSuspiciousScansPageData } from "@/server/services/scan-classification.service";
 import { SuspiciousScansClient } from "./suspicious-scans-client";
-import { ShieldAlert } from "lucide-react";
+import { DashboardSectionHeader } from "@/components/dashboard/dashboard-section-header";
 
 export const dynamic = "force-dynamic";
 
@@ -33,18 +33,13 @@ export default async function SuspiciousScansPage({
   const data = await getSuspiciousScansPageData(filters);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <ShieldAlert className="h-8 w-8 text-destructive" />
-            Abuse Controls & Suspicious Scans
-          </h1>
-          <p className="text-muted-foreground">
-            Investigate suspicious scan behavior, repeat IPs, and exclude fraudulent activities from billing.
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#FFF6DE] p-8 md:p-12 space-y-10">
+      <DashboardSectionHeader
+        title="Abuse Controls & Suspicious Scans"
+        description="Investigate suspicious scan behavior, repeat IPs, and exclude fraudulent activities from billing."
+        badgeText="Fraud Monitoring"
+        badgeVariant="emerald"
+      />
 
       <SuspiciousScansClient data={data} />
     </div>

@@ -256,32 +256,53 @@ export async function generateCampaignBillingSummary(
   };
 
   if (existing) {
-    const updated = await prisma.billingSummary.update({
-      where: { id: existing.id },
-      data: summaryData,
-    });
-    await prisma.auditLog.create({
-      data: {
-        userId: generatedByUserId,
-        action: "GENERATE_BILLING_SUMMARY",
-        entityType: "BillingSummary",
-        entityId: updated.id,
-        metadata: { campaignId },
-      }
-    });
+    const metadata = {
+      campaignId,
+      billingSummaryId: existing.id,
+      previousTotalAmount: existing.totalAmount,
+      newTotalAmount: summaryData.totalAmount,
+      previousBillableScans: existing.billableScanCount,
+      newBillableScans: summaryData.billableScanCount,
+    };
+
+    const [updated] = await prisma.$transaction([
+      prisma.billingSummary.update({
+        where: { id: existing.id },
+        data: summaryData,
+      }),
+      prisma.auditLog.create({
+        data: {
+          userId: generatedByUserId,
+          action: "GENERATE_BILLING_SUMMARY",
+          entityType: "BillingSummary",
+          entityId: existing.id,
+          metadata,
+        },
+      }),
+    ]);
     return updated;
   } else {
     const created = await prisma.billingSummary.create({
       data: summaryData,
     });
+    
+    const metadata = {
+      campaignId,
+      billingSummaryId: created.id,
+      previousTotalAmount: 0,
+      newTotalAmount: summaryData.totalAmount,
+      previousBillableScans: 0,
+      newBillableScans: summaryData.billableScanCount,
+    };
+    
     await prisma.auditLog.create({
       data: {
         userId: generatedByUserId,
         action: "GENERATE_BILLING_SUMMARY",
         entityType: "BillingSummary",
         entityId: created.id,
-        metadata: { campaignId },
-      }
+        metadata,
+      },
     });
     return created;
   }
