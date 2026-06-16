@@ -1,6 +1,7 @@
 // src/server/services/billing.service.ts
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { randomUUID } from "crypto";
 
 export type BillingSummaryRow = {
   id?: string;
@@ -265,6 +266,7 @@ export async function generateCampaignBillingSummary(
       newBillableScans: summaryData.billableScanCount,
     };
 
+    // UPDATE path: already atomic from a prior fix
     const [updated] = await prisma.$transaction([
       prisma.billingSummary.update({
         where: { id: existing.id },
@@ -282,29 +284,34 @@ export async function generateCampaignBillingSummary(
     ]);
     return updated;
   } else {
-    const created = await prisma.billingSummary.create({
-      data: summaryData,
+    // CREATE path: wrap creation + audit in an interactive transaction so they
+    // succeed or fail together.
+    return prisma.$transaction(async (tx) => {
+      const created = await tx.billingSummary.create({
+        data: summaryData,
+      });
+
+      const metadata = {
+        campaignId,
+        billingSummaryId: created.id,
+        previousTotalAmount: 0,
+        newTotalAmount: summaryData.totalAmount,
+        previousBillableScans: 0,
+        newBillableScans: summaryData.billableScanCount,
+      };
+
+      await tx.auditLog.create({
+        data: {
+          userId: generatedByUserId,
+          action: "GENERATE_BILLING_SUMMARY",
+          entityType: "BillingSummary",
+          entityId: created.id,
+          metadata,
+        },
+      });
+
+      return created;
     });
-    
-    const metadata = {
-      campaignId,
-      billingSummaryId: created.id,
-      previousTotalAmount: 0,
-      newTotalAmount: summaryData.totalAmount,
-      previousBillableScans: 0,
-      newBillableScans: summaryData.billableScanCount,
-    };
-    
-    await prisma.auditLog.create({
-      data: {
-        userId: generatedByUserId,
-        action: "GENERATE_BILLING_SUMMARY",
-        entityType: "BillingSummary",
-        entityId: created.id,
-        metadata,
-      },
-    });
-    return created;
   }
 }
 
@@ -313,16 +320,67 @@ export async function regenerateAllCampaignBillingSummaries(generatedByUserId: s
     select: { id: true },
   });
 
-  for (const c of campaigns) {
-    await generateCampaignBillingSummary(c.id, generatedByUserId);
-  }
+  const runId = randomUUID();
+  const startedAt = new Date();
+  const totalCampaigns = campaigns.length;
 
+  // Write STARTED audit event before touching any summaries.
+  // If this fails we do not proceed — the caller receives the error.
   await prisma.auditLog.create({
     data: {
       userId: generatedByUserId,
-      action: "REGENERATE_ALL_BILLING",
+      action: "REGENERATE_ALL_BILLING_STARTED",
       entityType: "BillingSummary",
-      metadata: { totalCampaigns: campaigns.length },
+      metadata: { runId, totalCampaigns, startedAt },
+    },
+  });
+
+  let processedCount = 0;
+
+  try {
+    for (const c of campaigns) {
+      // Each individual campaign summary + its audit entry is already atomic
+      // inside generateCampaignBillingSummary (see CREATE and UPDATE paths above).
+      await generateCampaignBillingSummary(c.id, generatedByUserId);
+      processedCount++;
     }
+  } catch (err) {
+    const failedCampaignId = campaigns[processedCount]?.id ?? "unknown";
+    const safeErrorMessage =
+      err instanceof Error ? err.message.substring(0, 200) : "unknown error";
+
+    await prisma.auditLog.create({
+      data: {
+        userId: generatedByUserId,
+        action: "REGENERATE_ALL_BILLING_FAILED",
+        entityType: "BillingSummary",
+        metadata: {
+          runId,
+          totalCampaigns,
+          processedCount,
+          failedCampaignId,
+          errorSummary: safeErrorMessage,
+          failedAt: new Date(),
+        },
+      },
+    });
+
+    throw err;
+  }
+
+  const completedAt = new Date();
+  await prisma.auditLog.create({
+    data: {
+      userId: generatedByUserId,
+      action: "REGENERATE_ALL_BILLING_COMPLETED",
+      entityType: "BillingSummary",
+      metadata: {
+        runId,
+        totalCampaigns,
+        processedCount,
+        startedAt,
+        completedAt,
+      },
+    },
   });
 }

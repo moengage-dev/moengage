@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, getSession } from "next-auth/react";
@@ -50,6 +50,16 @@ function LoginPageInner() {
   const [user, setUser] = React.useState({ email: "", password: "" });
   const [loading, setLoading] = React.useState(false);
   const [message, setMessage] = React.useState<Message | null>(null);
+
+  // Prevent concurrent polling loops and stop after unmount
+  const pollingRef = useRef(false);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
   const buttonDisabled = !(user.email && user.password);
 
   const onLogin = async () => {
@@ -62,6 +72,9 @@ function LoginPageInner() {
       });
       return;
     }
+
+    // Guard against concurrent submissions
+    if (pollingRef.current) return;
 
     setLoading(true);
     try {
@@ -78,15 +91,17 @@ function LoginPageInner() {
         });
         setLoading(false);
       } else {
-        await checkSession();
+        await awaitSession();
       }
     } catch (err) {
-      console.error(err);
-      setMessage({
-        type: "error",
-        text: "An unexpected error occurred. Please try again.",
-      });
-      setLoading(false);
+      console.error("Login error (no sensitive data):", (err as Error)?.message ?? "unknown");
+      if (mountedRef.current) {
+        setMessage({
+          type: "error",
+          text: "An unexpected error occurred. Please try again.",
+        });
+        setLoading(false);
+      }
     }
   };
 
@@ -116,38 +131,71 @@ function LoginPageInner() {
     }
   };
 
-  const checkSession = async () => {
-    const sess = await getSession();
-    if (sess?.user) {
-      const { isEmailVerified, email, role } = sess.user;
+  /**
+   * Polls getSession() up to MAX_POLL_ATTEMPTS times (500 ms apart ≈ 4 s total).
+   * Uses an iterative loop so there is no unbounded recursion.
+   * Bails out immediately if the component unmounts between attempts.
+   */
+  const awaitSession = async () => {
+    const MAX_POLL_ATTEMPTS = 8;
+    const POLL_INTERVAL_MS = 500;
 
-      if (!isEmailVerified) {
-        setMessage({
-          type: "error",
-          text: (
-            <>
-              Your email is not verified.{" "}
-              <button
-                onClick={() => email && ReSendVerificationEmail(email)}
-                className="text-primary underline font-medium hover:text-emerald-600"
-              >
-                Click here to resend verification email.
-              </button>
-            </>
-          ),
-        });
-        setLoading(false);
-        return;
+    if (pollingRef.current) return;
+    pollingRef.current = true;
+
+    try {
+      for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+        if (!mountedRef.current) return;
+
+        const sess = await getSession();
+
+        if (sess?.user) {
+          if (!mountedRef.current) return;
+
+          const { isEmailVerified, email, role } = sess.user;
+
+          if (!isEmailVerified) {
+            setMessage({
+              type: "error",
+              text: (
+                <>
+                  Your email is not verified.{" "}
+                  <button
+                    onClick={() => email && ReSendVerificationEmail(email)}
+                    className="text-primary underline font-medium hover:text-emerald-600"
+                  >
+                    Click here to resend verification email.
+                  </button>
+                </>
+              ),
+            });
+            setLoading(false);
+            return;
+          }
+
+          setMessage({ type: "success", text: "Login successful! Redirecting…" });
+          const destination = nextParam || getDefaultDashboard(role || "");
+          router.replace(destination);
+          router.refresh();
+          return;
+        }
+
+        // Session not yet ready — wait before the next attempt
+        if (attempt < MAX_POLL_ATTEMPTS - 1) {
+          await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+        }
       }
 
-      setMessage({ type: "success", text: "Login successful! Redirecting…" });
-      
-      const destination = nextParam || getDefaultDashboard(role || "");
-      setTimeout(() => {
-        router.push(destination);
-      }, 600);
-    } else {
-      setTimeout(checkSession, 500);
+      // All attempts exhausted — session never materialised
+      if (mountedRef.current) {
+        setMessage({
+          type: "error",
+          text: "Your credentials were accepted, but the session could not be established. Clear your site cookies and try again.",
+        });
+        setLoading(false);
+      }
+    } finally {
+      pollingRef.current = false;
     }
   };
 
