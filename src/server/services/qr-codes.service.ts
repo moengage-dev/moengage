@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { QRCodeType, QRCodeStatus } from "@prisma/client";
 import { qrCodeSchema } from "@/lib/validators/qr-code.validator";
 import type { QRCodeFormValues } from "@/lib/validators/qr-code.validator";
+import { getAssignedCampaignIds } from "@/lib/auth/role-scope";
 import {
   generateQrCodeDataUrl,
   generateQrCodeSvg,
@@ -130,9 +131,30 @@ function toQRCodeRow(q: {
 
 export async function getQRCodesPageData(user: ScopedUser): Promise<AdminQRCodesPageData> {
   const qrFilter: any = {};
-  if (user.role === "BRAND_ADMIN") {
+  let assignedCampaignIds: string[] = [];
+
+  if (user.role === "CAMPAIGN_MANAGER") {
+    assignedCampaignIds = await getAssignedCampaignIds(user.id);
+    if (assignedCampaignIds.length === 0) {
+      return {
+        qrCodes: [],
+        brands: [],
+        advertisers: [],
+        campaigns: [],
+        products: [],
+        batches: [],
+        totalQRCodes: 0,
+        activeQRCodes: 0,
+        consumerCampaignQRCodes: 0,
+        deliveryQRCodes: 0,
+        sampleLabelQRCodes: 0,
+        internalTestQRCodes: 0,
+      };
+    }
+    qrFilter.campaignId = { in: assignedCampaignIds };
+  } else if (user.role === "BRAND_ADMIN") {
     qrFilter.brandId = user.brandId;
-  } else if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+  } else if (user.role === "ADVERTISER_VIEWER") {
     qrFilter.advertiserId = user.advertiserId;
   }
 
@@ -142,14 +164,16 @@ export async function getQRCodesPageData(user: ScopedUser): Promise<AdminQRCodes
   }
 
   const advertiserFilter: any = { status: "ACTIVE" };
-  if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+  if (user.role === "ADVERTISER_VIEWER") {
     advertiserFilter.id = user.advertiserId;
   }
 
   const campaignFilter: any = { status: { in: ["ACTIVE", "DRAFT", "PAUSED"] } };
   if (user.role === "BRAND_ADMIN") {
     campaignFilter.brandId = user.brandId;
-  } else if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+  } else if (user.role === "CAMPAIGN_MANAGER") {
+    campaignFilter.id = { in: assignedCampaignIds };
+  } else if (user.role === "ADVERTISER_VIEWER") {
     campaignFilter.advertiserId = user.advertiserId;
   }
 
@@ -161,7 +185,9 @@ export async function getQRCodesPageData(user: ScopedUser): Promise<AdminQRCodes
   const batchFilter: any = { status: { in: ["CREATED", "ACTIVE", "DELIVERING", "DELIVERED"] } };
   if (user.role === "BRAND_ADMIN") {
     batchFilter.brandId = user.brandId;
-  } else if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+  } else if (user.role === "CAMPAIGN_MANAGER") {
+    batchFilter.campaignId = { in: assignedCampaignIds };
+  } else if (user.role === "ADVERTISER_VIEWER") {
     batchFilter.campaign = { advertiserId: user.advertiserId };
   }
 
@@ -348,8 +374,17 @@ export async function createQRCode(
   if (user.role === "BRAND_ADMIN" && brandId !== user.brandId) {
     return { ok: false, error: "Unauthorized: Invalid brand mapping" };
   }
-  if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && advertiserId !== user.advertiserId) {
+  if (user.role === "ADVERTISER_VIEWER" && advertiserId !== user.advertiserId) {
     return { ok: false, error: "Unauthorized: Invalid advertiser mapping" };
+  }
+  if (user.role === "CAMPAIGN_MANAGER") {
+    if (!campaignId) {
+      return { ok: false, error: "Unauthorized: Campaign Managers must specify an assigned campaign or batch" };
+    }
+    const assignedCampaignIds = await getAssignedCampaignIds(user.id);
+    if (!assignedCampaignIds.includes(campaignId)) {
+      return { ok: false, error: "Unauthorized: Campaign Managers can only create QR codes for assigned campaigns" };
+    }
   }
 
   // Relationship consistency checks
@@ -450,7 +485,13 @@ export async function updateQRCode(
 
   if (user.role !== "ADMIN") {
     if (user.role === "BRAND_ADMIN" && existing.brandId !== user.brandId) return { ok: false, error: "Unauthorized" };
-    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && existing.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+    if (user.role === "ADVERTISER_VIEWER" && existing.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+    if (user.role === "CAMPAIGN_MANAGER") {
+      const assignedCampaignIds = await getAssignedCampaignIds(user.id);
+      if (!existing.campaignId || !assignedCampaignIds.includes(existing.campaignId)) {
+        return { ok: false, error: "QR Code not found" };
+      }
+    }
   }
 
   // Verify code uniqueness
@@ -496,7 +537,13 @@ export async function updateQRCode(
 
   if (user.role !== "ADMIN") {
     if (user.role === "BRAND_ADMIN" && brandId !== user.brandId) return { ok: false, error: "Unauthorized: Invalid brand mapping" };
-    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized: Invalid advertiser mapping" };
+    if (user.role === "ADVERTISER_VIEWER" && advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized: Invalid advertiser mapping" };
+    if (user.role === "CAMPAIGN_MANAGER") {
+      const assignedCampaignIds = await getAssignedCampaignIds(user.id);
+      if (!campaignId || !assignedCampaignIds.includes(campaignId)) {
+        return { ok: false, error: "Unauthorized: Campaign Managers can only assign QR codes to assigned campaigns" };
+      }
+    }
   }
 
   // Relationship consistency checks
@@ -566,7 +613,7 @@ export async function updateQRCode(
 export async function disableQRCode(id: string, user: ScopedUser): Promise<ServiceResult> {
   const existing = await prisma.qRCode.findUnique({
     where: { id },
-    select: { id: true, brandId: true, advertiserId: true },
+    select: { id: true, brandId: true, advertiserId: true, campaignId: true },
   });
   if (!existing) {
     return { ok: false, error: "QR Code not found" };
@@ -574,7 +621,13 @@ export async function disableQRCode(id: string, user: ScopedUser): Promise<Servi
 
   if (user.role !== "ADMIN") {
     if (user.role === "BRAND_ADMIN" && existing.brandId !== user.brandId) return { ok: false, error: "Unauthorized" };
-    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && existing.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+    if (user.role === "ADVERTISER_VIEWER" && existing.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+    if (user.role === "CAMPAIGN_MANAGER") {
+      const assignedCampaignIds = await getAssignedCampaignIds(user.id);
+      if (!existing.campaignId || !assignedCampaignIds.includes(existing.campaignId)) {
+        return { ok: false, error: "QR Code not found" };
+      }
+    }
   }
 
   await prisma.qRCode.update({
@@ -612,16 +665,8 @@ export async function generateQRCodeDownloadData(
       user.advertiserId && qr.advertiserId === user.advertiserId
     );
   } else if (user.role === "CAMPAIGN_MANAGER" && qr.campaignId) {
-    const assignment = await prisma.campaignAssignment.findUnique({
-      where: {
-        campaignId_userId: {
-          campaignId: qr.campaignId,
-          userId: user.id,
-        },
-      },
-      select: { id: true },
-    });
-    authorized = Boolean(assignment);
+    const assignedCampaignIds = await getAssignedCampaignIds(user.id);
+    authorized = assignedCampaignIds.includes(qr.campaignId);
   }
 
   if (!authorized) {

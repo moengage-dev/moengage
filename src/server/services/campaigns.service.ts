@@ -1,6 +1,7 @@
 // src/server/services/campaigns.service.ts
 import prisma from "@/lib/prisma";
 import { RewardType, CampaignStatus } from "@prisma/client";
+import { getAssignedCampaignIds } from "@/lib/auth/role-scope";
 import { campaignSchema } from "@/lib/validators/campaign.validator";
 import type { CampaignFormValues } from "@/lib/validators/campaign.validator";
 
@@ -139,7 +140,22 @@ export async function getCampaignsPageData(user: ScopedUser): Promise<AdminCampa
   const campaignFilter: any = {};
   if (user.role === "BRAND_ADMIN") {
     campaignFilter.brandId = user.brandId;
-  } else if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+  } else if (user.role === "CAMPAIGN_MANAGER") {
+    const assignedCampaignIds = await getAssignedCampaignIds(user.id);
+    if (assignedCampaignIds.length === 0) {
+      return {
+        campaigns: [],
+        brands: [],
+        advertisers: [],
+        products: [],
+        totalCampaigns: 0,
+        activeCampaigns: 0,
+        draftCampaigns: 0,
+        archivedCampaigns: 0,
+      };
+    }
+    campaignFilter.id = { in: assignedCampaignIds };
+  } else if (user.role === "ADVERTISER_VIEWER") {
     campaignFilter.advertiserId = user.advertiserId;
   }
 
@@ -149,7 +165,7 @@ export async function getCampaignsPageData(user: ScopedUser): Promise<AdminCampa
   }
 
   const advertiserFilter: any = { status: "ACTIVE" };
-  if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+  if (user.role === "ADVERTISER_VIEWER") {
     advertiserFilter.id = user.advertiserId;
   }
 
@@ -222,6 +238,10 @@ export async function createCampaign(
     };
   }
 
+  if (user.role === "CAMPAIGN_MANAGER") {
+    return { ok: false, error: "Unauthorized: Campaign Managers cannot create campaigns" };
+  }
+
   const {
     brandId,
     advertiserId,
@@ -243,7 +263,7 @@ export async function createCampaign(
   if (user.role === "BRAND_ADMIN" && brandId !== user.brandId) {
     return { ok: false, error: "Unauthorized: Invalid brand mapping" };
   }
-  if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && advertiserId !== user.advertiserId) {
+  if (user.role === "ADVERTISER_VIEWER" && advertiserId !== user.advertiserId) {
     return { ok: false, error: "Unauthorized: Invalid advertiser mapping" };
   }
 
@@ -325,9 +345,15 @@ export async function updateCampaign(
     const existing = await prisma.campaign.findUnique({ where: { id }, select: { brandId: true, advertiserId: true } });
     if (!existing) return { ok: false, error: "Campaign not found" };
     if (user.role === "BRAND_ADMIN" && existing.brandId !== user.brandId) return { ok: false, error: "Unauthorized" };
-    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && existing.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
-    if (user.role === "BRAND_ADMIN" && brandId !== existing.brandId) return { ok: false, error: "Unauthorized to change brand ownership" };
-    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && advertiserId !== existing.advertiserId) return { ok: false, error: "Unauthorized to change advertiser ownership" };
+    if (user.role === "ADVERTISER_VIEWER" && existing.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+    if (user.role === "CAMPAIGN_MANAGER") {
+      const assignedCampaignIds = await getAssignedCampaignIds(user.id);
+      if (!assignedCampaignIds.includes(id)) {
+        return { ok: false, error: "Campaign not found" };
+      }
+      if (brandId !== existing.brandId) return { ok: false, error: "Unauthorized to change brand ownership" };
+      if (advertiserId !== existing.advertiserId) return { ok: false, error: "Unauthorized to change advertiser ownership" };
+    }
   }
 
   const slugConflict = await prisma.campaign.findFirst({
@@ -380,7 +406,13 @@ export async function archiveCampaign(id: string, user: ScopedUser): Promise<Ser
     const existing = await prisma.campaign.findUnique({ where: { id }, select: { brandId: true, advertiserId: true } });
     if (!existing) return { ok: false, error: "Campaign not found" };
     if (user.role === "BRAND_ADMIN" && existing.brandId !== user.brandId) return { ok: false, error: "Unauthorized" };
-    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && existing.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+    if (user.role === "ADVERTISER_VIEWER" && existing.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+    if (user.role === "CAMPAIGN_MANAGER") {
+      const assignedCampaignIds = await getAssignedCampaignIds(user.id);
+      if (!assignedCampaignIds.includes(id)) {
+        return { ok: false, error: "Campaign not found" };
+      }
+    }
   }
   await prisma.campaign.update({
     where: { id },

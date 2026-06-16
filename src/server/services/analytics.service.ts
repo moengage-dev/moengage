@@ -1,6 +1,7 @@
 // src/server/services/analytics.service.ts
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { getAssignedCampaignIds } from "@/lib/auth/role-scope";
 
 export type ScopedUser = {
   id: string;
@@ -440,12 +441,7 @@ export async function getAnalyticsDashboardData(user: ScopedUser): Promise<Analy
     filters.deliveryScan.brandId = user.brandId;
   } else if (user.role === "CAMPAIGN_MANAGER") {
     // Scope by the campaigns explicitly assigned to this manager.
-    // CAMPAIGN_MANAGER has brandId (not advertiserId) — do NOT filter by advertiserId.
-    const assignments = await prisma.campaignAssignment.findMany({
-      where: { userId: user.id },
-      select: { campaignId: true },
-    });
-    const campaignIds = assignments.map((a) => a.campaignId);
+    const campaignIds = await getAssignedCampaignIds(user.id);
     if (campaignIds.length === 0) {
       return EMPTY_ANALYTICS_DATA;
     }

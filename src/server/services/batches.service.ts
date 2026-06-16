@@ -1,6 +1,7 @@
 // src/server/services/batches.service.ts
 import prisma from "@/lib/prisma";
 import { BatchStatus } from "@prisma/client";
+import { getAssignedCampaignIds } from "@/lib/auth/role-scope";
 import { batchSchema } from "@/lib/validators/batch.validator";
 import type { BatchFormValues } from "@/lib/validators/batch.validator";
 
@@ -115,7 +116,22 @@ export async function getBatchesPageData(user: ScopedUser): Promise<AdminBatches
   const batchFilter: any = {};
   if (user.role === "BRAND_ADMIN") {
     batchFilter.brandId = user.brandId;
-  } else if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+  } else if (user.role === "CAMPAIGN_MANAGER") {
+    const assignedCampaignIds = await getAssignedCampaignIds(user.id);
+    if (assignedCampaignIds.length === 0) {
+      return {
+        batches: [],
+        brands: [],
+        campaigns: [],
+        products: [],
+        totalBatches: 0,
+        activeBatches: 0,
+        deliveringBatches: 0,
+        closedBatches: 0,
+      };
+    }
+    batchFilter.campaignId = { in: assignedCampaignIds };
+  } else if (user.role === "ADVERTISER_VIEWER") {
     batchFilter.campaign = { advertiserId: user.advertiserId };
   }
 
@@ -127,7 +143,10 @@ export async function getBatchesPageData(user: ScopedUser): Promise<AdminBatches
   const campaignFilter: any = { status: { in: ["ACTIVE", "DRAFT", "PAUSED"] } };
   if (user.role === "BRAND_ADMIN") {
     campaignFilter.brandId = user.brandId;
-  } else if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+  } else if (user.role === "CAMPAIGN_MANAGER") {
+    const assignedCampaignIds = await getAssignedCampaignIds(user.id);
+    campaignFilter.id = { in: assignedCampaignIds };
+  } else if (user.role === "ADVERTISER_VIEWER") {
     campaignFilter.advertiserId = user.advertiserId;
   }
 
@@ -221,7 +240,12 @@ export async function createBatch(
     return { ok: false, error: "Unauthorized: Invalid brand mapping" };
   }
   
-  if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
+  if (user.role === "CAMPAIGN_MANAGER") {
+    const assignedCampaignIds = await getAssignedCampaignIds(user.id);
+    if (!assignedCampaignIds.includes(campaignId)) {
+      return { ok: false, error: "Unauthorized to create batch for this campaign" };
+    }
+  } else if (user.role === "ADVERTISER_VIEWER") {
     const checkCampaign = await prisma.campaign.findUnique({ where: { id: campaignId }, select: { advertiserId: true } });
     if (!checkCampaign || checkCampaign.advertiserId !== user.advertiserId) {
        return { ok: false, error: "Unauthorized to create batch for this campaign" };
@@ -307,7 +331,13 @@ export async function updateBatch(
     });
     if (!existingBatch) return { ok: false, error: "Batch not found" };
     if (user.role === "BRAND_ADMIN" && existingBatch.brandId !== user.brandId) return { ok: false, error: "Unauthorized" };
-    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && existingBatch.campaign?.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+    if (user.role === "ADVERTISER_VIEWER" && existingBatch.campaign?.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+    if (user.role === "CAMPAIGN_MANAGER") {
+      const assignedCampaignIds = await getAssignedCampaignIds(user.id);
+      if (!assignedCampaignIds.includes(existingBatch.campaignId) || !assignedCampaignIds.includes(campaignId)) {
+        return { ok: false, error: "Batch not found" };
+      }
+    }
     if (user.role === "BRAND_ADMIN" && brandId !== existingBatch.brandId) return { ok: false, error: "Unauthorized to change brand ownership" };
   }
 
@@ -369,7 +399,13 @@ export async function closeBatch(id: string, user: ScopedUser): Promise<ServiceR
     });
     if (!existingBatch) return { ok: false, error: "Batch not found" };
     if (user.role === "BRAND_ADMIN" && existingBatch.brandId !== user.brandId) return { ok: false, error: "Unauthorized" };
-    if ((user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") && existingBatch.campaign?.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+    if (user.role === "ADVERTISER_VIEWER" && existingBatch.campaign?.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
+    if (user.role === "CAMPAIGN_MANAGER") {
+      const assignedCampaignIds = await getAssignedCampaignIds(user.id);
+      if (!assignedCampaignIds.includes(existingBatch.campaignId)) {
+        return { ok: false, error: "Batch not found" };
+      }
+    }
   }
 
   await prisma.batch.update({

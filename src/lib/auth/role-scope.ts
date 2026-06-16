@@ -8,6 +8,14 @@ export type RoleScopeFilters = {
   campaignId?: { in: string[] };
 };
 
+export async function getAssignedCampaignIds(userId: string): Promise<string[]> {
+  const assignments = await prisma.campaignAssignment.findMany({
+    where: { userId },
+    select: { campaignId: true },
+  });
+  return assignments.map((a) => a.campaignId);
+}
+
 export async function getRoleScopeFilters(user: CurrentUser): Promise<RoleScopeFilters | null> {
   if (user.role === "ADMIN") {
     return {};
@@ -24,11 +32,7 @@ export async function getRoleScopeFilters(user: CurrentUser): Promise<RoleScopeF
   }
 
   if (user.role === "CAMPAIGN_MANAGER") {
-    const assignments = await prisma.campaignAssignment.findMany({
-      where: { userId: user.id },
-      select: { campaignId: true },
-    });
-    const campaignIds = assignments.map((a) => a.campaignId);
+    const campaignIds = await getAssignedCampaignIds(user.id);
     if (campaignIds.length === 0) return null;
     return { campaignId: { in: campaignIds } };
   }

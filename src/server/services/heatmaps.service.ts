@@ -1,5 +1,7 @@
 // src/server/services/heatmaps.service.ts
 import prisma from "@/lib/prisma";
+import { getAssignedCampaignIds } from "@/lib/auth/role-scope";
+import type { CurrentUser } from "@/lib/auth/get-current-user";
 
 export interface HeatmapFilters {
   brandId?: string;
@@ -70,6 +72,14 @@ export interface HeatmapData {
     totalCartonsDelivered: number;
     totalEstimatedUnitsDelivered: number;
   };
+  metadata: {
+    totalMatchingConsumerPoints: number;
+    returnedConsumerPoints: number;
+    totalMatchingDeliveryPoints: number;
+    returnedDeliveryPoints: number;
+    isConsumerDataTruncated: boolean;
+    isDeliveryDataTruncated: boolean;
+  };
 }
 
 function toNumber(val: any): number | null {
@@ -79,21 +89,68 @@ function toNumber(val: any): number | null {
   return isNaN(parsed) ? null : parsed;
 }
 
-export async function getAdminHeatmapData(filters: HeatmapFilters): Promise<HeatmapData> {
+export async function getAdminHeatmapData(
+  filters: HeatmapFilters,
+  user?: CurrentUser
+): Promise<HeatmapData> {
   const scanWhere: any = {};
   const deliveryWhere: any = {};
 
+  // User scope check (Task B)
+  if (user) {
+    if (user.role === "BRAND_ADMIN") {
+      const bId = user.brandId || "NONE";
+      scanWhere.brandId = bId;
+      deliveryWhere.brandId = bId;
+    } else if (user.role === "CAMPAIGN_MANAGER") {
+      const assignedCampaignIds = await getAssignedCampaignIds(user.id);
+      scanWhere.campaignId = { in: assignedCampaignIds };
+      deliveryWhere.campaignId = { in: assignedCampaignIds };
+    } else if (user.role === "ADVERTISER_VIEWER") {
+      const advId = user.advertiserId || "NONE";
+      scanWhere.advertiserId = advId;
+      deliveryWhere.campaign = { advertiserId: advId };
+    }
+  }
+
+  // Filter parameters
   if (filters.brandId) {
-    scanWhere.brandId = filters.brandId;
-    deliveryWhere.brandId = filters.brandId;
+    if (scanWhere.brandId && scanWhere.brandId !== filters.brandId) {
+      scanWhere.brandId = "NONE";
+      deliveryWhere.brandId = "NONE";
+    } else {
+      scanWhere.brandId = filters.brandId;
+      deliveryWhere.brandId = filters.brandId;
+    }
   }
   if (filters.advertiserId) {
-    scanWhere.advertiserId = filters.advertiserId;
-    deliveryWhere.campaign = { advertiserId: filters.advertiserId };
+    if (scanWhere.advertiserId && scanWhere.advertiserId !== filters.advertiserId) {
+      scanWhere.advertiserId = "NONE";
+      deliveryWhere.campaign = { advertiserId: "NONE" };
+    } else {
+      scanWhere.advertiserId = filters.advertiserId;
+      deliveryWhere.campaign = { advertiserId: filters.advertiserId };
+    }
   }
   if (filters.campaignId) {
-    scanWhere.campaignId = filters.campaignId;
-    deliveryWhere.campaignId = filters.campaignId;
+    if (scanWhere.campaignId) {
+      if (user && user.role === "CAMPAIGN_MANAGER") {
+        const assignedCampaignIds = await getAssignedCampaignIds(user.id);
+        if (!assignedCampaignIds.includes(filters.campaignId)) {
+          scanWhere.campaignId = "NONE";
+          deliveryWhere.campaignId = "NONE";
+        } else {
+          scanWhere.campaignId = filters.campaignId;
+          deliveryWhere.campaignId = filters.campaignId;
+        }
+      } else {
+        scanWhere.campaignId = filters.campaignId;
+        deliveryWhere.campaignId = filters.campaignId;
+      }
+    } else {
+      scanWhere.campaignId = filters.campaignId;
+      deliveryWhere.campaignId = filters.campaignId;
+    }
   }
   if (filters.productId) {
     scanWhere.productId = filters.productId;
@@ -104,26 +161,36 @@ export async function getAdminHeatmapData(filters: HeatmapFilters): Promise<Heat
     deliveryWhere.batchId = filters.batchId;
   }
 
-  // Date range filters
-  if (filters.startDate || filters.endDate) {
-    const scanDateFilter: any = {};
-    const deliveryDateFilter: any = {};
-
-    if (filters.startDate) {
-      const start = new Date(filters.startDate);
-      scanDateFilter.gte = start;
-      deliveryDateFilter.gte = start;
-    }
-    if (filters.endDate) {
-      const end = new Date(filters.endDate);
-      end.setHours(23, 59, 59, 999);
-      scanDateFilter.lte = end;
-      deliveryDateFilter.lte = end;
-    }
-
-    scanWhere.createdAt = scanDateFilter;
-    deliveryWhere.createdAt = deliveryDateFilter;
+  // Default date range when no dates are supplied: previous 90 days
+  let startDate = filters.startDate;
+  let endDate = filters.endDate;
+  if (!startDate && !endDate) {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 90);
+    startDate = start.toISOString().split("T")[0];
+    endDate = end.toISOString().split("T")[0];
   }
+
+  // Date range filters
+  const scanDateFilter: any = {};
+  const deliveryDateFilter: any = {};
+
+  if (startDate) {
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    scanDateFilter.gte = start;
+    deliveryDateFilter.gte = start;
+  }
+  if (endDate) {
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    scanDateFilter.lte = end;
+    deliveryDateFilter.lte = end;
+  }
+
+  scanWhere.createdAt = scanDateFilter;
+  deliveryWhere.createdAt = deliveryDateFilter;
 
   const [
     brands,
@@ -137,6 +204,7 @@ export async function getAdminHeatmapData(filters: HeatmapFilters): Promise<Heat
     totalDeliveryCount,
     cartonsAgg,
     unitsAgg,
+    totalMatchingConsumerPoints,
   ] = await Promise.all([
     prisma.brand.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.advertiser.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
@@ -153,7 +221,8 @@ export async function getAdminHeatmapData(filters: HeatmapFilters): Promise<Heat
         product: { select: { name: true } },
         batch: { select: { batchCode: true } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: 2001,
     }),
 
     prisma.deliveryScan.findMany({
@@ -169,7 +238,8 @@ export async function getAdminHeatmapData(filters: HeatmapFilters): Promise<Heat
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: 2001,
     }),
 
     prisma.scanEvent.aggregate({
@@ -189,13 +259,17 @@ export async function getAdminHeatmapData(filters: HeatmapFilters): Promise<Heat
       _sum: { estimatedUnitsDelivered: true },
       where: deliveryWhere,
     }),
+    prisma.scanEvent.count({ where: scanWhere }),
   ]);
 
   const totalScanCount = scanEventAgg._sum.hitCount ?? 0;
   const totalBillableScans = scanEventAgg._sum.billableCount ?? 0;
   const totalRepeatScans = scanEventAgg._sum.repeatCount ?? 0;
 
-  const consumerEngagementMarkers: ConsumerScanMarker[] = scans.map((s) => ({
+  const isConsumerDataTruncated = scans.length > 2000;
+  const isDeliveryDataTruncated = deliveries.length > 2000;
+
+  const consumerEngagementMarkers: ConsumerScanMarker[] = scans.slice(0, 2000).map((s) => ({
     id: s.id,
     type: "SCAN",
     createdAt: s.createdAt,
@@ -218,7 +292,7 @@ export async function getAdminHeatmapData(filters: HeatmapFilters): Promise<Heat
     isSuspicious: s.isSuspicious,
   }));
 
-  const deliveryDistributionMarkers: DeliveryMarker[] = deliveries.map((d) => ({
+  const deliveryDistributionMarkers: DeliveryMarker[] = deliveries.slice(0, 2000).map((d) => ({
     id: d.id,
     type: "DELIVERY",
     createdAt: d.createdAt,
@@ -253,6 +327,14 @@ export async function getAdminHeatmapData(filters: HeatmapFilters): Promise<Heat
       totalRepeatScans,
       totalCartonsDelivered: cartonsAgg._sum.cartonsDelivered ?? 0,
       totalEstimatedUnitsDelivered: unitsAgg._sum.estimatedUnitsDelivered ?? 0,
+    },
+    metadata: {
+      totalMatchingConsumerPoints,
+      returnedConsumerPoints: consumerEngagementMarkers.length,
+      totalMatchingDeliveryPoints: totalDeliveryCount,
+      returnedDeliveryPoints: deliveryDistributionMarkers.length,
+      isConsumerDataTruncated,
+      isDeliveryDataTruncated,
     },
   };
 }
