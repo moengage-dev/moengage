@@ -1,9 +1,10 @@
 // src/server/services/public-scan.service.ts
+import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { headers, cookies } from "next/headers";
 import { parseUserAgent } from "@/lib/scans/device-parser";
 import { getApproximateLocationFromHeaders } from "@/lib/scans/ip-location";
-import { classifyConsumerScan } from "./scan-classification.service";
+import { classifyConsumerScan, classifyConsumerScanTx } from "./scan-classification.service";
 import { aggregateScanEvent } from "./scan-event-aggregation.service";
 
 export async function getConsumerQRCodeByCode(code: string) {
@@ -99,6 +100,7 @@ export async function logConsumerScan(qrCode: {
   }
   const userAgent = requestHeaders.get("user-agent") || null;
 
+  // ── All non-DB work is performed BEFORE opening the transaction ────────
   // Parse location and device metadata
   const location = getApproximateLocationFromHeaders(requestHeaders);
   const device = parseUserAgent(userAgent);
@@ -116,63 +118,255 @@ export async function logConsumerScan(qrCode: {
     ipAddress = requestHeaders.get("cf-connecting-ip");
   }
 
-  // Classify consumer scan
-  const classification = await classifyConsumerScan({
-    campaignId: qrCode.campaignId,
-    qrCodeId: qrCode.id,
-    qrCodeType: qrCode.type,
+  const ipHash = location.ipHash ?? deriveIpHash(ipAddress);
+
+  const scanResult = await processConsumerScan({
+    qrCode,
     visitorId: anonymousVisitorId,
     ipAddress,
+    ipHash,
     userAgent,
+    location,
+    device,
     now: new Date(),
   });
 
+  return {
+    scanEventId: scanResult.scanEventId,
+    isRepeatScan: scanResult.isRepeatScan,
+    location,
+  };
+}
+
+export type ConsumerScanContext = {
+  qrCode: {
+    id: string;
+    brandId: string | null;
+    advertiserId: string | null;
+    campaignId: string | null;
+    productId: string | null;
+    batchId: string | null;
+    type: string;
+    status: string;
+  };
+  visitorId: string | null;
+  ipAddress: string | null;
+  ipHash: string | null;
+  userAgent: string | null;
+  location: {
+    country: string | null;
+    region: string | null;
+    city: string | null;
+    suburb: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    locationSource: string;
+  };
+  device: {
+    deviceType: string;
+    os: string;
+    browser: string;
+  };
+  now: Date;
+};
+
+/**
+ * processConsumerScan
+ * Executes the atomic transaction to lock, classify, aggregate, and increment scan counts.
+ *
+ * Lock scope mapping to queries:
+ * 1. Visitor Lock:
+ *    - Query: Rule B counts scans by `visitorId` and `campaignId` (if present) or `qrCodeId`.
+ *    - Lock scope: `visitor:${visitorId}:${campaignId ?? qrCodeId}` matches this exactly.
+ * 2. IP Lock:
+ *    - Query: Rule B counts scans by `ipHash` and `campaignId` (if present).
+ *             Rule C counts scans by `ipHash` and `campaignId` (if present) or `qrCodeId`.
+ *             IP Footprint query (Rule A) counts by `ipHash` and `qrCodeId`.
+ *    - Lock scope: `ip:${ipHash}:${campaignId ?? qrCodeId}` safely covers all these queries.
+ *      Specifically, if `campaignId` is present, it serializes all concurrent scans from the
+ *      same IP targeting any QR code within the same campaign, which protects the campaign-level
+ *      IP aggregation query in Rule B and Rule C.
+ */
+export async function processConsumerScan(
+  ctx: ConsumerScanContext
+): Promise<{ scanEventId: string; isRepeatScan: boolean }> {
+  const { qrCode, visitorId, ipAddress, ipHash, userAgent, location, device, now } = ctx;
+
   const isInternalTest = qrCode.type === "INTERNAL_TEST";
 
-  // Keep the aggregate event and denormalized QR total consistent.
-  const scanResult = await prisma.$transaction(async (tx) => {
-    const result = await aggregateScanEvent(
-      {
-        qrCodeId: qrCode.id,
-        brandId: qrCode.brandId,
-        advertiserId: qrCode.advertiserId,
-        campaignId: qrCode.campaignId,
-        productId: qrCode.productId,
-        batchId: qrCode.batchId,
-        anonymousVisitorId,
-        sessionId: null,
-        ipHash: location.ipHash,
-        userAgent,
-        deviceType: device.deviceType,
-        os: device.os,
-        browser: device.browser,
-        country: location.country,
-        region: location.region,
-        city: location.city,
-        suburb: location.suburb,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        locationSource: location.locationSource,
-        isRepeatScan: classification.isRepeatScan,
-        isSuspicious: classification.isSuspicious,
-        suspiciousReason: classification.suspiciousReason,
-        isBillable: classification.isBillable,
-        isInternalTest,
-      },
-      tx,
-    );
+  const classificationInput = {
+    campaignId: qrCode.campaignId,
+    qrCodeId: qrCode.id,
+    qrCodeType: qrCode.type,
+    visitorId,
+    ipAddress,
+    ipHash,
+    userAgent,
+    now,
+  };
 
-    await tx.qRCode.update({
-      where: { id: qrCode.id },
-      data: { scanCount: { increment: 1 } },
+  const lockKeys = buildAdvisoryLockKeys({
+    visitorId,
+    ipHash,
+    campaignId: qrCode.campaignId,
+    qrCodeId: qrCode.id,
+  });
+
+  const scanResult = await runWithRetry(async () => {
+    return await prisma.$transaction(async (tx) => {
+      // Acquire transaction-scoped advisory locks in sorted order.
+      // Avoid raw void output by returning boolean using SELECT true FROM (SELECT pg_advisory_xact_lock(...)) AS lock_call
+      for (const key of lockKeys) {
+        await tx.$queryRaw`
+          SELECT true AS "acquired"
+          FROM (
+            SELECT pg_advisory_xact_lock(${key}::bigint)
+          ) AS lock_call
+        `;
+      }
+
+      // Classification now runs INSIDE the locked transaction so all reads see
+      // the committed state that no concurrent transaction for the same identity
+      // has modified yet.
+      const classification = await classifyConsumerScanTx(classificationInput, tx);
+
+      const result = await aggregateScanEvent(
+        {
+          qrCodeId: qrCode.id,
+          brandId: qrCode.brandId,
+          advertiserId: qrCode.advertiserId,
+          campaignId: qrCode.campaignId,
+          productId: qrCode.productId,
+          batchId: qrCode.batchId,
+          anonymousVisitorId: visitorId,
+          sessionId: null,
+          ipHash,
+          userAgent,
+          deviceType: device.deviceType,
+          os: device.os,
+          browser: device.browser,
+          country: location.country,
+          region: location.region,
+          city: location.city,
+          suburb: location.suburb,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          locationSource: location.locationSource,
+          isRepeatScan: classification.isRepeatScan,
+          isSuspicious: classification.isSuspicious,
+          suspiciousReason: classification.suspiciousReason,
+          isBillable: classification.isBillable,
+          isInternalTest,
+          now,
+        },
+        tx,
+      );
+
+      await tx.qRCode.update({
+        where: { id: qrCode.id },
+        data: { scanCount: { increment: 1 } },
+      });
+
+      return result;
+    }, {
+      maxWait: 15000,
+      timeout: 20000,
     });
-
-    return result;
   });
 
   return {
     scanEventId: scanResult.id,
     isRepeatScan: scanResult.isRepeatScan,
-    location,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Advisory-lock helpers (internal, not exported)
+// ---------------------------------------------------------------------------
+
+async function runWithRetry<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> {
+  let attempts = 0;
+  while (true) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      attempts++;
+      const isRetryable = error.code === "P2034" || error.code === "P2028";
+
+      if (isRetryable && attempts <= maxRetries) {
+        // Jittered short backoff (e.g. 100ms - 300ms)
+        const delay = Math.floor(Math.random() * 200) + 100 * attempts;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
+/**
+ * Builds a sorted, deduplicated list of 64-bit PostgreSQL advisory lock keys.
+ *
+ * Key construction:
+ *   "visitor:<visitorId>:<scope>"   where scope = campaignId ?? qrCodeId
+ *   "ip:<ipHash>:<scope>"           where scope = campaignId ?? qrCodeId
+ *
+ * The scope exactly mirrors the predicate used in Rules B and C so that two
+ * requests sharing the same classification query also share the same lock key
+ * and therefore serialise.  Different identities use different keys and
+ * proceed concurrently.
+ *
+ * Keys are derived from the first 8 bytes of SHA-256(text), interpreted as
+ * a two's-complement signed int64 so PostgreSQL accepts them.
+ */
+function buildAdvisoryLockKeys({
+  visitorId,
+  ipHash,
+  campaignId,
+  qrCodeId,
+}: {
+  visitorId: string | null;
+  ipHash: string | null;
+  campaignId: string | null;
+  qrCodeId: string;
+}): bigint[] {
+  // Scope must match the classification predicate (Rule B): campaign when
+  // campaignId is present, QR code otherwise.
+  const scope = campaignId ?? qrCodeId;
+  const rawKeys: bigint[] = [];
+
+  if (visitorId) {
+    rawKeys.push(scopeToLockKey(`visitor:${visitorId}:${scope}`));
+  }
+  if (ipHash) {
+    rawKeys.push(scopeToLockKey(`ip:${ipHash}:${scope}`));
+  }
+
+  // Deduplicate (unlikely but defensive) and sort ascending so all callers
+  // always acquire in the same order — eliminates deadlocks.
+  const unique = [...new Set(rawKeys.map(String))].map(BigInt);
+  unique.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  return unique;
+}
+
+/**
+ * Converts a human-readable scope string into a signed 64-bit integer for
+ * pg_advisory_xact_lock.  Takes the first 8 bytes of SHA-256 and re-interprets
+ * them as a two's-complement int64.
+ */
+function scopeToLockKey(text: string): bigint {
+  const buf = crypto.createHash("sha256").update(text).digest();
+  const unsigned = buf.readBigUInt64BE(0);
+  const INT64_MAX = BigInt("0x7fffffffffffffff");
+  const UINT64_WRAP = BigInt("0x10000000000000000");
+  return unsigned > INT64_MAX ? unsigned - UINT64_WRAP : unsigned;
+}
+
+/**
+ * Derives an IP hash for lock-key construction when location.ipHash is not
+ * available (e.g. no geolocation header was present).
+ */
+export function deriveIpHash(ipAddress: string | null): string | null {
+  if (!ipAddress) return null;
+  return crypto.createHash("sha256").update(ipAddress).digest("hex");
 }

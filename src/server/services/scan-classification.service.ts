@@ -1,15 +1,17 @@
 // src/server/services/scan-classification.service.ts
 import prisma from "@/lib/prisma";
 import crypto from "crypto";
+import type { Prisma } from "@prisma/client";
 
 export type ClassificationInput = {
   campaignId: string | null;
   qrCodeId: string;
   qrCodeType: string;
   visitorId: string | null;
-  ipAddress: string | null;
+  ipAddress?: string | null;
+  ipHash?: string | null;
   userAgent: string | null;
-  now?: Date;
+  now: Date;
 };
 
 export type ClassificationResult = {
@@ -17,10 +19,37 @@ export type ClassificationResult = {
   isSuspicious: boolean;
   suspiciousReason: string | null;
   isBillable: boolean;
+  /** Derived IP hash, forwarded so callers can include it in the aggregation input. */
+  ipHash: string | null;
 };
 
+// ---------------------------------------------------------------------------
+// Public entry point — no transaction client (backward-compatible, used by
+// any caller that does NOT need serialised classification).
+// ---------------------------------------------------------------------------
 export async function classifyConsumerScan(
   input: ClassificationInput
+): Promise<ClassificationResult> {
+  return _classifyWithClient(input, prisma as unknown as Prisma.TransactionClient);
+}
+
+// ---------------------------------------------------------------------------
+// Transactional entry point — used inside an advisory-locked Prisma
+// transaction so that all DB reads participate in the same snapshot.
+// ---------------------------------------------------------------------------
+export async function classifyConsumerScanTx(
+  input: ClassificationInput,
+  tx: Prisma.TransactionClient,
+): Promise<ClassificationResult> {
+  return _classifyWithClient(input, tx);
+}
+
+// ---------------------------------------------------------------------------
+// Shared implementation
+// ---------------------------------------------------------------------------
+async function _classifyWithClient(
+  input: ClassificationInput,
+  db: Prisma.TransactionClient,
 ): Promise<ClassificationResult> {
   const {
     campaignId,
@@ -28,7 +57,8 @@ export async function classifyConsumerScan(
     qrCodeType,
     visitorId,
     ipAddress,
-    now = new Date(),
+    ipHash: precomputedIpHash,
+    now,
   } = input;
 
   let isRepeatScan = false;
@@ -43,96 +73,71 @@ export async function classifyConsumerScan(
       isSuspicious: false,
       suspiciousReason: "BATCH_DELIVERY_QR",
       isBillable: false,
+      ipHash: null,
     };
   }
 
-  // Generate IP Hash if IP is available
-  const ipHash = ipAddress
+  // Use precomputed ipHash or derive it from ipAddress
+  const ipHash = precomputedIpHash || (ipAddress
     ? crypto.createHash("sha256").update(ipAddress).digest("hex")
-    : null;
+    : null);
 
-  // Rule A: Repeat Scan Detection
+  // ── Rule A: Repeat Scan Detection ──────────────────────────────────────
   if (visitorId) {
     if (campaignId) {
-      const previous = await prisma.scanEvent.findFirst({
-        where: {
-          anonymousVisitorId: visitorId,
-          campaignId: campaignId,
-        },
+      const previous = await db.scanEvent.findFirst({
+        where: { anonymousVisitorId: visitorId, campaignId },
         select: { id: true },
       });
       isRepeatScan = !!previous;
     } else {
-      const previous = await prisma.scanEvent.findFirst({
-        where: {
-          anonymousVisitorId: visitorId,
-          qrCodeId: qrCodeId,
-        },
+      const previous = await db.scanEvent.findFirst({
+        where: { anonymousVisitorId: visitorId, qrCodeId },
         select: { id: true },
       });
       isRepeatScan = !!previous;
     }
   }
 
-  // Active IP Footprint (30 minutes session window) repeat scan check
+  // Active IP Footprint (30-minute session window) repeat-scan check
   if (!isRepeatScan && ipHash) {
     const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
-    const previousByIp = await prisma.scanEvent.findFirst({
-      where: {
-        ipHash: ipHash,
-        qrCodeId: qrCodeId,
-        createdAt: {
-          gte: thirtyMinutesAgo,
-        },
-      },
+    const previousByIp = await db.scanEvent.findFirst({
+      where: { ipHash, qrCodeId, createdAt: { gte: thirtyMinutesAgo } },
       select: { id: true },
     });
-    if (previousByIp) {
-      isRepeatScan = true;
-    }
+    if (previousByIp) isRepeatScan = true;
   }
 
-  // Rule B: High Frequency Visitor Abuse (>10 scans in 5 minutes by visitorId or ipHash + campaignId)
+  // ── Rule B: High-Frequency Visitor Abuse (≥10 scans / 5 min) ──────────
+  // Scope matches the classification query: campaign-scoped when campaignId
+  // is present, qrCode-scoped otherwise. Lock keys must reflect the same scope.
   let visitorOrIpCampaignAbuse = false;
 
-  // Check visitorId frequency if present
   if (visitorId) {
     const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
-    const visitorScanCountAgg = await prisma.scanEvent.aggregate({
+    const agg = await db.scanEvent.aggregate({
       _sum: { hitCount: true },
       where: {
         anonymousVisitorId: visitorId,
         ...(campaignId ? { campaignId } : { qrCodeId }),
-        createdAt: {
-          gte: fiveMinutesAgo,
-        },
+        createdAt: { gte: fiveMinutesAgo },
       },
     });
-    const visitorScanCount = visitorScanCountAgg._sum.hitCount ?? 0;
-
-    if (visitorScanCount >= 10) {
-      visitorOrIpCampaignAbuse = true;
-    }
+    if ((agg._sum.hitCount ?? 0) >= 10) visitorOrIpCampaignAbuse = true;
   }
 
-  // Check ipHash + campaignId frequency if present
   if (!visitorOrIpCampaignAbuse && ipHash && campaignId) {
     const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
-    const ipCampaignScanCountAgg = await prisma.scanEvent.aggregate({
+    const agg = await db.scanEvent.aggregate({
       _sum: { hitCount: true },
       where: {
-        ipHash: ipHash,
-        campaignId: campaignId,
-        createdAt: {
-          gte: fiveMinutesAgo,
-        },
+        ipHash,
+        campaignId,
+        createdAt: { gte: fiveMinutesAgo },
       },
     });
-    const ipCampaignScanCount = ipCampaignScanCountAgg._sum.hitCount ?? 0;
-
-    if (ipCampaignScanCount >= 10) {
-      visitorOrIpCampaignAbuse = true;
-    }
+    if ((agg._sum.hitCount ?? 0) >= 10) visitorOrIpCampaignAbuse = true;
   }
 
   if (visitorOrIpCampaignAbuse) {
@@ -141,22 +146,18 @@ export async function classifyConsumerScan(
     isBillable = false;
   }
 
-  // Rule C: IP frequency abuse (>20 scans in 10 minutes)
+  // ── Rule C: IP frequency abuse (≥20 scans / 10 min) ──────────────────
   if (ipHash) {
     const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
-    const ipScanCountAgg = await prisma.scanEvent.aggregate({
+    const agg = await db.scanEvent.aggregate({
       _sum: { hitCount: true },
       where: {
-        ipHash: ipHash,
+        ipHash,
         ...(campaignId ? { campaignId } : { qrCodeId }),
-        createdAt: {
-          gte: tenMinutesAgo,
-        },
+        createdAt: { gte: tenMinutesAgo },
       },
     });
-    const ipScanCount = ipScanCountAgg._sum.hitCount ?? 0;
-
-    if (ipScanCount >= 20) {
+    if ((agg._sum.hitCount ?? 0) >= 20) {
       isSuspicious = true;
       isBillable = false;
       suspiciousReason = suspiciousReason
@@ -165,7 +166,7 @@ export async function classifyConsumerScan(
     }
   }
 
-  // Rule D: Internal/test QR exclusion
+  // ── Rule D: Internal/test QR exclusion ───────────────────────────────
   if (qrCodeType === "INTERNAL_TEST") {
     isBillable = false;
     suspiciousReason = suspiciousReason
@@ -173,12 +174,7 @@ export async function classifyConsumerScan(
       : "INTERNAL_TEST_QR";
   }
 
-  return {
-    isRepeatScan,
-    isSuspicious,
-    suspiciousReason,
-    isBillable,
-  };
+  return { isRepeatScan, isSuspicious, suspiciousReason, isBillable, ipHash };
 }
 
 export type SuspiciousScansFilter = {
