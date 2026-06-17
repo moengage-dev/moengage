@@ -32,7 +32,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
   const navItems = getNavItemsForRole(role);
 
   return (
-    <Sidebar className="bg-white dark:bg-[#181512] border-r border-border/50 text-sidebar-foreground animate-in fade-in duration-300">
+    <Sidebar className="bg-sidebar border-r border-border/50 text-sidebar-foreground animate-in fade-in duration-300">
       <SidebarHeader className="flex flex-row items-center py-4 border-b border-border/40 bg-transparent gap-3">
         <div className="relative w-8 h-8 flex items-center justify-center">
           <Image
@@ -44,7 +44,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
             priority
           />
         </div>
-        <span className="font-bold leading-none text-xl text-[#2C2621] dark:text-[#F7F5F0] tracking-tight">
+        <span className="font-bold leading-none text-xl text-sidebar-foreground tracking-tight">
           MoEngage
         </span>
       </SidebarHeader>
@@ -74,13 +74,13 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                         w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative overflow-hidden
                         ${
                           isActive
-                            ? "bg-[#F48F68]/10 text-[#F48F68] font-semibold before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-5 before:bg-[#F48F68] before:rounded-r"
-                            : "text-[#2C2621]/80 hover:text-[#2C2621] hover:bg-[#F5EFE0]/60 font-medium dark:text-muted-foreground dark:hover:text-[#F7F5F0] dark:hover:bg-muted/40"
+                            ? "bg-primary/10 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-5 before:bg-primary before:rounded-r"
+                            : "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-muted/60 font-medium dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-muted/40"
                         }
                       `}
                     >
                       <Link href={item.href}>
-                        <item.icon className={`h-4 w-4 transition-colors ${isActive ? "text-[#F48F68]" : "text-[#2C2621]/60 group-hover/menu-button:text-[#2C2621] dark:text-muted-foreground/80 dark:group-hover/menu-button:text-[#F7F5F0]"}`} />
+                        <item.icon className={`h-4 w-4 transition-colors ${isActive ? "text-primary" : "text-sidebar-foreground/60 group-hover/menu-button:text-sidebar-foreground dark:text-muted-foreground/80 dark:group-hover/menu-button:text-foreground"}`} />
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>

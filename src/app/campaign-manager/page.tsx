@@ -40,14 +40,14 @@ export default async function CampaignManagerDashboardPage() {
           badgeText="Campaign Manager"
           badgeVariant="indigo"
         />
-        <Card className="bg-slate-900/40 border-slate-850 py-12">
+        <Card className="py-12">
           <CardContent className="text-center space-y-4">
-            <div className="mx-auto w-12 h-12 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center">
+            <div className="mx-auto w-12 h-12 bg-muted border border-border text-muted-foreground rounded-full flex items-center justify-center">
               <BarChart3 className="h-6 w-6" />
             </div>
             <div className="max-w-md mx-auto space-y-2">
-              <h2 className="text-lg font-bold text-slate-200">No Assigned Campaigns</h2>
-              <p className="text-sm text-slate-400">
+              <h2 className="text-lg font-bold text-foreground">No Assigned Campaigns</h2>
+              <p className="text-sm text-muted-foreground">
                 You are not currently assigned to any active campaigns. Please request a campaign assignment from your administrator.
               </p>
             </div>
@@ -152,14 +152,14 @@ export default async function CampaignManagerDashboardPage() {
           hasData={performance.campaignPerformance.length > 0}
         >
           {performance.campaignPerformance.map((c, idx) => (
-            <tr key={idx} className="hover:bg-slate-850/40 transition-colors">
-              <td className="py-3 px-3.5 font-semibold text-slate-200">{c.name}</td>
-              <td className="py-3 px-3.5 text-slate-400">{c.advertiserName}</td>
+            <tr key={idx} className="hover:bg-muted/40 transition-colors">
+              <td className="py-3 px-3.5 font-semibold text-foreground">{c.name}</td>
+              <td className="py-3 px-3.5 text-muted-foreground">{c.advertiserName}</td>
               <td className="py-3 px-3.5 text-right font-mono font-medium">{formatNumber(c.totalScans)}</td>
-              <td className="py-3 px-3.5 text-right font-mono font-medium text-emerald-400">{formatNumber(c.approvedClaims)}</td>
-              <td className="py-3 px-3.5 text-right font-mono font-medium text-rose-400">{formatNumber(c.duplicateDeclines)}</td>
-              <td className="py-3 px-3.5 text-right font-mono font-medium text-blue-400">{formatNumber(c.deliveryScans)}</td>
-              <td className="py-3 px-3.5 text-right font-mono font-semibold text-teal-400">{formatNumber(c.estimatedUnitsDelivered)}</td>
+              <td className="py-3 px-3.5 text-right font-mono font-medium text-emerald-600">{formatNumber(c.approvedClaims)}</td>
+              <td className="py-3 px-3.5 text-right font-mono font-medium text-rose-600">{formatNumber(c.duplicateDeclines)}</td>
+              <td className="py-3 px-3.5 text-right font-mono font-medium text-blue-600">{formatNumber(c.deliveryScans)}</td>
+              <td className="py-3 px-3.5 text-right font-mono font-semibold text-foreground">{formatNumber(c.estimatedUnitsDelivered)}</td>
             </tr>
           ))}
         </AnalyticsTableSection>
@@ -171,12 +171,12 @@ export default async function CampaignManagerDashboardPage() {
           hasData={performance.locationPerformance.length > 0}
         >
           {performance.locationPerformance.map((l, idx) => (
-            <tr key={idx} className="hover:bg-slate-850/40 transition-colors">
-              <td className="py-3 px-3.5 font-semibold text-slate-200">{l.location}</td>
+            <tr key={idx} className="hover:bg-muted/40 transition-colors">
+              <td className="py-3 px-3.5 font-semibold text-foreground">{l.location}</td>
               <td className="py-3 px-3.5 text-right font-mono font-medium">{formatNumber(l.totalScans)}</td>
-              <td className="py-3 px-3.5 text-right font-mono font-medium text-emerald-400">{formatNumber(l.approvedClaims)}</td>
-              <td className="py-3 px-3.5 text-right font-mono font-medium text-blue-400">{formatNumber(l.deliveryScans)}</td>
-              <td className="py-3 px-3.5 text-right font-mono font-semibold text-teal-400">{formatNumber(l.estimatedUnitsDelivered)}</td>
+              <td className="py-3 px-3.5 text-right font-mono font-medium text-emerald-600">{formatNumber(l.approvedClaims)}</td>
+              <td className="py-3 px-3.5 text-right font-mono font-medium text-blue-600">{formatNumber(l.deliveryScans)}</td>
+              <td className="py-3 px-3.5 text-right font-mono font-semibold text-foreground">{formatNumber(l.estimatedUnitsDelivered)}</td>
             </tr>
           ))}
         </AnalyticsTableSection>
@@ -190,16 +190,16 @@ export default async function CampaignManagerDashboardPage() {
           hasData={performance.recentScanEvents.length > 0}
         >
           {performance.recentScanEvents.map((s, idx) => (
-            <tr key={idx} className="hover:bg-slate-850/40 transition-colors">
-              <td className="py-3 px-3.5 font-mono text-[10px] text-slate-400">
+            <tr key={idx} className="hover:bg-muted/40 transition-colors">
+              <td className="py-3 px-3.5 font-mono text-[10px] text-muted-foreground">
                 {formatDateTime(s.createdAt)}
               </td>
-              <td className="py-3 px-3.5 font-semibold text-slate-200 truncate max-w-[100px]" title={s.campaignName}>
+              <td className="py-3 px-3.5 font-semibold text-foreground truncate max-w-[100px]" title={s.campaignName}>
                 {s.campaignName}
               </td>
               <td className="py-3 px-3.5 truncate max-w-[80px]" title={s.productName}>{s.productName}</td>
               <td className="py-3 px-3.5 truncate max-w-[100px]" title={s.location}>{s.location}</td>
-              <td className="py-3 px-3.5 uppercase text-[9px] tracking-wider text-slate-400">
+              <td className="py-3 px-3.5 uppercase text-[9px] tracking-wider text-muted-foreground">
                 {s.deviceType}
               </td>
               <td className="py-3 px-3.5 text-right font-mono">{formatNumber(s.hitCount)}</td>
@@ -217,24 +217,24 @@ export default async function CampaignManagerDashboardPage() {
           hasData={performance.recentRewardClaims.length > 0}
         >
           {performance.recentRewardClaims.map((r, idx) => (
-            <tr key={idx} className="hover:bg-slate-850/40 transition-colors">
-              <td className="py-3 px-3.5 font-mono text-[10px] text-slate-400">
+            <tr key={idx} className="hover:bg-muted/40 transition-colors">
+              <td className="py-3 px-3.5 font-mono text-[10px] text-muted-foreground">
                 {formatDateTime(r.createdAt)}
               </td>
-              <td className="py-3 px-3.5 font-semibold text-slate-200 truncate max-w-[120px]" title={r.campaignName}>
+              <td className="py-3 px-3.5 font-semibold text-foreground truncate max-w-[120px]" title={r.campaignName}>
                 {r.campaignName}
               </td>
               <td className="py-3 px-3.5">
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 uppercase border-slate-800 text-slate-400">
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 uppercase border-border text-muted-foreground">
                   {r.rewardType}
                 </Badge>
               </td>
               <td className="py-3 px-3.5 text-right">
-                <Badge className={`text-[9px] uppercase px-1 py-0 h-4 ${r.status === "APPROVED" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"}`}>
+                <Badge className={`text-[9px] uppercase px-1 py-0 h-4 ${r.status === "APPROVED" ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-amber-100 text-amber-700 border-amber-300"}`}>
                   {r.status}
                 </Badge>
               </td>
-              <td className="py-3 px-3.5 text-right font-mono text-slate-400">
+              <td className="py-3 px-3.5 text-right font-mono text-muted-foreground">
                 ···{r.mobileNumberLast4}
               </td>
             </tr>

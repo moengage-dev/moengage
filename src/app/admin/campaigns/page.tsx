@@ -3,6 +3,7 @@ import React from "react";
 import { getCampaignsPageData } from "@/server/services/campaigns.service";
 import { CampaignsClient } from "@/app/admin/campaigns/campaigns-client";
 import { requireRole } from "@/lib/auth/require-role";
+import { DashboardSectionHeader } from "@/components/dashboard/dashboard-section-header";
 
 export default async function CampaignsPage() {
   const user = await requireRole(["ADMIN"]);
@@ -19,12 +20,12 @@ export default async function CampaignsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Campaigns</h1>
-        <p className="text-muted-foreground">
-          All QR advertising campaigns across brands and advertisers.
-        </p>
-      </div>
+      <DashboardSectionHeader
+        title="Campaigns"
+        description="All QR advertising campaigns across brands and advertisers."
+        badgeText="Admin"
+        badgeVariant="blue"
+      />
 
       <CampaignsClient
         campaigns={campaigns}

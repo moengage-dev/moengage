@@ -2,6 +2,7 @@ import React from "react";
 import { requireRole } from "@/lib/auth/require-role";
 import { getQRCodesPageData } from "@/server/services/qr-codes.service";
 import { QRCodesClient } from "@/app/admin/qr-codes/qr-codes-client";
+import { DashboardSectionHeader } from "@/components/dashboard/dashboard-section-header";
 
 export default async function QRCodesPage() {
   const user = await requireRole(["ADMIN"]);
@@ -23,12 +24,12 @@ export default async function QRCodesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">QR Codes</h1>
-        <p className="text-muted-foreground">
-          Manage, view, and export platform QR codes.
-        </p>
-      </div>
+      <DashboardSectionHeader
+        title="QR Codes"
+        description="Manage, view, and export platform QR codes."
+        badgeText="Admin"
+        badgeVariant="blue"
+      />
 
       <QRCodesClient
         qrCodes={qrCodes}

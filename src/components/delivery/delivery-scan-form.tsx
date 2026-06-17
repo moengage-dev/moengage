@@ -21,13 +21,11 @@ import {
   CheckCircle,
   AlertTriangle,
   Loader2,
-  MapPin,
   FileText,
   Building2,
   Navigation,
   RefreshCw,
   WifiOff,
-  Info,
   ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
@@ -220,13 +218,13 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
   // Success screen
   if (successData) {
     return (
-      <Card className="bg-white border border-border/50 shadow-sm rounded-2xl overflow-hidden">
-        <div className="h-1.5 bg-emerald-500 w-full" />
+      <Card className="public-card overflow-hidden">
+        <div className="h-1.5 bg-brand-teal w-full" />
         <CardHeader className="text-center pb-4">
-          <div className="mx-auto bg-emerald-50 border border-emerald-200 w-12 h-12 rounded-full flex items-center justify-center text-emerald-600 mb-3">
+          <div className="mx-auto bg-brand-teal/15 border border-brand-teal/30 w-12 h-12 rounded-2xl flex items-center justify-center text-foreground mb-3">
             <CheckCircle className="h-6 w-6" />
           </div>
-          <CardTitle className="text-xl font-bold text-[#2C2621]">Delivery Logged</CardTitle>
+          <CardTitle className="text-xl font-bold text-foreground">Delivery Logged</CardTitle>
           <CardDescription className="text-muted-foreground text-xs">
             Cartons successfully recorded in system.
           </CardDescription>
@@ -235,7 +233,7 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
           <div className="bg-muted/30 border border-border/40 rounded-xl p-4 space-y-3 text-sm">
             <div className="flex justify-between border-b border-border/30 pb-2">
               <span className="text-muted-foreground">Retailer</span>
-              <span className="font-semibold text-[#2C2621]">{successData.retailerName}</span>
+              <span className="font-semibold text-foreground">{successData.retailerName}</span>
             </div>
             {successData.city && (
               <div className="flex justify-between border-b border-border/30 pb-2">
@@ -255,8 +253,8 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
               <span className="font-medium">{unitsPerCarton} units</span>
             </div>
             <div className="flex justify-between pt-1">
-              <span className="text-emerald-600 font-medium">Estimated Units</span>
-              <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+              <span className="text-foreground font-medium">Estimated Units</span>
+              <Badge className="bg-brand-teal/15 text-foreground border border-brand-teal/30 font-bold">
                 {successData.estimatedUnits.toLocaleString()} units
               </Badge>
             </div>
@@ -295,15 +293,15 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
   }
 
   return (
-    <Card className="bg-white border border-border/50 shadow-sm rounded-2xl overflow-hidden w-full">
-      <div className="h-1.5 bg-gradient-to-r from-[#1E5C5A] via-[#F48F68] to-emerald-500 w-full" />
+    <Card className="public-card overflow-hidden w-full">
+      <div className="h-1.5 bg-gradient-to-r from-brand-teal via-primary to-brand-yellow w-full" />
       <CardHeader className="pb-4">
         <div className="flex items-center gap-3">
-          <div className="bg-[#1E5C5A]/10 border border-[#1E5C5A]/20 w-10 h-10 rounded-xl flex items-center justify-center text-[#1E5C5A]">
+          <div className="bg-brand-teal/10 border border-brand-teal/20 w-10 h-10 rounded-xl flex items-center justify-center text-foreground">
             <Truck className="h-5 w-5" />
           </div>
           <div>
-            <CardTitle className="text-lg font-bold text-[#2C2621]">Log Retail Placement</CardTitle>
+            <CardTitle className="text-lg font-bold text-foreground">Log Retail Placement</CardTitle>
             <CardDescription className="text-xs">Confirm batch arrival and carton drop-off.</CardDescription>
           </div>
         </div>
@@ -313,14 +311,14 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
         <div className="grid grid-cols-2 gap-3 mb-6 bg-muted/30 border border-border/40 rounded-xl p-4 text-xs">
           <div className="space-y-1">
             <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold block">Campaign</span>
-            <span className="font-semibold text-[#2C2621] block truncate">{qrCode.campaign?.name ?? "N/A"}</span>
+            <span className="font-semibold text-foreground block truncate">{qrCode.campaign?.name ?? "N/A"}</span>
             <span className="text-muted-foreground truncate block">{qrCode.campaign?.offerTitle ?? ""}</span>
           </div>
           <div className="space-y-1 border-l border-border/40 pl-4">
             <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold block">Batch Code</span>
-            <span className="font-semibold text-[#2C2621] block truncate">{qrCode.batch?.batchCode ?? "N/A"}</span>
+            <span className="font-semibold text-foreground block truncate">{qrCode.batch?.batchCode ?? "N/A"}</span>
             <span className="text-muted-foreground block">
-              Units/Carton: <span className="font-semibold text-[#2C2621]">{unitsPerCarton}</span>
+              Units/Carton: <span className="font-semibold text-foreground">{unitsPerCarton}</span>
             </span>
           </div>
         </div>
@@ -328,7 +326,7 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Retailer Select */}
           <div className="space-y-2">
-            <Label htmlFor="retailerSelect" className="text-xs font-semibold text-[#2C2621]">
+            <Label htmlFor="retailerSelect" className="text-xs font-semibold text-foreground">
               Select Retailer / Outlet
             </Label>
             <Select value={retailerSelection} onValueChange={setRetailerSelection}>
@@ -336,7 +334,7 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
                 <SelectValue placeholder="Select Outlet" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="_NEW_" className="font-bold text-[#1E5C5A]">
+                <SelectItem value="_NEW_" className="font-bold text-foreground">
                   + Add New Retailer
                 </SelectItem>
                 {retailers.map((r) => (
@@ -351,7 +349,7 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
           {/* New retailer fields */}
           {retailerSelection === "_NEW_" && (
             <div className="space-y-4 bg-muted/20 border border-dashed border-border/60 rounded-xl p-4">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-[#1E5C5A]">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
                 <Building2 className="h-3.5 w-3.5" />
                 New Retailer Profile
               </div>
@@ -428,8 +426,8 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
           {/* Location Section */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-semibold text-[#2C2621] flex items-center gap-1.5">
-                <Navigation className="h-3.5 w-3.5 text-[#1E5C5A]" />
+              <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <Navigation className="h-3.5 w-3.5 text-foreground" />
                 Device Location
               </Label>
               <Button
@@ -452,7 +450,7 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
             {/* Location status badge */}
             <div className="flex items-center gap-2 text-xs py-1">
               {locationState.status === "requesting" && (
-                <span className="flex items-center gap-1.5 text-amber-600">
+                <span className="flex items-center gap-1.5 text-primary">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   Requesting device location…
                 </span>
@@ -508,7 +506,7 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
             </div>
 
             {locationState.status === "unavailable" && (
-              <p className="text-xs text-amber-600 flex items-center gap-1.5">
+              <p className="text-xs text-primary flex items-center gap-1.5">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 No location available — delivery will be recorded without coordinates.
               </p>
@@ -517,7 +515,7 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
 
           {/* Cartons Delivered */}
           <div className="space-y-2">
-            <Label htmlFor="cartonsDelivered" className="text-xs font-semibold text-[#2C2621]">
+            <Label htmlFor="cartonsDelivered" className="text-xs font-semibold text-foreground">
               Cartons Delivered <span className="text-destructive">*</span>
             </Label>
             <div className="flex items-center gap-3">
@@ -534,9 +532,9 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
               <div className="flex-1 bg-muted/30 border border-border/40 p-2.5 rounded-lg text-xs space-y-1 text-muted-foreground">
                 <div className="flex justify-between">
                   <span>Units per Carton:</span>
-                  <span className="font-semibold text-[#2C2621]">{unitsPerCarton}</span>
+                  <span className="font-semibold text-foreground">{unitsPerCarton}</span>
                 </div>
-                <div className="flex justify-between border-t border-border/30 pt-1 text-emerald-600 font-semibold">
+                <div className="flex justify-between border-t border-border/30 pt-1 text-foreground font-semibold">
                   <span>Estimated Total Units:</span>
                   <span>{estimatedUnits.toLocaleString()}</span>
                 </div>
@@ -546,7 +544,7 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
 
           {/* Notes */}
           <div className="space-y-2">
-            <Label htmlFor="notes" className="text-xs font-semibold text-[#2C2621] flex items-center gap-1">
+            <Label htmlFor="notes" className="text-xs font-semibold text-foreground flex items-center gap-1">
               <FileText className="h-3.5 w-3.5" />
               Notes / Comments
             </Label>

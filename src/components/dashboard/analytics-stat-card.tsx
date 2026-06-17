@@ -51,7 +51,7 @@ export function AnalyticsStatCard({
             </div>
           )}
         </div>
-        <div className="text-3xl font-extrabold text-[#2C2621] tracking-tight">
+        <div className="text-3xl font-extrabold text-foreground tracking-tight">
           {value}
         </div>
       </div>

@@ -11,7 +11,7 @@ export default function Page() {
           <h1 className="text-3xl font-bold tracking-tight">QR Campaigns</h1>
           <p className="text-muted-foreground">Export generated campaign QR codes and monitor scan counts.</p>
         </div>
-        <Badge variant="secondary" className="w-fit bg-amber-50 text-amber-700 hover:bg-amber-50 hover:text-amber-700 border-amber-200">
+        <Badge variant="secondary" className="w-fit">
           Coming soon
         </Badge>
       </div>

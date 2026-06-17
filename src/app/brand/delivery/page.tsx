@@ -11,7 +11,7 @@ export default function Page() {
           <h1 className="text-3xl font-bold tracking-tight">Retailer Deliveries</h1>
           <p className="text-muted-foreground">Track product batch shipments and retailer delivery scans.</p>
         </div>
-        <Badge variant="secondary" className="w-fit bg-amber-50 text-amber-700 hover:bg-amber-50 hover:text-amber-700 border-amber-200">
+        <Badge variant="secondary" className="w-fit">
           Coming soon
         </Badge>
       </div>

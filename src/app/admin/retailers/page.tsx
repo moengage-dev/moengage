@@ -3,6 +3,7 @@ import React from "react";
 import { requireRole } from "@/lib/auth/require-role";
 import { getAdminRetailersPageData } from "@/server/services/retailers.service";
 import { RetailersClient } from "./retailers-client";
+import { DashboardSectionHeader } from "@/components/dashboard/dashboard-section-header";
 
 export default async function RetailersPage() {
   await requireRole(["ADMIN"]);
@@ -11,12 +12,12 @@ export default async function RetailersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Retailers</h1>
-        <p className="text-muted-foreground">
-          Manage retail outlets and distribution points linked to delivery operations.
-        </p>
-      </div>
+      <DashboardSectionHeader
+        title="Retailers"
+        description="Manage retail outlets and distribution points linked to delivery operations."
+        badgeText="Admin"
+        badgeVariant="blue"
+      />
 
       <RetailersClient
         retailers={data.retailers}

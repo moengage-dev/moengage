@@ -42,7 +42,7 @@ export function UserMenu({ user }: UserMenuProps) {
           className="relative h-12 w-full flex items-center justify-start gap-3 px-3 py-1.5 rounded-lg hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-left focus-visible:ring-0"
         >
           <Avatar className="h-8 w-8 rounded-lg">
-            <AvatarFallback className="rounded-lg bg-emerald-100 text-emerald-800 font-semibold text-xs">
+            <AvatarFallback className="rounded-lg bg-primary/15 text-primary font-semibold text-xs">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -62,7 +62,7 @@ export function UserMenu({ user }: UserMenuProps) {
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user.name || "User"}</p>
             <p className="text-xs leading-none text-muted-foreground">{user.email || ""}</p>
-            <p className="text-[10px] uppercase font-bold text-emerald-600 mt-1">
+            <p className="text-[10px] uppercase font-bold text-primary mt-1">
               {user.role?.replace("_", " ") || ""}
             </p>
           </div>

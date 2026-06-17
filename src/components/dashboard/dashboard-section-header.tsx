@@ -10,11 +10,11 @@ type Props = {
 };
 
 const BADGE_CLASSES = {
-  blue: "bg-brand-teal/20 text-[#0d5f5d] border-brand-teal/30 dark:bg-brand-teal/10 dark:text-brand-teal",
-  emerald: "bg-brand-coral/20 text-[#a03816] border-brand-coral/30 dark:bg-brand-coral/10 dark:text-brand-coral",
-  amber: "bg-brand-yellow/30 text-[#8B6B00] border-brand-yellow/40 dark:bg-brand-yellow/10 dark:text-brand-yellow",
-  indigo: "bg-brand-coral/20 text-[#a03816] border-brand-coral/30 dark:bg-brand-coral/10 dark:text-brand-coral",
-  purple: "bg-brand-teal/20 text-[#0d5f5d] border-brand-teal/30 dark:bg-brand-teal/10 dark:text-brand-teal",
+  blue: "bg-brand-teal/20 text-foreground border-brand-teal/30 dark:bg-brand-teal/10 dark:text-brand-teal",
+  emerald: "bg-primary/20 text-foreground border-primary/30 dark:bg-primary/10 dark:text-primary",
+  amber: "bg-brand-yellow/30 text-foreground border-brand-yellow/40 dark:bg-brand-yellow/10 dark:text-brand-yellow",
+  indigo: "bg-primary/20 text-foreground border-primary/30 dark:bg-primary/10 dark:text-primary",
+  purple: "bg-brand-teal/20 text-foreground border-brand-teal/30 dark:bg-brand-teal/10 dark:text-brand-teal",
 };
 
 export function DashboardSectionHeader({

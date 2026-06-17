@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-  --font-heading: var(--font-mono);
+  --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -18,7 +18,7 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  
+
   /* Brand Theme Extensions */
   --color-brand-cream: var(--brand-cream);
   --color-brand-teal: var(--brand-teal);
@@ -31,7 +31,7 @@
   --color-chart-3: var(--chart-3); /* Yellow: Reward Claims */
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  
+
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -49,7 +49,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -61,49 +61,52 @@
 
 /* Base Light Mode Tokens - Warm, Organic SaaS Style */
 :root {
-  /* Brand Palette Tones */
-  --brand-cream: #FFF6DE;  /* Deep base cream canvas */
-  --brand-teal: #8BDFDD;    /* Consumer engagement / scans */
-  --brand-coral: #F48F68;   /* Primary actions / active campaigns */
-  --brand-yellow: #FFE394;  /* Rewards / alerts */
-  
-  /* Core Layout Mapping */
+  /* Brand Palette */
+  --brand-cream: #FFF6DE;
+  --brand-teal: #8BDFDD;
+  --brand-coral: #F48F68;
+  --brand-yellow: #FFE394;
+
+  /* Font bridge: preset sets --font-geist-mono via next/font, map it to the theme token */
+  --font-mono: var(--font-geist-mono);
+
+  /* Core Layout - brand-mapped */
   --background: var(--brand-cream);
-  --foreground: #2C2621;    /* Rich, warm charcoal instead of harsh pitch black */
-  
-  /* Elevated elements use pure white to pop cleanly against the cream canvas */
+  --foreground: #2C2621;
+
+  /* Elevated elements pop against the cream canvas */
   --card: #FFFBF5;
   --card-foreground: #2C2621;
   --popover: #FFFBF5;
   --popover-foreground: #2C2621;
-  
-  /* Interactive Mapping */
+
+  /* Interactive */
   --primary: var(--brand-coral);
   --primary-foreground: #ffffff;
-  --secondary: #F4EBD4;     /* Muted cream tint */
+  --secondary: #F4EBD4;
   --secondary-foreground: #2C2621;
-  
+
   --muted: #F5EFE0;
   --muted-foreground: #7D756E;
   --accent: #F5EFE0;
   --accent-foreground: #2C2621;
   --destructive: #E15A3E;
   --destructive-foreground: #ffffff;
-  
+
   --border: #EFE6D0;
   --input: #EFE6D0;
   --ring: var(--brand-teal);
-  
-  /* Chart Definitions matching brand palette */
+
+  /* Chart colours mapped to brand palette */
   --chart-1: var(--brand-coral);
   --chart-2: var(--brand-teal);
   --chart-3: var(--brand-yellow);
   --chart-4: #A6C5B3;
   --chart-5: #D9A07E;
-  
-  --radius: 0.85rem; /* Generous, premium curves */
-  
-  /* Navigation Sidebar Configuration */
+
+  --radius: 0.85rem;
+
+  /* Navigation Sidebar */
   --sidebar: #FFFBF5;
   --sidebar-foreground: #2C2621;
   --sidebar-primary: var(--brand-coral);
@@ -114,33 +117,46 @@
   --sidebar-ring: var(--brand-teal);
 }
 
-/* Elegant Complementary Dark Mode Context */
+/* Warm Dark Mode */
 .dark {
-  --background: #181512;    /* Super deep warm dark base */
+  --background: #181512;
   --foreground: #F7F5F0;
-  
-  --card: #221E1A;          /* Slightly raised warm containers */
+
+  --card: #221E1A;
   --card-foreground: #F7F5F0;
   --popover: #221E1A;
   --popover-foreground: #F7F5F0;
-  
+
   --primary: var(--brand-coral);
   --primary-foreground: #181512;
   --secondary: #2C2621;
   --secondary-foreground: #F7F5F0;
-  
+
   --muted: #2C2621;
   --muted-foreground: #A69E96;
   --accent: #2C2621;
   --accent-foreground: #F7F5F0;
-  
+
   --border: #2C2621;
   --input: #2C2621;
   --ring: var(--brand-teal);
-  
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: #ffffff;
+
+  --chart-1: var(--brand-coral);
+  --chart-2: var(--brand-teal);
+  --chart-3: var(--brand-yellow);
+  --chart-4: #A6C5B3;
+  --chart-5: #D9A07E;
+
   --sidebar: #181512;
   --sidebar-foreground: #F7F5F0;
   --sidebar-border: #2C2621;
+  --sidebar-primary: var(--brand-coral);
+  --sidebar-primary-foreground: #F7F5F0;
+  --sidebar-accent: #2C2621;
+  --sidebar-accent-foreground: #F7F5F0;
+  --sidebar-ring: var(--brand-teal);
 }
 
 @layer base {
@@ -148,9 +164,36 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground antialiased tracking-tight;
+    @apply antialiased tracking-tight bg-background text-foreground;
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer components {
+  .public-page-bg {
+    @apply relative min-h-screen overflow-hidden bg-background text-foreground;
+    background:
+      radial-gradient(circle at top left, color-mix(in oklch, var(--primary) 20%, transparent), transparent 34rem),
+      radial-gradient(circle at bottom right, color-mix(in oklch, var(--brand-teal) 24%, transparent), transparent 30rem),
+      var(--background);
+  }
+
+  .public-page-bg::before {
+    content: "";
+    @apply pointer-events-none absolute inset-x-0 top-0 h-32 border-b border-border/40 bg-card/55 backdrop-blur-xl;
+  }
+
+  .public-card {
+    @apply rounded-3xl border border-border/60 bg-card/90 text-card-foreground shadow-xl shadow-foreground/5 backdrop-blur-xl;
+  }
+
+  .public-muted-card {
+    @apply rounded-2xl border border-border/50 bg-background/45 text-foreground shadow-sm;
+  }
+
+  .public-status-icon {
+    @apply mx-auto flex size-12 items-center justify-center rounded-2xl border border-border/60 bg-muted/55 text-foreground shadow-sm;
   }
 }

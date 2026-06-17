@@ -25,7 +25,7 @@ function LocalTableSection({
     <div className="bg-card rounded-2xl p-8 border border-border/50 shadow-sm flex flex-col justify-between h-full overflow-hidden">
       <div>
         <div className="pb-6">
-          <h3 className="text-lg font-semibold tracking-tight text-[#2C2621]">{title}</h3>
+          <h3 className="text-lg font-semibold tracking-tight text-foreground">{title}</h3>
           {description && (
             <p className="text-xs text-muted-foreground mt-1 leading-normal">
               {description}
@@ -82,7 +82,7 @@ export default async function AdminDeliveryPage() {
   } = await getRetailDeliveriesPageData(user);
 
   return (
-    <div className="min-h-screen bg-[#FFF6DE] p-8 md:p-12 space-y-10">
+    <div className="min-h-screen bg-background p-8 md:p-12 space-y-10">
       <DashboardSectionHeader
         title="Delivery Operations"
         description="Monitor supply chain carton delivery logs and distribution metrics across all registered brands."
@@ -93,13 +93,13 @@ export default async function AdminDeliveryPage() {
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: Total Delivery Scans */}
-        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#8BDFDD]">
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-teal">
           <div className="flex items-center justify-between pb-3">
             <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Total Delivery Scans</span>
-            <span className="p-1.5 rounded-lg bg-[#8BDFDD]/15 text-[#156D6B] dark:text-[#8BDFDD]"><Truck className="h-4 w-4" /></span>
+            <span className="p-1.5 rounded-lg bg-brand-teal/15 text-foreground"><Truck className="h-4 w-4" /></span>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-[#156D6B] dark:text-[#8BDFDD] tracking-tight">
+            <div className="text-3xl font-extrabold text-foreground tracking-tight">
               {formatNumber(totalDeliveryScans)}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Platform-wide logged deliveries</p>
@@ -107,13 +107,13 @@ export default async function AdminDeliveryPage() {
         </div>
 
         {/* Card 2: Total Cartons Delivered */}
-        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#FFE394]">
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-yellow">
           <div className="flex items-center justify-between pb-3">
             <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Total Cartons Delivered</span>
-            <span className="p-1.5 rounded-lg bg-[#FFE394]/30 text-[#6B5215] dark:text-[#FFE394]"><Layers className="h-4 w-4" /></span>
+            <span className="p-1.5 rounded-lg bg-brand-yellow/30 text-foreground"><Layers className="h-4 w-4" /></span>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-[#8B6B00] dark:text-[#FFE394] tracking-tight">
+            <div className="text-3xl font-extrabold text-foreground tracking-tight">
               {formatNumber(totalCartonsDelivered)}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Platform-wide cartons dropped off</p>
@@ -121,13 +121,13 @@ export default async function AdminDeliveryPage() {
         </div>
 
         {/* Card 3: Total Placed Units */}
-        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#F48F68]">
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-primary">
           <div className="flex items-center justify-between pb-3">
             <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Total Placed Units</span>
-            <span className="p-1.5 rounded-lg bg-[#F48F68]/10 text-[#F48F68]"><Archive className="h-4 w-4" /></span>
+            <span className="p-1.5 rounded-lg bg-primary/10 text-primary"><Archive className="h-4 w-4" /></span>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-[#E27E58] dark:text-[#F48F68] tracking-tight">
+            <div className="text-3xl font-extrabold text-primary tracking-tight">
               {formatNumber(totalEstimatedUnitsDelivered)}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Estimated product units in circulation</p>
@@ -143,18 +143,18 @@ export default async function AdminDeliveryPage() {
         hasData={deliveryScans.length > 0}
       >
         {deliveryScans.map((scan) => (
-          <tr key={scan.id} className="border-b border-border/30 last:border-0 hover:bg-[#F5EFE0]/40 transition-colors">
+          <tr key={scan.id} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
             <td className="py-4 px-3 font-mono text-[10px] text-muted-foreground whitespace-nowrap">
               {formatDateTime(scan.createdAt)}
             </td>
-            <td className="py-4 px-3 font-medium text-[#2C2621] whitespace-nowrap">
+            <td className="py-4 px-3 font-medium text-foreground whitespace-nowrap">
               <span className="flex items-center gap-1.5">
                 <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                 {scan.brand?.name ?? "—"}
               </span>
             </td>
             <td className="py-4 px-3 whitespace-nowrap">
-              <span className="font-semibold text-[#2C2621] block">
+              <span className="font-semibold text-foreground block">
                 {scan.retailer?.name ?? "—"}
               </span>
               <span className="text-[9px] text-muted-foreground uppercase tracking-wider block mt-0.5">
@@ -170,13 +170,13 @@ export default async function AdminDeliveryPage() {
             <td className="py-4 px-3 font-mono text-[10px] text-muted-foreground">
               {scan.batch?.batchCode ?? "—"}
             </td>
-            <td className="py-4 px-3 text-right font-medium text-[#2C2621]">
+            <td className="py-4 px-3 text-right font-medium text-foreground">
               {formatNumber(scan.cartonsDelivered)}
             </td>
             <td className="py-4 px-3 text-right font-mono text-muted-foreground">
               {scan.unitsPerCarton}
             </td>
-            <td className="py-4 px-3 text-right font-semibold text-[#156D6B] dark:text-brand-teal">
+            <td className="py-4 px-3 text-right font-semibold text-foreground">
               {formatNumber(scan.estimatedUnitsDelivered)}
             </td>
             <td className="py-4 px-3 whitespace-nowrap">

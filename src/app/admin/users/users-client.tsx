@@ -1,12 +1,19 @@
 // src/app/admin/users/users-client.tsx
 "use client";
 
-import React, { useState } from "react";
-import { Plus, Pencil, UserX, UserCheck } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Plus, Pencil, UserX, UserCheck, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
@@ -81,9 +88,24 @@ export function UsersClient({
   inactiveUsers,
 }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserRow | undefined>(
-    undefined
-  );
+  const [editingUser, setEditingUser] = useState<UserRow | undefined>(undefined);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("ALL");
+
+  const filteredUsers = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return users.filter((u) => {
+      const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
+      if (!matchesRole) return false;
+      if (!q) return true;
+      return (
+        (u.name ?? "").toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.brandName ?? "").toLowerCase().includes(q) ||
+        (u.advertiserName ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [users, searchQuery, roleFilter]);
 
   function openCreate() {
     setEditingUser(undefined);
@@ -117,45 +139,66 @@ export function UsersClient({
     }
   }
 
+  const hasActiveFilters = searchQuery !== "" || roleFilter !== "ALL";
+
+  function clearFilters() {
+    setSearchQuery("");
+    setRoleFilter("ALL");
+  }
+
   return (
     <>
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(totalUsers)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(activeUsers)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Verified</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(verifiedUsers)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inactive</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(inactiveUsers)}</div>
-          </CardContent>
-        </Card>
+      {/* KPI Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-primary">
+          <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Total Users</span>
+          <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(totalUsers)}</div>
+        </div>
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-brand-teal">
+          <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Active</span>
+          <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(activeUsers)}</div>
+        </div>
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-brand-yellow">
+          <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Verified</span>
+          <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(verifiedUsers)}</div>
+        </div>
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-muted-foreground/40">
+          <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Inactive</span>
+          <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(inactiveUsers)}</div>
+        </div>
       </div>
 
-      <div className="flex justify-end">
+      {/* Search & Filter bar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Search by name, email, brand, or advertiser…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+            aria-label="Search users"
+          />
+        </div>
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-[200px]" aria-label="Filter by role">
+            <SelectValue placeholder="All Roles" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Roles</SelectItem>
+            <SelectItem value="ADMIN">Admin</SelectItem>
+            <SelectItem value="BRAND_ADMIN">Brand Admin</SelectItem>
+            <SelectItem value="CAMPAIGN_MANAGER">Campaign Manager</SelectItem>
+            <SelectItem value="ADVERTISER_VIEWER">Advertiser Viewer</SelectItem>
+            <SelectItem value="RETAIL_OPERATIONS">Retail Operations</SelectItem>
+          </SelectContent>
+        </Select>
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
+            <X className="mr-1.5 h-3.5 w-3.5" />
+            Clear
+          </Button>
+        )}
         <Button onClick={openCreate} size="sm">
           <Plus className="mr-1.5 h-4 w-4" />
           Add User
@@ -178,24 +221,19 @@ export function UsersClient({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.length === 0 ? (
+            {filteredUsers.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={9}
-                  className="text-center text-muted-foreground py-8"
-                >
-                  No users found.
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                  {hasActiveFilters
+                    ? "No users match your search or filter."
+                    : "No users found."}
                 </TableCell>
               </TableRow>
             ) : (
-              users.map((user) => (
+              filteredUsers.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">
-                    {user.name ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {user.email}
-                  </TableCell>
+                  <TableCell className="font-medium">{user.name ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{user.email}</TableCell>
                   <TableCell>
                     <Badge variant={roleVariant(user.role)}>
                       {formatStatusLabel(user.role)}
@@ -209,9 +247,7 @@ export function UsersClient({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant={user.isEmailVerified ? "default" : "secondary"}
-                    >
+                    <Badge variant={user.isEmailVerified ? "default" : "secondary"}>
                       {user.isEmailVerified ? "Verified" : "Unverified"}
                     </Badge>
                   </TableCell>
@@ -221,7 +257,6 @@ export function UsersClient({
                   <TableCell className="text-right">
                     <TooltipProvider>
                       <div className="flex justify-end gap-1">
-                        {/* Edit */}
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -229,7 +264,7 @@ export function UsersClient({
                               size="icon-sm"
                               aria-label="Edit user"
                               onClick={() => openEdit(user)}
-                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 focus-visible:ring-blue-500"
+                              className="text-muted-foreground hover:text-foreground"
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
@@ -238,7 +273,6 @@ export function UsersClient({
                         </Tooltip>
 
                         {user.isActive ? (
-                          /* Deactivate */
                           <AlertDialog>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -247,7 +281,7 @@ export function UsersClient({
                                     variant="ghost"
                                     size="icon-sm"
                                     aria-label="Deactivate user"
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 focus-visible:ring-red-500"
+                                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                   >
                                     <UserX className="h-3.5 w-3.5" />
                                   </Button>
@@ -259,8 +293,7 @@ export function UsersClient({
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Deactivate user?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  This will prevent{" "}
-                                  <strong>{user.name ?? user.email}</strong> from
+                                  This will prevent <strong>{user.name ?? user.email}</strong> from
                                   logging in. No data will be deleted.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
@@ -268,7 +301,7 @@ export function UsersClient({
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => handleDeactivate(user)}
-                                  className="bg-red-600 hover:bg-red-700"
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
                                   Deactivate
                                 </AlertDialogAction>
@@ -276,7 +309,6 @@ export function UsersClient({
                             </AlertDialogContent>
                           </AlertDialog>
                         ) : (
-                          /* Activate */
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -284,7 +316,7 @@ export function UsersClient({
                                 size="icon-sm"
                                 aria-label="Activate user"
                                 onClick={() => handleActivate(user)}
-                                className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 focus-visible:ring-amber-500"
+                                className="text-muted-foreground hover:text-foreground"
                               >
                                 <UserCheck className="h-3.5 w-3.5" />
                               </Button>
@@ -303,10 +335,7 @@ export function UsersClient({
       </div>
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent
-          side="right"
-          className="overflow-y-auto w-full sm:max-w-lg"
-        >
+        <SheetContent side="right" className="overflow-y-auto w-full sm:max-w-lg">
           <SheetHeader>
             <SheetTitle>{editingUser ? "Edit User" : "Add User"}</SheetTitle>
             <SheetDescription>
@@ -322,9 +351,7 @@ export function UsersClient({
               initialData={editingUser}
               brands={brands}
               advertisers={advertisers}
-              onSubmitAction={(values) =>
-                updateUserAction(editingUser.id, values)
-              }
+              onSubmitAction={(values) => updateUserAction(editingUser.id, values)}
               onSuccess={handleSheetSuccess}
             />
           ) : (

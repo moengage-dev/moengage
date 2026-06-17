@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { requireRole } from "@/lib/auth/require-role";
 import { ReportsClient, DEFAULT_REPORT_CARDS } from "@/components/dashboard/reports-client";
-import { FileText } from "lucide-react";
+import { DashboardSectionHeader } from "@/components/dashboard/dashboard-section-header";
 
 export const metadata: Metadata = {
   title: "Reports | Advertiser Dashboard",
@@ -18,15 +18,12 @@ export default async function AdvertiserReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <FileText className="h-8 w-8 text-primary" />
-            Advertiser Reports
-          </h1>
-          <p className="text-muted-foreground">Export and view reports for campaigns you are advertising.</p>
-        </div>
-      </div>
+      <DashboardSectionHeader
+        title="Advertiser Reports"
+        description="Export and view reports for campaigns you are advertising."
+        badgeText="Advertiser"
+        badgeVariant="purple"
+      />
 
       <ReportsClient availableCards={cards} />
     </div>

@@ -53,7 +53,7 @@ export default async function HeatmapsPage({ searchParams }: PageProps) {
   } = data;
 
   return (
-    <div className="min-h-screen bg-[#FFF6DE] p-8 md:p-12 space-y-10">
+    <div className="min-h-screen bg-background p-8 md:p-12 space-y-10">
       <DashboardSectionHeader
         title="Heatmaps"
         description="Compare consumer engagement scans and delivery distribution activity."
@@ -63,8 +63,8 @@ export default async function HeatmapsPage({ searchParams }: PageProps) {
 
       {/* Truncation Notice */}
       {(metadata.isConsumerDataTruncated || metadata.isDeliveryDataTruncated) && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 text-amber-800 shadow-sm">
-          <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+        <div className="bg-muted border border-border rounded-xl p-4 flex items-start gap-3 text-foreground shadow-sm">
+          <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
           <div className="text-sm">
             Showing the most recent 2,000 mapped records. Narrow the filters to view a more specific area.
           </div>

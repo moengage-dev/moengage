@@ -10,5 +10,17 @@ export default function VerifyEmailLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>;
+  return (
+    <Suspense
+      fallback={
+        <div className="public-page-bg flex items-center justify-center px-4">
+          <div className="public-card relative z-10 px-8 py-7 text-sm font-medium text-muted-foreground">
+            Loading verification screen...
+          </div>
+        </div>
+      }
+    >
+      {children}
+    </Suspense>
+  );
 }

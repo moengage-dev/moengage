@@ -33,7 +33,7 @@ export function HeatmapDataTables({ scanMarkers, deliveryMarkers }: HeatmapDataT
         <CardHeader className="border-b border-border/40 pb-4">
           <div className="flex items-center gap-2">
             <Scan className="h-4 w-4 text-indigo-600" />
-            <CardTitle className="text-md font-semibold text-[#2C2621]">Consumer Engagement Scans</CardTitle>
+            <CardTitle className="text-md font-semibold text-foreground">Consumer Engagement Scans</CardTitle>
           </div>
           <CardDescription className="text-muted-foreground text-xs mt-1">
             Geographic log of 30-second scan buckets matching the current filters.
@@ -68,7 +68,7 @@ export function HeatmapDataTables({ scanMarkers, deliveryMarkers }: HeatmapDataT
                       <TableCell className="py-2.5 px-4 font-mono text-[10px] text-muted-foreground">
                         {formatDateTime(marker.createdAt)}
                       </TableCell>
-                      <TableCell className="py-2.5 px-4 font-medium text-[#2C2621] truncate max-w-[120px]" title={marker.campaignName}>
+                      <TableCell className="py-2.5 px-4 font-medium text-foreground truncate max-w-[120px]" title={marker.campaignName}>
                         {marker.campaignName}
                       </TableCell>
                       <TableCell className="py-2.5 px-4 text-muted-foreground truncate max-w-[100px]" title={marker.productName}>
@@ -98,7 +98,7 @@ export function HeatmapDataTables({ scanMarkers, deliveryMarkers }: HeatmapDataT
         <CardHeader className="border-b border-border/40 pb-4">
           <div className="flex items-center gap-2">
             <Truck className="h-4 w-4 text-emerald-600" />
-            <CardTitle className="text-md font-semibold text-[#2C2621]">Delivery Distribution drops</CardTitle>
+            <CardTitle className="text-md font-semibold text-foreground">Delivery Distribution drops</CardTitle>
           </div>
           <CardDescription className="text-muted-foreground text-xs mt-1">
             Geographic log of retail distribution drops matching the current filters.
@@ -131,7 +131,7 @@ export function HeatmapDataTables({ scanMarkers, deliveryMarkers }: HeatmapDataT
                       <TableCell className="py-2.5 px-4 font-mono text-[10px] text-muted-foreground">
                         {formatDateTime(marker.createdAt)}
                       </TableCell>
-                      <TableCell className="py-2.5 px-4 font-semibold text-[#2C2621] truncate max-w-[120px]" title={marker.retailerName}>
+                      <TableCell className="py-2.5 px-4 font-semibold text-foreground truncate max-w-[120px]" title={marker.retailerName}>
                         {marker.retailerName}
                       </TableCell>
                       <TableCell className="py-2.5 px-4 text-muted-foreground truncate max-w-[100px]" title={marker.campaignName}>

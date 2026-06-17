@@ -128,20 +128,20 @@ export function RetailersClient({
       {/* KPI summary */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Total Retailers", value: totalRetailers, icon: Building2, color: "text-[#1E5C5A]" },
-          { label: "Countries", value: uniqueCountries, icon: MapPin, color: "text-[#F48F68]" },
-          { label: "Brands Represented", value: brandsRepresented, icon: Building2, color: "text-blue-600" },
+          { label: "Total Retailers", value: totalRetailers, icon: Building2, color: "text-foreground" },
+          { label: "Countries", value: uniqueCountries, icon: MapPin, color: "text-primary" },
+          { label: "Brands Represented", value: brandsRepresented, icon: Building2, color: "text-foreground" },
           { label: "With Coordinates", value: withCoords, icon: Navigation, color: "text-emerald-600" },
         ].map(({ label, value, icon: Icon, color }) => (
           <div
             key={label}
-            className="bg-white rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2"
+            className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2"
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{label}</span>
               <Icon className={`h-4 w-4 ${color}`} />
             </div>
-            <div className="text-2xl font-extrabold text-[#2C2621]">{value}</div>
+            <div className="text-2xl font-extrabold text-foreground">{value}</div>
           </div>
         ))}
       </div>
@@ -198,7 +198,7 @@ export function RetailersClient({
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border overflow-x-auto bg-white shadow-sm">
+      <div className="rounded-xl border overflow-x-auto bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow>
@@ -227,7 +227,7 @@ export function RetailersClient({
             ) : (
               filteredRetailers.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell className="font-medium text-[#2C2621]">{r.name}</TableCell>
+                  <TableCell className="font-medium text-foreground">{r.name}</TableCell>
                   <TableCell>
                     {r.brandName ? (
                       <Badge variant="outline" className="text-[10px]">{r.brandName}</Badge>
@@ -275,7 +275,7 @@ export function RetailersClient({
                             size="icon-sm"
                             aria-label="Edit retailer"
                             onClick={() => openEdit(r)}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 focus-visible:ring-blue-500"
+                            className="text-muted-foreground hover:text-foreground"
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
