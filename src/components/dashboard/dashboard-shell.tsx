@@ -23,7 +23,7 @@ export function DashboardShell({ role, user, children }: DashboardShellProps) {
         <AppSidebar role={role} user={user} />
         <SidebarInset className="flex flex-col flex-1 h-screen overflow-hidden">
           <DashboardHeader />
-          <main className="flex-1 overflow-y-auto bg-background p-6 md:p-8">
+          <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 md:p-8">
             {children}
           </main>
           <Toaster richColors />

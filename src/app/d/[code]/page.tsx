@@ -9,7 +9,7 @@ import {
 } from "@/server/services/delivery-scan.service";
 import { getApproximateLocationFromHeaders } from "@/lib/scans/ip-location";
 import { DeliveryScanForm } from "@/components/delivery/delivery-scan-form";
-import { AlertCircle, Ban, ArrowLeft, Archive, AlertTriangle } from "lucide-react";
+import { AlertCircle, Ban, ArrowLeft, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -35,9 +35,9 @@ export default async function DeliveryScanPage({ params }: Props) {
     let errorTitle = "Invalid QR Code";
     let errorMsg = result.error;
     let Icon = AlertCircle;
-    let iconColor = "text-red-500";
-    let borderColor = "border-red-100";
-    let bgColor = "bg-red-50";
+    let iconColor = "text-destructive";
+    let borderColor = "border-destructive/30";
+    let bgColor = "bg-destructive/10";
 
     if (result.status === "NOT_FOUND") {
       errorTitle = "Delivery QR Not Found";
@@ -46,9 +46,9 @@ export default async function DeliveryScanPage({ params }: Props) {
       errorTitle = "Wrong QR Code Type";
       errorMsg = "This scan flow is reserved for BATCH_DELIVERY operations. The scanned QR is of a different category.";
       Icon = Ban;
-      iconColor = "text-amber-500";
-      borderColor = "border-amber-100";
-      bgColor = "bg-amber-50";
+      iconColor = "text-primary";
+      borderColor = "border-primary/30";
+      bgColor = "bg-primary/10";
     } else if (result.status === "INACTIVE") {
       errorTitle = "Delivery QR Inactive";
       errorMsg = "This batch delivery QR code has been paused, disabled, or expired.";
@@ -58,9 +58,9 @@ export default async function DeliveryScanPage({ params }: Props) {
     } else if (result.status === "MISSING_BATCH" || result.status === "MISSING_CARTON_CONFIG") {
       errorTitle = "Configuration Missing";
       Icon = AlertTriangle;
-      iconColor = "text-amber-500";
-      borderColor = "border-amber-100";
-      bgColor = "bg-amber-50";
+      iconColor = "text-primary";
+      borderColor = "border-primary/30";
+      bgColor = "bg-primary/10";
     } else if (result.status === "UNAUTHORIZED") {
       errorTitle = "Access Denied";
       errorMsg = "This batch belongs to another brand. You are unauthorized to log drop-offs for this inventory.";
@@ -68,8 +68,8 @@ export default async function DeliveryScanPage({ params }: Props) {
     }
 
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <div className={`max-w-md w-full bg-white border ${borderColor} rounded-2xl shadow-sm p-8 text-center space-y-5`}>
+      <div className="public-page-bg flex flex-col items-center justify-center p-4">
+        <div className={`public-card relative z-10 max-w-md w-full border ${borderColor} p-8 text-center space-y-5`}>
           <div className={`mx-auto w-12 h-12 rounded-full ${bgColor} border ${borderColor} flex items-center justify-center`}>
             <Icon className={`h-6 w-6 ${iconColor}`} />
           </div>
@@ -117,8 +117,8 @@ export default async function DeliveryScanPage({ params }: Props) {
   const ipLocation = getApproximateLocationFromHeaders(reqHeaders as any);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center p-4 pb-12">
-      <div className="w-full max-w-lg space-y-4 pt-6">
+    <div className="public-page-bg flex flex-col items-center p-4 pb-12">
+      <div className="relative z-10 w-full max-w-lg space-y-4 pt-6">
         <div className="flex items-center justify-between">
           <Link
             href="/retail"

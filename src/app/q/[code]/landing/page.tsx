@@ -28,9 +28,9 @@ export default async function ConsumerQRLandingPage({ params }: Props) {
 
   if (result.status === "NOT_FOUND") {
     return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
-        <div className="max-w-md w-full bg-card border border-border/60 shadow-xl rounded-2xl p-8 text-center space-y-6">
-          <div className="mx-auto w-12 h-12 bg-brand-coral/15 border border-brand-coral/20 text-foreground rounded-full flex items-center justify-center">
+      <div className="public-page-bg flex flex-col items-center justify-center p-4">
+        <div className="public-card relative z-10 max-w-md w-full p-8 text-center space-y-6">
+          <div className="public-status-icon bg-destructive/10 text-destructive">
             <AlertCircle className="h-6 w-6" />
           </div>
           <div className="space-y-2">
@@ -39,7 +39,7 @@ export default async function ConsumerQRLandingPage({ params }: Props) {
               The QR code you scanned does not match any active campaign or promotion.
             </p>
           </div>
-          <Button asChild className="w-full bg-brand-coral hover:bg-brand-coral/90 text-white rounded-xl shadow-sm transition-all">
+          <Button asChild className="w-full">
             <Link href="/login">Return Home</Link>
           </Button>
         </div>
@@ -49,9 +49,9 @@ export default async function ConsumerQRLandingPage({ params }: Props) {
 
   if (result.status === "BATCH_DELIVERY") {
     return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
-        <div className="max-w-md w-full bg-card border border-border/60 shadow-xl rounded-2xl p-8 text-center space-y-6">
-          <div className="mx-auto w-12 h-12 bg-brand-teal/15 border border-brand-teal/20 text-foreground rounded-full flex items-center justify-center">
+      <div className="public-page-bg flex flex-col items-center justify-center p-4">
+        <div className="public-card relative z-10 max-w-md w-full p-8 text-center space-y-6">
+          <div className="public-status-icon bg-brand-teal/15">
             <AlertTriangle className="h-6 w-6" />
           </div>
           <div className="space-y-2">
@@ -61,7 +61,7 @@ export default async function ConsumerQRLandingPage({ params }: Props) {
             </p>
           </div>
           <div className="space-y-2">
-            <Button asChild className="w-full bg-brand-teal hover:bg-brand-teal/90 text-white rounded-xl shadow-sm transition-all">
+            <Button asChild className="w-full">
               <Link href={`/d/${code}`}>Go to Delivery Scanner</Link>
             </Button>
             <Button asChild variant="ghost" className="w-full text-muted-foreground hover:text-foreground">
@@ -75,9 +75,9 @@ export default async function ConsumerQRLandingPage({ params }: Props) {
 
   if (result.status === "INACTIVE" || result.status === "WRONG_TYPE") {
     return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
-        <div className="max-w-md w-full bg-card border border-border/60 shadow-xl rounded-2xl p-8 text-center space-y-6">
-          <div className="mx-auto w-12 h-12 bg-brand-coral/15 border border-brand-coral/20 text-foreground rounded-full flex items-center justify-center">
+      <div className="public-page-bg flex flex-col items-center justify-center p-4">
+        <div className="public-card relative z-10 max-w-md w-full p-8 text-center space-y-6">
+          <div className="public-status-icon bg-destructive/10 text-destructive">
             <Ban className="h-6 w-6" />
           </div>
           <div className="space-y-2">
@@ -86,7 +86,7 @@ export default async function ConsumerQRLandingPage({ params }: Props) {
               This campaign or promotional offer is not currently active.
             </p>
           </div>
-          <Button asChild className="w-full bg-brand-coral hover:bg-brand-coral/90 text-white rounded-xl shadow-sm transition-all">
+          <Button asChild className="w-full">
             <Link href="/login">Return Home</Link>
           </Button>
         </div>

@@ -24,68 +24,68 @@ Date: 2026-06-17
 
 ## Route Inventory
 
-42 routes total. Status: semantic = brand colors via CSS variables, hardcoded = hex/fixed values remain.
+42 route entries plus application `not-found` and `error` boundaries. Status: semantic = brand colors via CSS variables, hardcoded = hex/fixed values remain.
 
 ### Auth Routes
 
 | Route | Status | Notes |
 |-------|--------|-------|
-| `/login` | To review | Public auth page |
-| `/signup` | To review | Public auth page |
-| `/verify-email` | To review | OTP verification page |
+| `/login` | ✅ Semantic | Public auth page uses shared public surface, live loading/status treatment |
+| `/signup` | ✅ Semantic | Public auth page uses shared public surface, accessible status treatment |
+| `/verify-email` | ✅ Semantic | OTP verification page uses shared public surface and loading fallback |
 
 ### Admin Routes
 
 | Route | Status | Notes |
 |-------|--------|-------|
 | `/admin` | ✅ Semantic | `bg-background`, `text-foreground`, `text-primary`, brand tokens |
-| `/admin/brands` | To review | CRUD table |
-| `/admin/advertisers` | To review | CRUD table |
-| `/admin/products` | To review | CRUD table |
-| `/admin/campaigns` | To review | CRUD table |
-| `/admin/batches` | To review | CRUD table |
-| `/admin/users` | To review | CRUD table |
-| `/admin/qr-codes` | To review | QR management |
+| `/admin/brands` | ✅ Semantic | CRUD table uses shared shadcn table/filter/sheet/dialog patterns |
+| `/admin/advertisers` | ✅ Semantic | CRUD table uses shared shadcn table/filter/sheet/dialog patterns |
+| `/admin/products` | ✅ Semantic | CRUD table uses shared shadcn table/filter/sheet/dialog patterns |
+| `/admin/campaigns` | ✅ Semantic | CRUD table and KPI cards use shared semantic tokens |
+| `/admin/batches` | ✅ Semantic | CRUD table and KPI cards use shared semantic tokens |
+| `/admin/users` | ✅ Semantic | CRUD table and KPI cards use shared semantic tokens |
+| `/admin/qr-codes` | ✅ Semantic | QR management table/filter/action patterns use semantic tokens |
 | `/admin/retailers` | ✅ Semantic | KPI cards, table — uses `bg-card`, `text-foreground` |
 | `/admin/delivery` | ✅ Semantic | KPI cards, table — brand tokens applied |
 | `/admin/heatmaps` | ✅ Semantic | `bg-background`, heatmap map component |
 | `/admin/suspicious-scans` | ✅ Semantic | KPI cards, filters, table |
-| `/admin/reports` | To review | Reports client |
-| `/admin/billing` | To review | Billing client |
+| `/admin/reports` | ✅ Semantic | Reports client uses semantic cards, inputs, buttons |
+| `/admin/billing` | ✅ Semantic | Billing client uses semantic cards, filters, tables |
 
 ### Brand Admin Routes
 
 | Route | Status | Notes |
 |-------|--------|-------|
-| `/brand` | To review | Brand dashboard |
-| `/brand/campaigns` | To review | |
-| `/brand/products` | To review | |
-| `/brand/batches` | To review | |
-| `/brand/qr-codes` | To review | |
-| `/brand/delivery` | To review | |
-| `/brand/heatmaps` | To review | |
-| `/brand/reports` | To review | |
-| `/brand/billing` | To review | |
+| `/brand` | ✅ Semantic | Brand dashboard uses shared dashboard cards/tables |
+| `/brand/campaigns` | ✅ Semantic | Shared campaign management UI |
+| `/brand/products` | ✅ Semantic | Shared product management UI |
+| `/brand/batches` | ✅ Semantic | Shared batch management UI |
+| `/brand/qr-codes` | ✅ Semantic | Shared QR management UI |
+| `/brand/delivery` | ✅ Semantic | Shared delivery dashboard UI |
+| `/brand/heatmaps` | ✅ Semantic | Shared heatmap UI; map popups retain map-safe inline styles |
+| `/brand/reports` | ✅ Semantic | Shared reports client |
+| `/brand/billing` | ✅ Semantic | Shared billing client |
 
 ### Campaign Manager Routes
 
 | Route | Status | Notes |
 |-------|--------|-------|
-| `/campaign-manager` | To review | Campaign manager dashboard |
-| `/campaign-manager/campaigns` | To review | |
-| `/campaign-manager/analytics` | To review | |
-| `/campaign-manager/qr-codes` | To review | |
-| `/campaign-manager/reports` | To review | |
+| `/campaign-manager` | ✅ Semantic | Shared dashboard cards/tables |
+| `/campaign-manager/campaigns` | ✅ Semantic | Shared campaign management UI |
+| `/campaign-manager/analytics` | ✅ Semantic | Shared analytics dashboard UI |
+| `/campaign-manager/qr-codes` | ✅ Semantic | Shared QR management UI |
+| `/campaign-manager/reports` | ✅ Semantic | Shared reports client |
 
 ### Advertiser Routes
 
 | Route | Status | Notes |
 |-------|--------|-------|
-| `/advertiser` | To review | Advertiser dashboard |
-| `/advertiser/campaigns` | To review | |
-| `/advertiser/heatmaps` | To review | |
-| `/advertiser/reports` | To review | |
-| `/advertiser/billing` | To review | |
+| `/advertiser` | ✅ Semantic | Shared advertiser dashboard UI |
+| `/advertiser/campaigns` | ✅ Semantic | Shared campaign UI |
+| `/advertiser/heatmaps` | ✅ Semantic | Shared heatmap UI; map popups retain map-safe inline styles |
+| `/advertiser/reports` | ✅ Semantic | Shared reports client |
+| `/advertiser/billing` | ✅ Semantic | Shared billing client |
 
 ### Retail Routes
 
@@ -93,15 +93,17 @@ Date: 2026-06-17
 |-------|--------|-------|
 | `/retail` | ✅ Semantic | `bg-background`, `bg-card`, `text-foreground`, `text-primary` |
 | `/retail/deliveries` | ✅ Semantic | Same treatment as `/retail` |
-| `/retail/scan` | To review | Delivery scan entry |
+| `/retail/scan` | ✅ Semantic | Scanner entry and camera UI use semantic surfaces |
 
 ### Public / Operations Routes
 
 | Route | Status | Notes |
 |-------|--------|-------|
-| `/q` | To review | QR redirect index |
-| `/q/[code]/landing` | ✅ Semantic | `bg-background`, `text-foreground` applied |
-| `/d/[code]` | ✅ Semantic | `bg-background`, `text-foreground` applied |
+| `/q` | ✅ Semantic | Redirect behavior unchanged |
+| `/q/[code]/landing` | ✅ Semantic | Shared public surface and accessible reward states |
+| `/d/[code]` | ✅ Semantic | Shared public surface, delivery form, error states |
+| app `not-found` | ✅ Semantic | Shared public surface |
+| app `error` | ✅ Semantic | Shared public surface |
 
 ## Shared Components
 
@@ -131,9 +133,9 @@ Date: 2026-06-17
 | `ui/textarea.tsx` | ✅ Preset | Semantic tokens |
 | `ui/breadcrumb.tsx` | ✅ Preset | Semantic tokens |
 | `ui/input-group.tsx` | ✅ Preset | New component |
-| `campaign/public-campaign-landing.tsx` | ✅ Semantic | `text-foreground`, `bg-background/30` |
-| `delivery/delivery-scan-form.tsx` | ✅ Semantic | `bg-card`, `text-foreground` |
-| `delivery/delivery-qr-scanner.tsx` | Partial | Camera overlay uses white for contrast |
+| `campaign/public-campaign-landing.tsx` | ✅ Semantic | Shared public card, status, and reward claim treatment |
+| `delivery/delivery-scan-form.tsx` | ✅ Semantic | Shared public card, tokenized delivery status and form sections |
+| `delivery/delivery-qr-scanner.tsx` | ✅ Semantic | Camera frame uses semantic foreground/background contrast |
 | `heatmaps/heatmap-map.tsx` | ✅ Semantic | `text-foreground`, `text-primary` |
 | `heatmaps/heatmap-data-tables.tsx` | ✅ Semantic | `text-foreground` |
 | `heatmaps/heatmap-filters.tsx` | ✅ Semantic | `text-foreground` |
@@ -147,11 +149,11 @@ Date: 2026-06-17
 
 ## Remaining Work
 
-Routes marked "To review" share the same structural patterns. The most critical outstanding items:
+Visual QA still requires browser screenshots against seeded/demo data:
 
-1. Brand Admin / Campaign Manager / Advertiser dashboards (`/brand`, `/campaign-manager`, `/advertiser`) — check for `bg-[#FFF6DE]` and `text-[#2C2621]` patterns
-2. Auth pages — check background and text colors
-3. Admin CRUD pages (brands, advertisers, products, campaigns, batches, users, qr-codes) — these use the same `DashboardSectionHeader` and `AnalyticsStatCard` shared components which are already semantic; review for inline hardcoded colors
+1. Public auth, QR reward, delivery form, scanner, not-found, and error states.
+2. Admin, Brand, Campaign Manager, Advertiser, and Retail dashboards at desktop and mobile widths.
+3. Heatmap map popup rendering, because map popup markup intentionally keeps map-safe inline styles.
 
 ## What NOT to Change
 

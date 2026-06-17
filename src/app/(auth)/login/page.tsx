@@ -162,7 +162,7 @@ function LoginPageInner() {
                   Your email is not verified.{" "}
                   <button
                     onClick={() => email && ReSendVerificationEmail(email)}
-                    className="text-primary underline font-medium hover:text-emerald-600"
+                    className="text-primary underline font-medium hover:text-primary/80"
                   >
                     Click here to resend verification email.
                   </button>
@@ -213,31 +213,37 @@ function LoginPageInner() {
   };
 
   return (
-    <div className="relative min-h-screen bg-background text-foreground flex flex-col justify-center items-center px-4 py-12">
+    <div className="public-page-bg flex flex-col justify-center items-center px-4 py-12">
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm" aria-live="polite" aria-busy="true">
+          <div className="public-card flex flex-col items-center gap-4 px-8 py-7">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             <p className="text-muted-foreground text-sm font-medium">Validating credentials...</p>
           </div>
         </div>
       )}
 
-      <div className="w-full max-w-md flex flex-col gap-6">
+      <div className="relative z-10 w-full max-w-md flex flex-col gap-6">
         <div className="flex flex-col gap-2 text-center">
-          <h1 className="text-3xl font-bold tracking-tight">MoEngage</h1>
+          <div className="mx-auto mb-1 inline-flex rounded-full border border-border/60 bg-card/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-muted-foreground">
+            Secure access
+          </div>
+          <h1 className="text-4xl font-extrabold tracking-tight">MoEngage</h1>
           <p className="text-sm text-muted-foreground">
             FMCG Engagement Platform
           </p>
         </div>
 
-        <Card className="w-full">
+        <Card className="public-card w-full">
           <CardHeader className="pb-2">
             <CardDescription className="text-center">
               {message ? (
                 <div
-                  className={`text-sm ${
-                    message.type === "error" ? "text-destructive" : "text-emerald-600"
+                  role={message.type === "error" ? "alert" : "status"}
+                  className={`rounded-2xl border px-4 py-3 text-sm ${
+                    message.type === "error"
+                      ? "border-destructive/30 bg-destructive/10 text-destructive"
+                      : "border-brand-teal/30 bg-brand-teal/15 text-foreground"
                   }`}
                 >
                   {message.text}

@@ -3,7 +3,6 @@
 
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,13 +10,10 @@ import { Separator } from "@/components/ui/separator";
 import {
   Gift,
   CheckCircle,
-  ArrowRight,
   Sparkles,
   AlertCircle,
   AlertTriangle,
   Loader2,
-  Lock,
-  RefreshCw,
 } from "lucide-react";
 import { formatStatusLabel } from "@/lib/format";
 import { getFriendlyErrorMessage } from "@/components/experience/client-utils";
@@ -178,13 +174,13 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
+    <div className="public-page-bg flex flex-col items-center justify-center p-4 font-sans">
       {/* Main Card Container */}
-      <main className="w-full max-w-md z-10 space-y-6">
+      <main className="relative z-10 w-full max-w-md space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 bg-brand-coral/10 border border-brand-coral/20 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wider text-brand-coral uppercase">
-            <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-3 py-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
             Exclusive Campaign
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground mt-2">
@@ -198,10 +194,10 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
         </div>
 
         {/* Campaign Offer Details Card */}
-        <Card className="bg-card text-card-foreground rounded-2xl border border-border/60 shadow-xl p-6 md:p-8 relative overflow-hidden">
+        <Card className="public-card p-6 md:p-8 relative overflow-hidden">
           <CardHeader className="pb-3 text-center px-0 pt-0">
-            <div className="mx-auto bg-brand-coral/10 w-12 h-12 rounded-xl flex items-center justify-center mb-3">
-              <Gift className="h-6 w-6 text-brand-coral" />
+            <div className="public-status-icon bg-primary/10 mb-3">
+              <Gift className="h-6 w-6 text-primary" />
             </div>
             <CardTitle className="text-xl md:text-2xl font-bold text-foreground">
               {offerTitle}
@@ -224,7 +220,7 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
             )}
 
             {!scanEventId && (
-              <div className="bg-brand-coral/15 border border-brand-coral/20 rounded-xl p-4 flex items-start gap-3">
+              <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 flex items-start gap-3" role="status">
                 <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
                 <div className="space-y-1 text-destructive">
                   <p className="text-sm font-semibold">Scan event warning</p>
@@ -236,7 +232,7 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
             )}
 
             {scanEventId && !campaignId && (
-              <div className="bg-brand-coral/15 border border-brand-coral/20 rounded-xl p-4 flex items-start gap-3">
+              <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 flex items-start gap-3" role="status">
                 <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
                 <div className="space-y-1 text-destructive">
                   <p className="text-sm font-semibold">Reward unavailable</p>
@@ -254,8 +250,8 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
               {/* Approved View */}
               {uiState === "approved" && (
                 <div className="text-center py-6 space-y-4 animate-in fade-in zoom-in-95 duration-300">
-                  <div className="mx-auto w-16 h-16 bg-brand-teal/15 border border-brand-teal/20 text-foreground rounded-full flex items-center justify-center">
-                    <CheckCircle className="h-10 w-10 animate-bounce" />
+                  <div className="public-status-icon size-16 bg-brand-teal/15">
+                    <CheckCircle className="h-9 w-9" />
                   </div>
                   <div className="space-y-1">
                     <h3 className="text-lg font-bold text-foreground">Reward claimed successfully.</h3>
@@ -291,7 +287,7 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
                   </div>
 
                   {uiState === "error" && errorMessage && (
-                    <div className="bg-brand-coral/15 border border-brand-coral/20 rounded-xl p-3 flex items-start gap-2.5">
+                    <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3 flex items-start gap-2.5" role="alert">
                       <AlertCircle className="h-4.5 w-4.5 text-destructive shrink-0 mt-0.5" />
                       <p className="text-xs text-destructive">{errorMessage}</p>
                     </div>
@@ -300,7 +296,7 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
                   <Button
                     type="submit"
                     disabled={uiState === "sending_otp" || !canClaimReward}
-                    className="w-full bg-brand-coral hover:bg-brand-coral/90 text-white font-bold py-6 rounded-xl transition-all duration-300 hover:scale-[1.01] shadow-sm"
+                    className="w-full py-6"
                   >
                     {uiState === "sending_otp" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Send OTP Code
@@ -332,7 +328,7 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
 
                   {/* Simulated OTP helper (dev or explicit demo mode only) */}
                   {demoOtp && (
-                    <div className="bg-brand-teal/10 border border-brand-teal/20 rounded-xl p-3 text-center">
+                    <div className="rounded-2xl border border-brand-teal/30 bg-brand-teal/15 p-3 text-center" role="status">
                       <p className="text-xs text-foreground font-medium">
                         Simulated OTP (demo): <span className="font-mono bg-background px-2 py-0.5 rounded border border-border/50 font-bold">{demoOtp}</span>
                       </p>
@@ -340,7 +336,7 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
                   )}
 
                   {errorMessage && (
-                    <div className="bg-brand-coral/15 border border-brand-coral/20 rounded-xl p-3 flex items-start gap-2.5">
+                    <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3 flex items-start gap-2.5" role="alert">
                       <AlertCircle className="h-4.5 w-4.5 text-destructive shrink-0 mt-0.5" />
                       <p className="text-xs text-destructive">{errorMessage}</p>
                     </div>
@@ -359,7 +355,7 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
                     <Button
                       type="submit"
                       disabled={uiState === "verifying_otp"}
-                      className="bg-brand-coral hover:bg-brand-coral/90 text-white font-bold py-6 rounded-xl transition-all duration-300 hover:scale-[1.01] shadow-sm flex-[2]"
+                      className="py-6 flex-[2]"
                     >
                       {uiState === "verifying_otp" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Claim Reward

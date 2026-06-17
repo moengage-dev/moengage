@@ -21,13 +21,11 @@ import {
   CheckCircle,
   AlertTriangle,
   Loader2,
-  MapPin,
   FileText,
   Building2,
   Navigation,
   RefreshCw,
   WifiOff,
-  Info,
   ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
@@ -220,10 +218,10 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
   // Success screen
   if (successData) {
     return (
-      <Card className="bg-white border border-border/50 shadow-sm rounded-2xl overflow-hidden">
-        <div className="h-1.5 bg-emerald-500 w-full" />
+      <Card className="public-card overflow-hidden">
+        <div className="h-1.5 bg-brand-teal w-full" />
         <CardHeader className="text-center pb-4">
-          <div className="mx-auto bg-emerald-50 border border-emerald-200 w-12 h-12 rounded-full flex items-center justify-center text-emerald-600 mb-3">
+          <div className="mx-auto bg-brand-teal/15 border border-brand-teal/30 w-12 h-12 rounded-2xl flex items-center justify-center text-foreground mb-3">
             <CheckCircle className="h-6 w-6" />
           </div>
           <CardTitle className="text-xl font-bold text-foreground">Delivery Logged</CardTitle>
@@ -255,8 +253,8 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
               <span className="font-medium">{unitsPerCarton} units</span>
             </div>
             <div className="flex justify-between pt-1">
-              <span className="text-emerald-600 font-medium">Estimated Units</span>
-              <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+              <span className="text-foreground font-medium">Estimated Units</span>
+              <Badge className="bg-brand-teal/15 text-foreground border border-brand-teal/30 font-bold">
                 {successData.estimatedUnits.toLocaleString()} units
               </Badge>
             </div>
@@ -295,8 +293,8 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
   }
 
   return (
-    <Card className="bg-white border border-border/50 shadow-sm rounded-2xl overflow-hidden w-full">
-      <div className="h-1.5 bg-gradient-to-r from-[#1E5C5A] via-[#F48F68] to-emerald-500 w-full" />
+    <Card className="public-card overflow-hidden w-full">
+      <div className="h-1.5 bg-gradient-to-r from-brand-teal via-primary to-brand-yellow w-full" />
       <CardHeader className="pb-4">
         <div className="flex items-center gap-3">
           <div className="bg-brand-teal/10 border border-brand-teal/20 w-10 h-10 rounded-xl flex items-center justify-center text-foreground">
@@ -452,7 +450,7 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
             {/* Location status badge */}
             <div className="flex items-center gap-2 text-xs py-1">
               {locationState.status === "requesting" && (
-                <span className="flex items-center gap-1.5 text-amber-600">
+                <span className="flex items-center gap-1.5 text-primary">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   Requesting device location…
                 </span>
@@ -508,7 +506,7 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
             </div>
 
             {locationState.status === "unavailable" && (
-              <p className="text-xs text-amber-600 flex items-center gap-1.5">
+              <p className="text-xs text-primary flex items-center gap-1.5">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 No location available — delivery will be recorded without coordinates.
               </p>
@@ -536,7 +534,7 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
                   <span>Units per Carton:</span>
                   <span className="font-semibold text-foreground">{unitsPerCarton}</span>
                 </div>
-                <div className="flex justify-between border-t border-border/30 pt-1 text-emerald-600 font-semibold">
+                <div className="flex justify-between border-t border-border/30 pt-1 text-foreground font-semibold">
                   <span>Estimated Total Units:</span>
                   <span>{estimatedUnits.toLocaleString()}</span>
                 </div>
