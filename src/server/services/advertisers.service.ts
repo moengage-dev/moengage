@@ -103,6 +103,19 @@ export async function createAdvertiser(
   let primaryUserEmail: string | null = null;
 
   if (primaryUserId) {
+    const acctUser = await prisma.user.findUnique({
+      where: { id: primaryUserId },
+      select: { role: true, isActive: true },
+    });
+    if (!acctUser) {
+      return { ok: false, error: "Selected account manager not found." };
+    }
+    if (acctUser.role !== "CAMPAIGN_MANAGER" && acctUser.role !== "ADVERTISER_VIEWER") {
+      return { ok: false, error: "Selected user must have the CAMPAIGN_MANAGER or ADVERTISER_VIEWER role." };
+    }
+    if (!acctUser.isActive) {
+      return { ok: false, error: "Selected account manager is not active." };
+    }
     const updatedUser = await prisma.user.update({
       where: { id: primaryUserId },
       data: { advertiserId: advertiser.id },
@@ -175,6 +188,19 @@ export async function updateAdvertiser(
   let primaryUserEmail: string | null = null;
 
   if (primaryUserId) {
+    const acctUser = await prisma.user.findUnique({
+      where: { id: primaryUserId },
+      select: { role: true, isActive: true },
+    });
+    if (!acctUser) {
+      return { ok: false, error: "Selected account manager not found." };
+    }
+    if (acctUser.role !== "CAMPAIGN_MANAGER" && acctUser.role !== "ADVERTISER_VIEWER") {
+      return { ok: false, error: "Selected user must have the CAMPAIGN_MANAGER or ADVERTISER_VIEWER role." };
+    }
+    if (!acctUser.isActive) {
+      return { ok: false, error: "Selected account manager is not active." };
+    }
     const updatedUser = await prisma.user.update({
       where: { id: primaryUserId },
       data: { advertiserId: id },

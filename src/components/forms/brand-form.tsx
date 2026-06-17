@@ -207,7 +207,7 @@ export function BrandForm({ initialData, unassignedAdmins, onSubmitAction, onSuc
 
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between w-full mb-2">
-          <label className="text-sm font-medium">Primary Brand Administrator</label>
+          <label className="text-sm font-medium">Primary Brand Administrator <span className="text-destructive">*</span></label>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button 
@@ -291,7 +291,11 @@ export function BrandForm({ initialData, unassignedAdmins, onSubmitAction, onSuc
                   variant="outline"
                   role="combobox"
                   aria-expanded={popoverOpen}
-                  className="w-full justify-between font-normal text-left"
+                  aria-required="true"
+                  className={cn(
+                    "w-full justify-between font-normal text-left",
+                    errors.primaryUserId && "border-destructive"
+                  )}
                 >
                   {field.value
                     ? userOptions.find((u) => u.id === field.value)?.name ||
@@ -307,21 +311,6 @@ export function BrandForm({ initialData, unassignedAdmins, onSubmitAction, onSuc
                   <CommandList>
                     <CommandEmpty>No administrator found.</CommandEmpty>
                     <CommandGroup>
-                      <CommandItem
-                        value="none"
-                        onSelect={() => {
-                          field.onChange("");
-                          setPopoverOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            !field.value ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        None (Unassigned)
-                      </CommandItem>
                       {userOptions.map((u) => (
                         <CommandItem
                           key={u.id}
@@ -350,6 +339,9 @@ export function BrandForm({ initialData, unassignedAdmins, onSubmitAction, onSuc
             </Popover>
           )}
         />
+        {errors.primaryUserId && (
+          <p className="text-xs text-destructive">{errors.primaryUserId.message}</p>
+        )}
       </div>
 
       <div className="flex flex-col gap-1.5">

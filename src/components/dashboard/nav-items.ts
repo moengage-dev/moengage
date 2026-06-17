@@ -15,6 +15,7 @@ import {
   Scan,
   ClipboardList,
   LineChart,
+  Store,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -34,6 +35,7 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
   { title: "Batches", href: "/admin/batches", icon: Boxes },
   { title: "QR Codes", href: "/admin/qr-codes", icon: QrCode },
   { title: "Delivery", href: "/admin/delivery", icon: Truck },
+  { title: "Retailers", href: "/admin/retailers", icon: Store },
   { title: "Heatmaps", href: "/admin/heatmaps", icon: Map },
   { title: "Reports", href: "/admin/reports", icon: BarChart3 },
   { title: "Billing", href: "/admin/billing", icon: CreditCard },

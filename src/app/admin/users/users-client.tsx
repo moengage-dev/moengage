@@ -8,6 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Table,
   TableBody,
   TableCell,
@@ -213,62 +219,81 @@ export function UsersClient({
                     {formatDate(user.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => openEdit(user)}
-                        title="Edit user"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-
-                      {user.isActive ? (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
+                    <TooltipProvider>
+                      <div className="flex justify-end gap-1">
+                        {/* Edit */}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              title="Deactivate user"
+                              aria-label="Edit user"
+                              onClick={() => openEdit(user)}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 focus-visible:ring-blue-500"
                             >
-                              <UserX className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="sr-only">Deactivate</span>
+                              <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Deactivate user?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will prevent{" "}
-                                <strong>{user.name ?? user.email}</strong> from
-                                logging in. No data will be deleted.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeactivate(user)}
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Edit user</TooltipContent>
+                        </Tooltip>
+
+                        {user.isActive ? (
+                          /* Deactivate */
+                          <AlertDialog>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label="Deactivate user"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 focus-visible:ring-red-500"
+                                  >
+                                    <UserX className="h-3.5 w-3.5" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">Deactivate user</TooltipContent>
+                            </Tooltip>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Deactivate user?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will prevent{" "}
+                                  <strong>{user.name ?? user.email}</strong> from
+                                  logging in. No data will be deleted.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeactivate(user)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Deactivate
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        ) : (
+                          /* Activate */
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Activate user"
+                                onClick={() => handleActivate(user)}
+                                className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 focus-visible:ring-amber-500"
                               >
-                                Deactivate
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          title="Activate user"
-                          onClick={() => handleActivate(user)}
-                        >
-                          <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="sr-only">Activate</span>
-                        </Button>
-                      )}
-                    </div>
+                                <UserCheck className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Activate user</TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
+                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))

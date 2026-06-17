@@ -29,6 +29,8 @@ const optionalDecimal = z.preprocess(
   z.number().nullable().optional()
 );
 
+const locationSourceEnum = z.enum(["IP", "GPS", "MANUAL", "DEMO_SEED"]).nullable().optional();
+
 export const deliveryScanSchema = z
   .object({
     qrCodeId: z.string().min(1, "QR Code ID is required"),
@@ -43,6 +45,7 @@ export const deliveryScanSchema = z
     address: optionalString,
     latitude: optionalDecimal,
     longitude: optionalDecimal,
+    locationSource: locationSourceEnum,
     cartonsDelivered: z.preprocess(
       (v) => {
         if (typeof v === "string" && v.trim() !== "") {

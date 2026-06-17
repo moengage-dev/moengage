@@ -241,7 +241,7 @@ export async function createDeliveryScan(
           suburb: data.suburb ?? null,
           latitude: data.latitude ?? null,
           longitude: data.longitude ?? null,
-          locationSource: "MANUAL",
+          locationSource: (data.locationSource as any) ?? "MANUAL",
           notes: data.notes ?? null,
         },
       });

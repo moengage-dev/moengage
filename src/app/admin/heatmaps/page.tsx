@@ -43,7 +43,14 @@ export default async function HeatmapsPage({ searchParams }: PageProps) {
 
   // Fetch heatmap data
   const data = await getAdminHeatmapData(validatedFilters, user);
-  const { filterOptions, consumerEngagementMarkers, deliveryDistributionMarkers, summaryCounts, metadata } = data;
+  const {
+    filterOptions,
+    consumerEngagementMarkers,
+    deliveryDistributionMarkers,
+    combinedLocationMarkers,
+    summaryCounts,
+    metadata,
+  } = data;
 
   return (
     <div className="min-h-screen bg-[#FFF6DE] p-8 md:p-12 space-y-10">
@@ -114,7 +121,7 @@ export default async function HeatmapsPage({ searchParams }: PageProps) {
       <HeatmapFilters options={filterOptions} initialFilters={rawFilters} />
 
       {/* Map Component */}
-      <HeatmapMap scanMarkers={consumerEngagementMarkers} deliveryMarkers={deliveryDistributionMarkers} />
+      <HeatmapMap locationMarkers={combinedLocationMarkers} />
 
       {/* Details Tables */}
       <HeatmapDataTables scanMarkers={consumerEngagementMarkers} deliveryMarkers={deliveryDistributionMarkers} />

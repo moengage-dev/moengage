@@ -81,6 +81,24 @@ export async function createBrand(
     return { ok: false, error: `Slug "${slug}" is already taken` };
   }
 
+  // Validate the selected administrator
+  if (!primaryUserId) {
+    return { ok: false, error: "A Primary Brand Administrator is required." };
+  }
+  const adminUser = await prisma.user.findUnique({
+    where: { id: primaryUserId },
+    select: { role: true, isActive: true },
+  });
+  if (!adminUser) {
+    return { ok: false, error: "Selected administrator not found." };
+  }
+  if (adminUser.role !== "BRAND_ADMIN") {
+    return { ok: false, error: "Selected user must have the BRAND_ADMIN role." };
+  }
+  if (!adminUser.isActive) {
+    return { ok: false, error: "Selected administrator is not active." };
+  }
+
   const brand = await prisma.brand.create({
     data: {
       name,
@@ -152,6 +170,24 @@ export async function updateBrand(
       status,
     },
   });
+
+  // Validate the selected administrator
+  if (!primaryUserId) {
+    return { ok: false, error: "A Primary Brand Administrator is required." };
+  }
+  const adminUserForUpdate = await prisma.user.findUnique({
+    where: { id: primaryUserId },
+    select: { role: true, isActive: true },
+  });
+  if (!adminUserForUpdate) {
+    return { ok: false, error: "Selected administrator not found." };
+  }
+  if (adminUserForUpdate.role !== "BRAND_ADMIN") {
+    return { ok: false, error: "Selected user must have the BRAND_ADMIN role." };
+  }
+  if (!adminUserForUpdate.isActive) {
+    return { ok: false, error: "Selected administrator is not active." };
+  }
 
   // Clear existing links
   await prisma.user.updateMany({

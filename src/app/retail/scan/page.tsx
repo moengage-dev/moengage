@@ -1,7 +1,5 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { QrCode } from "lucide-react";
+import { DeliveryQrScanner } from "@/components/delivery/delivery-qr-scanner";
 
 export default function Page() {
   return (
@@ -9,27 +7,14 @@ export default function Page() {
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Scan Delivery QR</h1>
-          <p className="text-muted-foreground">Scan batch/carton delivery QR codes to log retail placement.</p>
+          <p className="text-muted-foreground">Use your device camera to scan a delivery QR code, or enter the code manually.</p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-xl">
+            You can also scan the QR using your phone&apos;s Camera app. After signing in, you will be returned to the delivery form.
+          </p>
         </div>
-        <Badge variant="secondary" className="w-fit bg-amber-50 text-amber-700 hover:bg-amber-50 hover:text-amber-700 border-amber-200">
-          Coming soon
-        </Badge>
       </div>
 
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <QrCode className="h-6 w-6" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-base font-semibold">In-app camera scanning is coming soon</p>
-            <p className="max-w-md text-sm text-muted-foreground">
-              For now, scan a batch delivery QR with your device camera to open the delivery form at
-              <span className="font-mono"> /d/&lt;code&gt;</span>, or review logged drop-offs under Deliveries.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <DeliveryQrScanner />
     </div>
   );
 }

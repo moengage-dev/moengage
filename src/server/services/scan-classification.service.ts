@@ -184,16 +184,61 @@ export type SuspiciousScansFilter = {
   suspiciousReason?: string;
   startDate?: string;
   endDate?: string;
+  reviewState?: "FLAGGED" | "MARKED_SAFE" | "ALL";
 };
 
 export async function getSuspiciousScansPageData(filters: SuspiciousScansFilter = {}) {
-  const whereClause: any = {
-    OR: [
-      { isSuspicious: true },
-      { suspiciousReason: { not: null } },
-      { isBillable: false },
-    ],
-  };
+  // 1. Fetch relevant AuditLog entries to identify manual review states
+  const auditLogs = await prisma.auditLog.findMany({
+    where: { action: "OVERRIDE_SUSPICIOUS_SCAN", entityType: "ScanEvent" },
+    orderBy: { createdAt: "desc" },
+    include: { user: { select: { name: true, email: true } } },
+  });
+
+  const latestOverrideByEventId = new Map<string, typeof auditLogs[0]>();
+  for (const log of auditLogs) {
+    if (!log.entityId) continue;
+    if (!latestOverrideByEventId.has(log.entityId)) {
+      latestOverrideByEventId.set(log.entityId, log);
+    }
+  }
+
+  const markedSafeEventIds = Array.from(latestOverrideByEventId.entries())
+    .filter(([_, log]) => {
+      const metadata = log.metadata as any;
+      return metadata?.after?.isSuspicious === false;
+    })
+    .map(([id]) => id);
+
+  const reviewState = filters.reviewState || "FLAGGED";
+  let stateWhereClause: any = {};
+
+  if (reviewState === "FLAGGED") {
+    stateWhereClause = {
+      OR: [
+        { isSuspicious: true },
+        { suspiciousReason: { not: null } },
+        { isBillable: false },
+      ],
+    };
+  } else if (reviewState === "MARKED_SAFE") {
+    stateWhereClause = {
+      id: { in: markedSafeEventIds.length > 0 ? markedSafeEventIds : ["__NONE__"] },
+      isSuspicious: false,
+      suspiciousReason: null,
+    };
+  } else if (reviewState === "ALL") {
+    stateWhereClause = {
+      OR: [
+        { isSuspicious: true },
+        { suspiciousReason: { not: null } },
+        { isBillable: false },
+        { id: { in: markedSafeEventIds.length > 0 ? markedSafeEventIds : ["__NONE__"] } },
+      ],
+    };
+  }
+
+  const whereClause: any = { ...stateWhereClause };
 
   // Filter by brand
   if (filters.brandId) {
@@ -277,7 +322,7 @@ export async function getSuspiciousScansPageData(filters: SuspiciousScansFilter 
       orderBy: { name: "asc" },
     }),
     prisma.campaign.findMany({
-      select: { id: true, name: true },
+      select: { id: true, name: true, brandId: true, advertiserId: true },
       orderBy: { name: "asc" },
     }),
   ]);
@@ -290,11 +335,20 @@ export async function getSuspiciousScansPageData(filters: SuspiciousScansFilter 
       reason: g.suspiciousReason ?? "UNKNOWN",
       count: g._sum.suspiciousCount ?? 0,
     })),
-    recentScans: recentScans.map((s) => ({
-      ...s,
-      latitude: s.latitude ? s.latitude.toNumber() : null,
-      longitude: s.longitude ? s.longitude.toNumber() : null,
-    })),
+    recentScans: recentScans.map((s) => {
+      const latestLog = latestOverrideByEventId.get(s.id);
+      return {
+        ...s,
+        latitude: s.latitude ? s.latitude.toNumber() : null,
+        longitude: s.longitude ? s.longitude.toNumber() : null,
+        latestReview: latestLog ? {
+          action: latestLog.action,
+          user: latestLog.user ? latestLog.user.name || latestLog.user.email : "Unknown Admin",
+          timestamp: latestLog.createdAt,
+          wasMarkedSafe: (latestLog.metadata as any)?.after?.isSuspicious === false,
+        } : null,
+      };
+    }),
     brands,
     advertisers,
     campaigns,

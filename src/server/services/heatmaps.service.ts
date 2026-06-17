@@ -2,6 +2,17 @@
 import prisma from "@/lib/prisma";
 import { getAssignedCampaignIds } from "@/lib/auth/role-scope";
 import type { CurrentUser } from "@/lib/auth/get-current-user";
+import {
+  decodeLabel,
+  groupConsumerMarkers,
+  groupDeliveryMarkers,
+  mergeToCombinedLocations,
+} from "@/lib/heatmap-grouping";
+export type {
+  AggregatedConsumerMarker,
+  AggregatedDeliveryMarker,
+  CombinedLocationMarker,
+} from "@/lib/heatmap-grouping";
 
 export interface HeatmapFilters {
   brandId?: string;
@@ -62,8 +73,16 @@ export interface HeatmapData {
     products: { id: string; name: string }[];
     batches: { id: string; name: string }[];
   };
+  /** Raw per-bucket rows — used by HeatmapDataTables for the audit log view. */
   consumerEngagementMarkers: ConsumerScanMarker[];
+  /** Raw per-drop rows — used by HeatmapDataTables. */
   deliveryDistributionMarkers: DeliveryMarker[];
+  /**
+   * Geographically aggregated markers (3 decimal-place grid cells ≈ 111 m).
+   * Consumer and delivery data at the same cell are merged into one entry.
+   * Used by HeatmapMap for rendering.
+   */
+  combinedLocationMarkers: import("@/lib/heatmap-grouping").CombinedLocationMarker[];
   summaryCounts: {
     totalScanCount: number;
     totalDeliveryCount: number;
@@ -278,9 +297,10 @@ export async function getAdminHeatmapData(
     campaignName: s.campaign?.name ?? "—",
     productName: s.product?.name ?? "—",
     batchCode: s.batch?.batchCode ?? "—",
-    city: s.city ?? "",
-    suburb: s.suburb ?? "",
-    country: s.country ?? "",
+    // Decode at the source so every downstream consumer (tables + map) gets clean labels.
+    city: decodeLabel(s.city ?? ""),
+    suburb: decodeLabel(s.suburb ?? ""),
+    country: decodeLabel(s.country ?? ""),
     latitude: toNumber(s.latitude),
     longitude: toNumber(s.longitude),
     hitCount: s.hitCount,
@@ -301,14 +321,21 @@ export async function getAdminHeatmapData(
     productName: d.qrCode?.product?.name ?? "—",
     batchCode: d.batch?.batchCode ?? "—",
     retailerName: d.retailer?.name ?? "—",
-    city: d.city ?? "",
-    suburb: d.suburb ?? "",
-    country: d.country ?? "",
+    city: decodeLabel(d.city ?? ""),
+    suburb: decodeLabel(d.suburb ?? ""),
+    country: decodeLabel(d.country ?? ""),
     latitude: toNumber(d.latitude),
     longitude: toNumber(d.longitude),
     cartonsDelivered: d.cartonsDelivered,
     estimatedUnitsDelivered: d.estimatedUnitsDelivered,
   }));
+
+  // Geographic aggregation (3 d.p. ≈ 111 m cells). Happens server-side so the
+  // client receives one point per cell — smaller payload, pure UI rendering.
+  const combinedLocationMarkers = mergeToCombinedLocations(
+    groupConsumerMarkers(consumerEngagementMarkers),
+    groupDeliveryMarkers(deliveryDistributionMarkers)
+  );
 
   return {
     filterOptions: {
@@ -320,6 +347,7 @@ export async function getAdminHeatmapData(
     },
     consumerEngagementMarkers,
     deliveryDistributionMarkers,
+    combinedLocationMarkers,
     summaryCounts: {
       totalScanCount,
       totalDeliveryCount,

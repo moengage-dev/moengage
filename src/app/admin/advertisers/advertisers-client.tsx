@@ -32,6 +32,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { AdvertiserForm } from "@/components/forms/advertiser-form";
 import {
   createAdvertiserAction,
@@ -158,50 +164,64 @@ export function AdvertisersClient({ advertisers, unassignedUsers }: Props) {
                     {formatDate(adv.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => openEdit(adv)}
-                        title="Edit advertiser"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-                      {adv.status !== "ARCHIVED" && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
+                    <TooltipProvider>
+                      <div className="flex justify-end gap-1">
+                        {/* Edit */}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              title="Archive advertiser"
+                              aria-label="Edit advertiser"
+                              onClick={() => openEdit(adv)}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 focus-visible:ring-blue-500"
                             >
-                              <Archive className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="sr-only">Archive</span>
+                              <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Archive advertiser?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will set <strong>{adv.name}</strong> to
-                                Archived status. No data will be deleted.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleArchive(adv)}
-                              >
-                                Archive
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Edit advertiser</TooltipContent>
+                        </Tooltip>
+
+                        {/* Archive */}
+                        {adv.status !== "ARCHIVED" && (
+                          <AlertDialog>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label="Archive advertiser"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 focus-visible:ring-red-500"
+                                  >
+                                    <Archive className="h-3.5 w-3.5" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">Archive advertiser</TooltipContent>
+                            </Tooltip>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Archive advertiser?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will set <strong>{adv.name}</strong> to Archived status.
+                                  No data will be deleted.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleArchive(adv)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Archive
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))
