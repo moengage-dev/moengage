@@ -1,11 +1,19 @@
 // src/app/admin/products/products-client.tsx
 "use client";
 
-import React, { useState } from "react";
-import { Plus, Pencil, Archive } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Plus, Pencil, Archive, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -32,6 +40,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { ProductForm } from "@/components/forms/product-form";
 import {
   createProductAction,
@@ -49,9 +63,25 @@ type Props = {
 
 export function ProductsClient({ products, brands }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<ProductRow | undefined>(
-    undefined
-  );
+  const [editingProduct, setEditingProduct] = useState<ProductRow | undefined>(undefined);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+
+  const filteredProducts = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return products.filter((p) => {
+      const matchesStatus = statusFilter === "ALL" || p.status === statusFilter;
+      if (!matchesStatus) return false;
+      if (!q) return true;
+      return (
+        p.name.toLowerCase().includes(q) ||
+        p.brandName.toLowerCase().includes(q) ||
+        p.slug.toLowerCase().includes(q) ||
+        (p.sku ?? "").toLowerCase().includes(q) ||
+        (p.category ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [products, searchQuery, statusFilter]);
 
   function openCreate() {
     setEditingProduct(undefined);
@@ -83,9 +113,44 @@ export function ProductsClient({ products, brands }: Props) {
         : createProductAction(values);
   }
 
+  const hasActiveFilters = searchQuery !== "" || statusFilter !== "ALL";
+
+  function clearFilters() {
+    setSearchQuery("");
+    setStatusFilter("ALL");
+  }
+
   return (
     <>
-      <div className="flex justify-end">
+      {/* Search & Filter bar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Search by name, brand, slug, SKU, or category…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+            aria-label="Search products"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[160px]" aria-label="Filter by status">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Statuses</SelectItem>
+            <SelectItem value="ACTIVE">Active</SelectItem>
+            <SelectItem value="PAUSED">Paused</SelectItem>
+            <SelectItem value="ARCHIVED">Archived</SelectItem>
+          </SelectContent>
+        </Select>
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
+            <X className="mr-1.5 h-3.5 w-3.5" />
+            Clear
+          </Button>
+        )}
         <Button onClick={openCreate} size="sm">
           <Plus className="mr-1.5 h-4 w-4" />
           Add Product
@@ -108,17 +173,16 @@ export function ProductsClient({ products, brands }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.length === 0 ? (
+            {filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={9}
-                  className="text-center text-muted-foreground py-8"
-                >
-                  No products found.
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                  {hasActiveFilters
+                    ? "No products match your search or filter."
+                    : "No products found."}
                 </TableCell>
               </TableRow>
             ) : (
-              products.map((product) => (
+              filteredProducts.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>{product.brandName}</TableCell>
@@ -147,48 +211,62 @@ export function ProductsClient({ products, brands }: Props) {
                     {formatDate(product.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => openEdit(product)}
-                        title="Edit product"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-                      {product.status !== "ARCHIVED" && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
+                    <TooltipProvider>
+                      <div className="flex justify-end gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              title="Archive product"
+                              aria-label="Edit product"
+                              onClick={() => openEdit(product)}
+                              className="text-muted-foreground hover:text-foreground"
                             >
-                              <Archive className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="sr-only">Archive</span>
+                              <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Archive product?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will set <strong>{product.name}</strong> to
-                                Archived status. No data will be deleted.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleArchive(product)}
-                              >
-                                Archive
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Edit product</TooltipContent>
+                        </Tooltip>
+
+                        {product.status !== "ARCHIVED" && (
+                          <AlertDialog>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label="Archive product"
+                                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                  >
+                                    <Archive className="h-3.5 w-3.5" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">Archive product</TooltipContent>
+                            </Tooltip>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Archive product?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will set <strong>{product.name}</strong> to Archived status.
+                                  No data will be deleted.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleArchive(product)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Archive
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))

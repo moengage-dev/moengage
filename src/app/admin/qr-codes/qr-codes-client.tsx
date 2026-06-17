@@ -1,12 +1,19 @@
 // src/app/admin/qr-codes/qr-codes-client.tsx
 "use client";
 
-import React, { useState } from "react";
-import { Plus, Pencil, Ban, Download, FileCode } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Plus, Pencil, Ban, Download, FileCode, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -33,6 +40,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { QRCodeForm } from "@/components/forms/qr-code-form";
 import {
   createQRCodeAction,
@@ -98,6 +111,26 @@ export function QRCodesClient({
 }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingQR, setEditingQR] = useState<QRCodeRow | undefined>(undefined);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [typeFilter, setTypeFilter] = useState<string>("ALL");
+
+  const filteredQRCodes = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return qrCodes.filter((qr) => {
+      const matchesStatus = statusFilter === "ALL" || qr.status === statusFilter;
+      const matchesType = typeFilter === "ALL" || qr.type === typeFilter;
+      if (!matchesStatus || !matchesType) return false;
+      if (!q) return true;
+      return (
+        qr.code.toLowerCase().includes(q) ||
+        (qr.label ?? "").toLowerCase().includes(q) ||
+        (qr.brandName ?? "").toLowerCase().includes(q) ||
+        (qr.campaignName ?? "").toLowerCase().includes(q) ||
+        (qr.productName ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [qrCodes, searchQuery, statusFilter, typeFilter]);
 
   function openCreate() {
     setEditingQR(undefined);
@@ -122,61 +155,86 @@ export function QRCodesClient({
     }
   }
 
+  const hasActiveFilters = searchQuery !== "" || statusFilter !== "ALL" || typeFilter !== "ALL";
+
+  function clearFilters() {
+    setSearchQuery("");
+    setStatusFilter("ALL");
+    setTypeFilter("ALL");
+  }
+
   return (
     <>
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total QRs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(totalQRCodes)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(activeQRCodes)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Consumer Campaigns</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(consumerCampaignQRCodes)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Deliveries</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(deliveryQRCodes)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sample Labels</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(sampleLabelQRCodes)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Internal Tests</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(internalTestQRCodes)}</div>
-          </CardContent>
-        </Card>
+      {/* KPI Cards — 2 rows of 3 */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-primary">
+          <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Total QR Codes</span>
+          <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(totalQRCodes)}</div>
+        </div>
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-brand-teal">
+          <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Active</span>
+          <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(activeQRCodes)}</div>
+        </div>
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-brand-yellow">
+          <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Consumer Campaigns</span>
+          <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(consumerCampaignQRCodes)}</div>
+        </div>
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-muted-foreground/40">
+          <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Deliveries</span>
+          <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(deliveryQRCodes)}</div>
+        </div>
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-muted-foreground/40">
+          <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Sample Labels</span>
+          <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(sampleLabelQRCodes)}</div>
+        </div>
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-muted-foreground/40">
+          <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Internal Tests</span>
+          <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(internalTestQRCodes)}</div>
+        </div>
       </div>
 
-      <div className="flex justify-end">
+      {/* Search & Filter bar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Search by code, label, brand, or campaign…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+            aria-label="Search QR codes"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[150px]" aria-label="Filter by status">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Statuses</SelectItem>
+            <SelectItem value="ACTIVE">Active</SelectItem>
+            <SelectItem value="PAUSED">Paused</SelectItem>
+            <SelectItem value="EXPIRED">Expired</SelectItem>
+            <SelectItem value="DISABLED">Disabled</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-[180px]" aria-label="Filter by type">
+            <SelectValue placeholder="All Types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Types</SelectItem>
+            <SelectItem value="CONSUMER_CAMPAIGN">Consumer Campaign</SelectItem>
+            <SelectItem value="SAMPLE_LABEL">Sample Label</SelectItem>
+            <SelectItem value="BATCH_DELIVERY">Batch Delivery</SelectItem>
+            <SelectItem value="INTERNAL_TEST">Internal Test</SelectItem>
+          </SelectContent>
+        </Select>
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
+            <X className="mr-1.5 h-3.5 w-3.5" />
+            Clear
+          </Button>
+        )}
         <Button onClick={openCreate} size="sm">
           <Plus className="mr-1.5 h-4 w-4" />
           Add QR Code
@@ -203,34 +261,27 @@ export function QRCodesClient({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {qrCodes.length === 0 ? (
+            {filteredQRCodes.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={13}
-                  className="text-center text-muted-foreground py-8"
-                >
-                  No QR codes found.
+                <TableCell colSpan={13} className="text-center text-muted-foreground py-8">
+                  {hasActiveFilters
+                    ? "No QR codes match your search or filter."
+                    : "No QR codes found."}
                 </TableCell>
               </TableRow>
             ) : (
-              qrCodes.map((qr) => (
+              filteredQRCodes.map((qr) => (
                 <TableRow key={qr.id}>
-                  <TableCell className="font-mono text-sm font-medium">
-                    {qr.code}
-                  </TableCell>
+                  <TableCell className="font-mono text-sm font-medium">{qr.code}</TableCell>
                   <TableCell>
                     <Badge variant={typeVariant(qr.type)}>
                       {formatStatusLabel(qr.type)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="max-w-[150px] truncate">
-                    {qr.label ?? "—"}
-                  </TableCell>
+                  <TableCell className="max-w-[150px] truncate">{qr.label ?? "—"}</TableCell>
                   <TableCell>{qr.brandName ?? "—"}</TableCell>
                   <TableCell>{qr.advertiserName ?? "—"}</TableCell>
-                  <TableCell className="max-w-[150px] truncate">
-                    {qr.campaignName ?? "—"}
-                  </TableCell>
+                  <TableCell className="max-w-[150px] truncate">{qr.campaignName ?? "—"}</TableCell>
                   <TableCell>{qr.productName ?? "—"}</TableCell>
                   <TableCell className="font-mono text-xs">{qr.batchCode ?? "—"}</TableCell>
                   <TableCell>
@@ -242,78 +293,87 @@ export function QRCodesClient({
                   <TableCell className="max-w-[200px] truncate font-mono text-xs text-muted-foreground">
                     {qr.destinationUrl ?? "—"}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(qr.createdAt)}
-                  </TableCell>
+                  <TableCell className="text-muted-foreground">{formatDate(qr.createdAt)}</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => openEdit(qr)}
-                        title="Edit QR Code"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        asChild
-                        title="Download PNG"
-                      >
-                        <a href={`/api/qr-codes/${qr.id}/download/png`} download>
-                          <Download className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-                          <span className="sr-only">Download PNG</span>
-                        </a>
-                      </Button>
-
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        asChild
-                        title="Download SVG"
-                      >
-                        <a href={`/api/qr-codes/${qr.id}/download/svg`} download>
-                          <FileCode className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-                          <span className="sr-only">Download SVG</span>
-                        </a>
-                      </Button>
-
-                      {qr.status !== "DISABLED" && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
+                    <TooltipProvider>
+                      <div className="flex justify-end gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              title="Disable QR Code"
+                              aria-label="Edit QR Code"
+                              onClick={() => openEdit(qr)}
+                              className="text-muted-foreground hover:text-foreground"
                             >
-                              <Ban className="h-3.5 w-3.5 text-destructive" />
-                              <span className="sr-only">Disable</span>
+                              <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Disable QR Code?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will change the status of QR Code{" "}
-                                <strong>{qr.code}</strong> to <strong>DISABLED</strong>. No scan data or associations will be deleted, but the QR code will be deactivated.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDisable(qr)}
-                                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                              >
-                                Disable
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Edit QR Code</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon-sm" asChild className="text-muted-foreground hover:text-foreground">
+                              <a href={`/api/qr-codes/${qr.id}/download/png`} download aria-label="Download PNG">
+                                <Download className="h-3.5 w-3.5" />
+                              </a>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Download PNG</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon-sm" asChild className="text-muted-foreground hover:text-foreground">
+                              <a href={`/api/qr-codes/${qr.id}/download/svg`} download aria-label="Download SVG">
+                                <FileCode className="h-3.5 w-3.5" />
+                              </a>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Download SVG</TooltipContent>
+                        </Tooltip>
+
+                        {qr.status !== "DISABLED" && (
+                          <AlertDialog>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label="Disable QR Code"
+                                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                  >
+                                    <Ban className="h-3.5 w-3.5" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">Disable QR Code</TooltipContent>
+                            </Tooltip>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Disable QR Code?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will change the status of QR Code <strong>{qr.code}</strong> to{" "}
+                                  <strong>DISABLED</strong>. No scan data or associations will be deleted,
+                                  but the QR code will be deactivated.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDisable(qr)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Disable
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))

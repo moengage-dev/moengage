@@ -3,6 +3,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { getAdvertiserBillingPageData } from "@/server/services/billing.service";
 import { billingFilterSchema } from "@/lib/validators/billing.validator";
 import { BillingClient } from "@/components/dashboard/billing-client";
+import { DashboardSectionHeader } from "@/components/dashboard/dashboard-section-header";
 import { Coins } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -41,17 +42,12 @@ export default async function AdvertiserBillingPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Coins className="h-8 w-8 text-primary" />
-            Advertiser Billing Summary
-          </h1>
-          <p className="text-muted-foreground font-medium">
-            View calculated billing metrics for your active and historical campaigns.
-          </p>
-        </div>
-      </div>
+      <DashboardSectionHeader
+        title="Advertiser Billing Summary"
+        description="View calculated billing metrics for your active and historical campaigns."
+        badgeText="Advertiser"
+        badgeVariant="purple"
+      />
 
       <BillingClient data={data} basePath="/advertiser/billing" isAdmin={false} />
     </div>

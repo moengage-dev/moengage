@@ -1,11 +1,19 @@
 // src/app/admin/advertisers/advertisers-client.tsx
 "use client";
 
-import React, { useState } from "react";
-import { Plus, Pencil, Archive } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Plus, Pencil, Archive, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -55,9 +63,25 @@ type Props = {
 
 export function AdvertisersClient({ advertisers, unassignedUsers }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingAdvertiser, setEditingAdvertiser] = useState<
-    AdvertiserRow | undefined
-  >(undefined);
+  const [editingAdvertiser, setEditingAdvertiser] = useState<AdvertiserRow | undefined>(undefined);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+
+  const filteredAdvertisers = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return advertisers.filter((adv) => {
+      const matchesStatus = statusFilter === "ALL" || adv.status === statusFilter;
+      if (!matchesStatus) return false;
+      if (!q) return true;
+      return (
+        adv.name.toLowerCase().includes(q) ||
+        adv.slug.toLowerCase().includes(q) ||
+        (adv.industry ?? "").toLowerCase().includes(q) ||
+        (adv.contactName ?? "").toLowerCase().includes(q) ||
+        (adv.contactEmail ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [advertisers, searchQuery, statusFilter]);
 
   function openCreate() {
     setEditingAdvertiser(undefined);
@@ -89,9 +113,44 @@ export function AdvertisersClient({ advertisers, unassignedUsers }: Props) {
         : createAdvertiserAction(values);
   }
 
+  const hasActiveFilters = searchQuery !== "" || statusFilter !== "ALL";
+
+  function clearFilters() {
+    setSearchQuery("");
+    setStatusFilter("ALL");
+  }
+
   return (
     <>
-      <div className="flex justify-end">
+      {/* Search & Filter bar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Search by name, slug, industry, or contact…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+            aria-label="Search advertisers"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[160px]" aria-label="Filter by status">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Statuses</SelectItem>
+            <SelectItem value="ACTIVE">Active</SelectItem>
+            <SelectItem value="PAUSED">Paused</SelectItem>
+            <SelectItem value="ARCHIVED">Archived</SelectItem>
+          </SelectContent>
+        </Select>
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
+            <X className="mr-1.5 h-3.5 w-3.5" />
+            Clear
+          </Button>
+        )}
         <Button onClick={openCreate} size="sm">
           <Plus className="mr-1.5 h-4 w-4" />
           Add Advertiser
@@ -114,17 +173,16 @@ export function AdvertisersClient({ advertisers, unassignedUsers }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {advertisers.length === 0 ? (
+            {filteredAdvertisers.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={9}
-                  className="text-center text-muted-foreground py-8"
-                >
-                  No advertisers found.
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                  {hasActiveFilters
+                    ? "No advertisers match your search or filter."
+                    : "No advertisers found."}
                 </TableCell>
               </TableRow>
             ) : (
-              advertisers.map((adv) => (
+              filteredAdvertisers.map((adv) => (
                 <TableRow key={adv.id}>
                   <TableCell className="font-medium">{adv.name}</TableCell>
                   <TableCell className="text-muted-foreground font-mono text-sm">
@@ -166,7 +224,6 @@ export function AdvertisersClient({ advertisers, unassignedUsers }: Props) {
                   <TableCell className="text-right">
                     <TooltipProvider>
                       <div className="flex justify-end gap-1">
-                        {/* Edit */}
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -174,7 +231,7 @@ export function AdvertisersClient({ advertisers, unassignedUsers }: Props) {
                               size="icon-sm"
                               aria-label="Edit advertiser"
                               onClick={() => openEdit(adv)}
-                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 focus-visible:ring-blue-500"
+                              className="text-muted-foreground hover:text-foreground"
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
@@ -182,7 +239,6 @@ export function AdvertisersClient({ advertisers, unassignedUsers }: Props) {
                           <TooltipContent side="top">Edit advertiser</TooltipContent>
                         </Tooltip>
 
-                        {/* Archive */}
                         {adv.status !== "ARCHIVED" && (
                           <AlertDialog>
                             <Tooltip>
@@ -192,7 +248,7 @@ export function AdvertisersClient({ advertisers, unassignedUsers }: Props) {
                                     variant="ghost"
                                     size="icon-sm"
                                     aria-label="Archive advertiser"
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 focus-visible:ring-red-500"
+                                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                   >
                                     <Archive className="h-3.5 w-3.5" />
                                   </Button>
@@ -212,7 +268,7 @@ export function AdvertisersClient({ advertisers, unassignedUsers }: Props) {
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => handleArchive(adv)}
-                                  className="bg-red-600 hover:bg-red-700"
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
                                   Archive
                                 </AlertDialogAction>

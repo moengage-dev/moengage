@@ -240,7 +240,7 @@ export function BrandsClient({ brands, unassignedAdmins }: Props) {
                               size="icon-sm"
                               aria-label="Edit brand"
                               onClick={() => openEdit(brand)}
-                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 focus-visible:ring-blue-500"
+                              className="text-muted-foreground hover:text-foreground"
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
@@ -258,7 +258,7 @@ export function BrandsClient({ brands, unassignedAdmins }: Props) {
                                     variant="ghost"
                                     size="icon-sm"
                                     aria-label="Archive brand"
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 focus-visible:ring-red-500"
+                                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                   >
                                     <Archive className="h-3.5 w-3.5" />
                                   </Button>
@@ -278,7 +278,7 @@ export function BrandsClient({ brands, unassignedAdmins }: Props) {
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => handleArchive(brand)}
-                                  className="bg-red-600 hover:bg-red-700"
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
                                   Archive
                                 </AlertDialogAction>

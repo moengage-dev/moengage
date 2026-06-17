@@ -11,7 +11,7 @@ export default function Page() {
           <h1 className="text-3xl font-bold tracking-tight">Campaign Analytics</h1>
           <p className="text-muted-foreground">Review click-through rates, mobile OTP engagement, and performance trends.</p>
         </div>
-        <Badge variant="secondary" className="w-fit bg-amber-50 text-amber-700 hover:bg-amber-50 hover:text-amber-700 border-amber-200">
+        <Badge variant="secondary" className="w-fit">
           Coming soon
         </Badge>
       </div>

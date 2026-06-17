@@ -3,6 +3,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { getBrandBillingPageData } from "@/server/services/billing.service";
 import { billingFilterSchema } from "@/lib/validators/billing.validator";
 import { BillingClient } from "@/components/dashboard/billing-client";
+import { DashboardSectionHeader } from "@/components/dashboard/dashboard-section-header";
 import { Coins } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -41,17 +42,12 @@ export default async function BrandBillingPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Coins className="h-8 w-8 text-primary" />
-            Brand Billing Summary
-          </h1>
-          <p className="text-muted-foreground font-medium">
-            Calculated billing metrics based on campaign engagement and delivery for your brand.
-          </p>
-        </div>
-      </div>
+      <DashboardSectionHeader
+        title="Brand Billing Summary"
+        description="Calculated billing metrics based on campaign engagement and delivery for your brand."
+        badgeText="Brand"
+        badgeVariant="emerald"
+      />
 
       <BillingClient data={data} basePath="/brand/billing" isAdmin={false} />
     </div>
