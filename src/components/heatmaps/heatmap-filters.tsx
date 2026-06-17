@@ -96,7 +96,7 @@ export function HeatmapFilters({ options, initialFilters }: HeatmapFiltersProps)
     <div className="bg-card rounded-2xl p-6 border border-border/50 shadow-sm">
       <div className="flex items-center gap-2 pb-4">
         <Filter className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-semibold tracking-tight text-[#2C2621]">Heatmap Filters</h3>
+        <h3 className="text-sm font-semibold tracking-tight text-foreground">Heatmap Filters</h3>
       </div>
       <form onSubmit={handleApply} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 items-end">
         
@@ -227,7 +227,7 @@ export function HeatmapFilters({ options, initialFilters }: HeatmapFiltersProps)
           </Button>
           <Button
             type="submit"
-            className="bg-[#1E5C5A] hover:bg-[#15413F] text-white h-9"
+            className="h-9"
           >
             <Filter className="mr-2 h-4 w-4" />
             Apply Filters

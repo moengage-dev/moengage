@@ -87,7 +87,7 @@ function LocalTableSection({
     <div className="bg-card rounded-2xl p-8 border border-border/50 shadow-sm flex flex-col justify-between h-full overflow-hidden">
       <div>
         <div className="pb-6">
-          <h3 className="text-lg font-semibold tracking-tight text-[#2C2621]">{title}</h3>
+          <h3 className="text-lg font-semibold tracking-tight text-foreground">{title}</h3>
           {description && (
             <p className="text-xs text-muted-foreground mt-1 leading-normal">
               {description}
@@ -330,7 +330,7 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
       <div className="bg-card rounded-2xl p-6 border border-border/50 shadow-sm">
         <div className="flex items-center gap-2 pb-4">
           <Filter className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-semibold tracking-tight text-[#2C2621]">Abuse Filters</h3>
+          <h3 className="text-sm font-semibold tracking-tight text-foreground">Abuse Filters</h3>
         </div>
         <form onSubmit={handleFilter} className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-end">
@@ -467,7 +467,7 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
             <Button type="button" variant="ghost" onClick={handleClear} disabled={isPending} className="text-muted-foreground hover:text-foreground">
               Clear Filters
             </Button>
-            <Button type="submit" disabled={isPending} className="bg-[#1E5C5A] hover:bg-[#15413F] text-white">
+            <Button type="submit" disabled={isPending} >
               Apply Filters
             </Button>
             <Button
@@ -487,7 +487,7 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
       <TooltipProvider>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {/* Card 1: Total Flagged */}
-          <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#F48F68]">
+          <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-primary">
             <div className="flex items-center justify-between pb-3">
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Total Flagged</span>
@@ -502,10 +502,10 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <span className="p-1.5 rounded-lg bg-[#F48F68]/10 text-[#F48F68]"><ShieldAlert className="h-4 w-4" /></span>
+              <span className="p-1.5 rounded-lg bg-primary/10 text-primary"><ShieldAlert className="h-4 w-4" /></span>
             </div>
             <div>
-              <div className="text-3xl font-extrabold text-[#E27E58] dark:text-[#F48F68] tracking-tight">
+              <div className="text-3xl font-extrabold text-primary tracking-tight">
                 {data.totalSuspicious}
               </div>
               <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Matching current filters</p>
@@ -513,7 +513,7 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
           </div>
 
           {/* Card 2: Visitor Abuse */}
-          <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#F48F68]">
+          <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-primary">
             <div className="flex items-center justify-between pb-3">
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Visitor Abuse</span>
@@ -528,10 +528,10 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <span className="p-1.5 rounded-lg bg-[#F48F68]/10 text-[#F48F68]"><User className="h-4 w-4" /></span>
+              <span className="p-1.5 rounded-lg bg-primary/10 text-primary"><User className="h-4 w-4" /></span>
             </div>
             <div>
-              <div className="text-3xl font-extrabold text-[#E27E58] dark:text-[#F48F68] tracking-tight">
+              <div className="text-3xl font-extrabold text-primary tracking-tight">
                 {visitorAbuseCount}
               </div>
               <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">&gt; 10 scans / 5 min</p>
@@ -539,7 +539,7 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
           </div>
 
           {/* Card 3: IP Abuse */}
-          <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#F48F68]">
+          <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-primary">
             <div className="flex items-center justify-between pb-3">
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">IP Abuse</span>
@@ -554,10 +554,10 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <span className="p-1.5 rounded-lg bg-[#F48F68]/10 text-[#F48F68]"><Globe className="h-4 w-4" /></span>
+              <span className="p-1.5 rounded-lg bg-primary/10 text-primary"><Globe className="h-4 w-4" /></span>
             </div>
             <div>
-              <div className="text-3xl font-extrabold text-[#E27E58] dark:text-[#F48F68] tracking-tight">
+              <div className="text-3xl font-extrabold text-primary tracking-tight">
                 {ipAbuseCount}
               </div>
               <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">&gt; 20 scans / 10 min</p>
@@ -565,7 +565,7 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
           </div>
 
           {/* Card 4: Internal/Test QR */}
-          <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#8BDFDD]">
+          <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-teal">
             <div className="flex items-center justify-between pb-3">
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Internal/Test</span>
@@ -580,10 +580,10 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <span className="p-1.5 rounded-lg bg-[#8BDFDD]/15 text-[#156D6B] dark:text-[#8BDFDD]"><Monitor className="h-4 w-4" /></span>
+              <span className="p-1.5 rounded-lg bg-brand-teal/15 text-foreground"><Monitor className="h-4 w-4" /></span>
             </div>
             <div>
-              <div className="text-3xl font-extrabold text-[#156D6B] dark:text-[#8BDFDD] tracking-tight">
+              <div className="text-3xl font-extrabold text-foreground tracking-tight">
                 {internalTestCount + deliveryScanCount}
               </div>
               <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Excluded from billing</p>
@@ -591,7 +591,7 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
           </div>
 
           {/* Card 5: Manually Flagged */}
-          <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#FFE394]">
+          <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-yellow">
             <div className="flex items-center justify-between pb-3">
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Manual Flags</span>
@@ -606,10 +606,10 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <span className="p-1.5 rounded-lg bg-[#FFE394]/30 text-[#6B5215] dark:text-[#FFE394]"><ShieldAlert className="h-4 w-4" /></span>
+              <span className="p-1.5 rounded-lg bg-brand-yellow/30 text-foreground"><ShieldAlert className="h-4 w-4" /></span>
             </div>
             <div>
-              <div className="text-3xl font-extrabold text-[#8B6B00] dark:text-[#FFE394] tracking-tight">
+              <div className="text-3xl font-extrabold text-foreground tracking-tight">
                 {manualFlaggedCount}
               </div>
               <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Admin overrides</p>
@@ -626,7 +626,7 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
         hasData={data.recentScans.length > 0}
       >
         {data.recentScans.map((scan) => (
-          <tr key={scan.id} className="border-b border-border/30 last:border-0 hover:bg-[#F5EFE0]/40 transition-colors">
+          <tr key={scan.id} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
             <td className="py-4 px-3 font-mono text-[10px] text-muted-foreground whitespace-nowrap">
               {formatDateTime(scan.createdAt)}
             </td>
@@ -654,7 +654,7 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
               )}
             </td>
             <td className="py-4 px-3">
-              <div className="font-semibold text-[#2C2621] truncate max-w-[150px]" title={scan.campaign?.name || "—"}>
+              <div className="font-semibold text-foreground truncate max-w-[150px]" title={scan.campaign?.name || "—"}>
                 {scan.campaign?.name || "—"}
               </div>
               <div className="text-[10px] text-muted-foreground truncate max-w-[150px]">
@@ -696,7 +696,7 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
                 </span>
               </div>
             </td>
-            <td className="py-4 px-3 text-xs text-[#2C2621]">
+            <td className="py-4 px-3 text-xs text-foreground">
               <div className="flex flex-col gap-0.5">
                 <span className="truncate max-w-[120px]">{scan.city || "—"}</span>
                 <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">
@@ -704,7 +704,7 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
                 </span>
               </div>
             </td>
-            <td className="py-4 px-3 text-xs text-[#2C2621]">
+            <td className="py-4 px-3 text-xs text-foreground">
               <div className="flex flex-col gap-0.5">
                 <span className="truncate max-w-[120px]">
                   {scan.deviceType ? scan.deviceType.toUpperCase() : "—"}
@@ -716,7 +716,7 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
             </td>
             <td className="py-4 px-3 text-right">
               <div className="text-[11px] whitespace-nowrap">
-                <div className="text-[#2C2621] font-medium">Total: {scan.hitCount}</div>
+                <div className="text-foreground font-medium">Total: {scan.hitCount}</div>
                 <div className="text-rose-600 font-semibold">Susp: {scan.suspiciousCount}</div>
                 <div className="text-emerald-600 font-semibold">Bill: {scan.billableCount}</div>
               </div>

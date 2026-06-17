@@ -36,7 +36,7 @@ function LocalTableSection({
     <div className="bg-card rounded-2xl p-8 border border-border/50 shadow-sm flex flex-col justify-between h-full">
       <div>
         <div className="pb-6">
-          <h3 className="text-lg font-semibold tracking-tight text-[#2C2621]">{title}</h3>
+          <h3 className="text-lg font-semibold tracking-tight text-foreground">{title}</h3>
           {description && (
             <p className="text-xs text-muted-foreground mt-1 leading-normal">
               {description}
@@ -95,7 +95,7 @@ export default async function AdminDashboardPage() {
   const { metrics, performance } = data;
 
   return (
-    <div className="min-h-screen bg-[#FFF6DE] p-8 md:p-12 space-y-10">
+    <div className="min-h-screen bg-background p-8 md:p-12 space-y-10">
       <DashboardSectionHeader
         title="Admin Analytics Dashboard"
         description="Platform-wide overview of campaigns, QR code scans, reward claims, and delivery logs."
@@ -106,13 +106,13 @@ export default async function AdminDashboardPage() {
       {/* 10 Metrics Cards Grid */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {/* Card 1: Campaigns */}
-        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#F48F68]">
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-primary">
           <div className="flex items-center justify-between pb-3">
             <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Campaigns</span>
-            <span className="p-1.5 rounded-lg bg-[#F48F68]/10 text-[#F48F68]"><BarChart3 className="h-4 w-4" /></span>
+            <span className="p-1.5 rounded-lg bg-primary/10 text-primary"><BarChart3 className="h-4 w-4" /></span>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-[#E27E58] dark:text-[#F48F68] tracking-tight">
+            <div className="text-3xl font-extrabold text-primary tracking-tight">
               {metrics.activeCampaigns} <span className="text-muted-foreground text-lg font-medium">/</span> {metrics.totalCampaigns}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Active vs total campaigns</p>
@@ -120,13 +120,13 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Card 2: QR Codes */}
-        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#8BDFDD]">
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-teal">
           <div className="flex items-center justify-between pb-3">
             <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">QR Codes</span>
-            <span className="p-1.5 rounded-lg bg-[#8BDFDD]/15 text-[#156D6B] dark:text-[#8BDFDD]"><Layers className="h-4 w-4" /></span>
+            <span className="p-1.5 rounded-lg bg-brand-teal/15 text-foreground"><Layers className="h-4 w-4" /></span>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-[#156D6B] dark:text-[#8BDFDD] tracking-tight">
+            <div className="text-3xl font-extrabold text-foreground tracking-tight">
               {formatNumber(metrics.totalQRCodes)}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Total active QR codes</p>
@@ -134,13 +134,13 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Card 3: Total Scan Events */}
-        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#8BDFDD]">
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-teal">
           <div className="flex items-center justify-between pb-3">
             <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Total Scans</span>
-            <span className="p-1.5 rounded-lg bg-[#8BDFDD]/15 text-[#156D6B] dark:text-[#8BDFDD]"><Scan className="h-4 w-4" /></span>
+            <span className="p-1.5 rounded-lg bg-brand-teal/15 text-foreground"><Scan className="h-4 w-4" /></span>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-[#156D6B] dark:text-[#8BDFDD] tracking-tight">
+            <div className="text-3xl font-extrabold text-foreground tracking-tight">
               {formatNumber(metrics.totalScans)}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Total scans logged</p>
@@ -148,13 +148,13 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Card 4: Unique Visitors */}
-        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#8BDFDD]">
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-teal">
           <div className="flex items-center justify-between pb-3">
             <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Unique Visitors</span>
-            <span className="p-1.5 rounded-lg bg-[#8BDFDD]/15 text-[#156D6B] dark:text-[#8BDFDD]"><Users className="h-4 w-4" /></span>
+            <span className="p-1.5 rounded-lg bg-brand-teal/15 text-foreground"><Users className="h-4 w-4" /></span>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-[#156D6B] dark:text-[#8BDFDD] tracking-tight">
+            <div className="text-3xl font-extrabold text-foreground tracking-tight">
               {formatNumber(metrics.uniqueScans)}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Distinct visitor devices</p>
@@ -162,13 +162,13 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Card 5: Billable Scans */}
-        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#8BDFDD]">
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-teal">
           <div className="flex items-center justify-between pb-3">
             <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Billable Scans</span>
-            <span className="p-1.5 rounded-lg bg-[#8BDFDD]/15 text-[#156D6B] dark:text-[#8BDFDD]"><ShieldCheck className="h-4 w-4" /></span>
+            <span className="p-1.5 rounded-lg bg-brand-teal/15 text-foreground"><ShieldCheck className="h-4 w-4" /></span>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-[#156D6B] dark:text-[#8BDFDD] tracking-tight">
+            <div className="text-3xl font-extrabold text-foreground tracking-tight">
               {formatNumber(metrics.billableScans)}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Legitimate billable scans</p>
@@ -176,13 +176,13 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Card 6: Approved Claims */}
-        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#FFE394]">
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-yellow">
           <div className="flex items-center justify-between pb-3">
             <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Approved Claims</span>
-            <span className="p-1.5 rounded-lg bg-[#FFE394]/30 text-[#6B5215] dark:text-[#FFE394]"><Award className="h-4 w-4" /></span>
+            <span className="p-1.5 rounded-lg bg-brand-yellow/30 text-foreground"><Award className="h-4 w-4" /></span>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-[#8B6B00] dark:text-[#FFE394] tracking-tight">
+            <div className="text-3xl font-extrabold text-foreground tracking-tight">
               {formatNumber(metrics.approvedRewardClaims)}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Approved reward provisions</p>
@@ -190,13 +190,13 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Card 7: Duplicate Declines */}
-        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#F48F68]">
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-primary">
           <div className="flex items-center justify-between pb-3">
             <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Declined Claims</span>
-            <span className="p-1.5 rounded-lg bg-[#F48F68]/10 text-[#F48F68]"><AlertCircle className="h-4 w-4" /></span>
+            <span className="p-1.5 rounded-lg bg-primary/10 text-primary"><AlertCircle className="h-4 w-4" /></span>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-[#E27E58] dark:text-[#F48F68] tracking-tight">
+            <div className="text-3xl font-extrabold text-primary tracking-tight">
               {formatNumber(metrics.duplicateRewardDeclines)}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Declined duplicate claims</p>
@@ -204,13 +204,13 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Card 8: Delivery Scans */}
-        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#8BDFDD]">
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-teal">
           <div className="flex items-center justify-between pb-3">
             <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Deliveries</span>
-            <span className="p-1.5 rounded-lg bg-[#8BDFDD]/15 text-[#156D6B] dark:text-[#8BDFDD]"><Truck className="h-4 w-4" /></span>
+            <span className="p-1.5 rounded-lg bg-brand-teal/15 text-foreground"><Truck className="h-4 w-4" /></span>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-[#156D6B] dark:text-[#8BDFDD] tracking-tight">
+            <div className="text-3xl font-extrabold text-foreground tracking-tight">
               {formatNumber(metrics.totalDeliveryScans)}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Total distribution logs</p>
@@ -218,13 +218,13 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Card 9: Cartons Placed */}
-        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#FFE394]">
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-yellow">
           <div className="flex items-center justify-between pb-3">
             <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Cartons Placed</span>
-            <span className="p-1.5 rounded-lg bg-[#FFE394]/30 text-[#6B5215] dark:text-[#FFE394]"><Layers className="h-4 w-4" /></span>
+            <span className="p-1.5 rounded-lg bg-brand-yellow/30 text-foreground"><Layers className="h-4 w-4" /></span>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-[#8B6B00] dark:text-[#FFE394] tracking-tight">
+            <div className="text-3xl font-extrabold text-foreground tracking-tight">
               {formatNumber(metrics.totalCartonsDelivered)}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Total physical carton count</p>
@@ -232,13 +232,13 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Card 10: Est. Units Placed */}
-        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[#FFE394]">
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-yellow">
           <div className="flex items-center justify-between pb-3">
             <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Est. Units Placed</span>
-            <span className="p-1.5 rounded-lg bg-[#FFE394]/30 text-[#6B5215] dark:text-[#FFE394]"><Archive className="h-4 w-4" /></span>
+            <span className="p-1.5 rounded-lg bg-brand-yellow/30 text-foreground"><Archive className="h-4 w-4" /></span>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-[#8B6B00] dark:text-[#FFE394] tracking-tight">
+            <div className="text-3xl font-extrabold text-foreground tracking-tight">
               {formatNumber(metrics.totalEstimatedUnitsDelivered)}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Estimated units delivered</p>
@@ -255,15 +255,15 @@ export default async function AdminDashboardPage() {
           hasData={performance.campaignPerformance.length > 0}
         >
           {performance.campaignPerformance.map((c, idx) => (
-            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-[#F5EFE0]/40 transition-colors">
-              <td className="py-4 px-3 font-semibold text-[#2C2621]">{c.name}</td>
+            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
+              <td className="py-4 px-3 font-semibold text-foreground">{c.name}</td>
               <td className="py-4 px-3 text-muted-foreground">{c.brandName}</td>
               <td className="py-4 px-3 text-muted-foreground">{c.advertiserName}</td>
-              <td className="py-4 px-3 text-right font-medium text-[#2C2621]">{formatNumber(c.totalScans)}</td>
-              <td className="py-4 px-3 text-right font-semibold text-[#156D6B] dark:text-brand-teal">{formatNumber(c.approvedClaims)}</td>
-              <td className="py-4 px-3 text-right font-semibold text-[#a03816] dark:text-brand-coral">{formatNumber(c.duplicateDeclines)}</td>
-              <td className="py-4 px-3 text-right font-medium text-[#2C2621]">{formatNumber(c.deliveryScans)}</td>
-              <td className="py-4 px-3 text-right font-semibold text-[#156D6B] dark:text-brand-teal">{formatNumber(c.estimatedUnitsDelivered)}</td>
+              <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(c.totalScans)}</td>
+              <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(c.approvedClaims)}</td>
+              <td className="py-4 px-3 text-right font-semibold text-primary">{formatNumber(c.duplicateDeclines)}</td>
+              <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(c.deliveryScans)}</td>
+              <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(c.estimatedUnitsDelivered)}</td>
             </tr>
           ))}
         </LocalTableSection>
@@ -275,12 +275,12 @@ export default async function AdminDashboardPage() {
           hasData={performance.productPerformance.length > 0}
         >
           {performance.productPerformance.map((p, idx) => (
-            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-[#F5EFE0]/40 transition-colors">
-              <td className="py-4 px-3 font-semibold text-[#2C2621]">{p.name}</td>
+            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
+              <td className="py-4 px-3 font-semibold text-foreground">{p.name}</td>
               <td className="py-4 px-3 text-muted-foreground">{p.brandName}</td>
-              <td className="py-4 px-3 text-right font-medium text-[#2C2621]">{formatNumber(p.totalScans)}</td>
-              <td className="py-4 px-3 text-right font-semibold text-[#156D6B] dark:text-brand-teal">{formatNumber(p.approvedClaims)}</td>
-              <td className="py-4 px-3 text-right font-semibold text-[#156D6B] dark:text-brand-teal">{formatNumber(p.estimatedUnitsDelivered)}</td>
+              <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(p.totalScans)}</td>
+              <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(p.approvedClaims)}</td>
+              <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(p.estimatedUnitsDelivered)}</td>
             </tr>
           ))}
         </LocalTableSection>
@@ -294,12 +294,12 @@ export default async function AdminDashboardPage() {
           hasData={performance.locationPerformance.length > 0}
         >
           {performance.locationPerformance.map((l, idx) => (
-            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-[#F5EFE0]/40 transition-colors">
-              <td className="py-4 px-3 font-semibold text-[#2C2621]">{l.location}</td>
-              <td className="py-4 px-3 text-right font-medium text-[#2C2621]">{formatNumber(l.totalScans)}</td>
-              <td className="py-4 px-3 text-right font-semibold text-[#156D6B] dark:text-brand-teal">{formatNumber(l.approvedClaims)}</td>
-              <td className="py-4 px-3 text-right font-medium text-[#2C2621]">{formatNumber(l.deliveryScans)}</td>
-              <td className="py-4 px-3 text-right font-semibold text-[#156D6B] dark:text-brand-teal">{formatNumber(l.estimatedUnitsDelivered)}</td>
+            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
+              <td className="py-4 px-3 font-semibold text-foreground">{l.location}</td>
+              <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(l.totalScans)}</td>
+              <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(l.approvedClaims)}</td>
+              <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(l.deliveryScans)}</td>
+              <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(l.estimatedUnitsDelivered)}</td>
             </tr>
           ))}
         </LocalTableSection>
@@ -311,11 +311,11 @@ export default async function AdminDashboardPage() {
           hasData={performance.recentScanEvents.length > 0}
         >
           {performance.recentScanEvents.map((s, idx) => (
-            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-[#F5EFE0]/40 transition-colors">
+            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
               <td className="py-4 px-3 font-mono text-[10px] text-muted-foreground">
                 {formatDateTime(s.createdAt)}
               </td>
-              <td className="py-4 px-3 font-semibold text-[#2C2621] truncate max-w-[100px]" title={s.campaignName}>
+              <td className="py-4 px-3 font-semibold text-foreground truncate max-w-[100px]" title={s.campaignName}>
                 {s.campaignName}
               </td>
               <td className="py-4 px-3 text-muted-foreground truncate max-w-[80px]" title={s.productName}>{s.productName}</td>
@@ -340,23 +340,23 @@ export default async function AdminDashboardPage() {
           hasData={performance.recentRewardClaims.length > 0}
         >
           {performance.recentRewardClaims.map((r, idx) => (
-            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-[#F5EFE0]/40 transition-colors">
+            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
               <td className="py-4 px-3 font-mono text-[10px] text-muted-foreground">
                 {formatDateTime(r.createdAt)}
               </td>
-              <td className="py-4 px-3 font-semibold text-[#2C2621] truncate max-w-[120px]" title={r.campaignName}>
+              <td className="py-4 px-3 font-semibold text-foreground truncate max-w-[120px]" title={r.campaignName}>
                 {r.campaignName}
               </td>
               <td className="py-4 px-3">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-[#F5EFE0] text-[#2C2621] border border-border/40">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-muted text-foreground border border-border/40">
                   {r.rewardType}
                 </span>
               </td>
               <td className="py-4 px-3 text-right">
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${
                   r.status === "APPROVED" 
-                    ? "bg-[#8BDFDD]/20 text-[#1E5C5A] border-[#8BDFDD]/35" 
-                    : "bg-[#F48F68]/20 text-[#8C3A1B] border-[#F48F68]/25"
+                    ? "bg-brand-teal/20 text-foreground border-brand-teal/35"
+                    : "bg-primary/20 text-foreground border-primary/25"
                 }`}>
                   {r.status}
                 </span>
@@ -375,17 +375,17 @@ export default async function AdminDashboardPage() {
           hasData={performance.recentDeliveryScans.length > 0}
         >
           {performance.recentDeliveryScans.map((d, idx) => (
-            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-[#F5EFE0]/40 transition-colors">
+            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
               <td className="py-4 px-3 font-mono text-[10px] text-muted-foreground">
                 {formatDateTime(d.createdAt)}
               </td>
-              <td className="py-4 px-3 font-semibold text-[#2C2621] truncate max-w-[100px]" title={d.retailerName}>
+              <td className="py-4 px-3 font-semibold text-foreground truncate max-w-[100px]" title={d.retailerName}>
                 {d.retailerName}
               </td>
               <td className="py-4 px-3 text-muted-foreground truncate max-w-[100px]" title={d.campaignName}>{d.campaignName}</td>
               <td className="py-4 px-3 font-mono text-[10px] text-muted-foreground">{d.batchCode}</td>
-              <td className="py-4 px-3 text-right font-medium text-[#2C2621]">{d.cartonsDelivered}</td>
-              <td className="py-4 px-3 text-right font-semibold text-[#156D6B] dark:text-brand-teal">{formatNumber(d.estimatedUnitsDelivered)}</td>
+              <td className="py-4 px-3 text-right font-medium text-foreground">{d.cartonsDelivered}</td>
+              <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(d.estimatedUnitsDelivered)}</td>
               <td className="py-4 px-3 text-muted-foreground truncate max-w-[100px]">{d.location}</td>
             </tr>
           ))}

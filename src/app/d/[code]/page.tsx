@@ -68,13 +68,13 @@ export default async function DeliveryScanPage({ params }: Props) {
     }
 
     return (
-      <div className="min-h-screen bg-[#FFF6DE] flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <div className={`max-w-md w-full bg-white border ${borderColor} rounded-2xl shadow-sm p-8 text-center space-y-5`}>
           <div className={`mx-auto w-12 h-12 rounded-full ${bgColor} border ${borderColor} flex items-center justify-center`}>
             <Icon className={`h-6 w-6 ${iconColor}`} />
           </div>
           <div className="space-y-2">
-            <h1 className="text-xl font-bold text-[#2C2621]">{errorTitle}</h1>
+            <h1 className="text-xl font-bold text-foreground">{errorTitle}</h1>
             <p className="text-sm text-muted-foreground leading-relaxed">{errorMsg}</p>
           </div>
           <Button asChild variant="outline" className="w-full">
@@ -117,7 +117,7 @@ export default async function DeliveryScanPage({ params }: Props) {
   const ipLocation = getApproximateLocationFromHeaders(reqHeaders as any);
 
   return (
-    <div className="min-h-screen bg-[#FFF6DE] flex flex-col items-center p-4 pb-12">
+    <div className="min-h-screen bg-background flex flex-col items-center p-4 pb-12">
       <div className="w-full max-w-lg space-y-4 pt-6">
         <div className="flex items-center justify-between">
           <Link

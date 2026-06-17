@@ -28,13 +28,13 @@ export default async function ConsumerQRLandingPage({ params }: Props) {
 
   if (result.status === "NOT_FOUND") {
     return (
-      <div className="min-h-screen bg-[#FFF6DE] text-[#2C2621] flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
         <div className="max-w-md w-full bg-card border border-border/60 shadow-xl rounded-2xl p-8 text-center space-y-6">
-          <div className="mx-auto w-12 h-12 bg-brand-coral/15 border border-brand-coral/20 text-[#8C3A1B] rounded-full flex items-center justify-center">
+          <div className="mx-auto w-12 h-12 bg-brand-coral/15 border border-brand-coral/20 text-foreground rounded-full flex items-center justify-center">
             <AlertCircle className="h-6 w-6" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-xl font-bold text-[#2C2621]">Campaign Not Found</h1>
+            <h1 className="text-xl font-bold text-foreground">Campaign Not Found</h1>
             <p className="text-sm text-muted-foreground">
               The QR code you scanned does not match any active campaign or promotion.
             </p>
@@ -49,13 +49,13 @@ export default async function ConsumerQRLandingPage({ params }: Props) {
 
   if (result.status === "BATCH_DELIVERY") {
     return (
-      <div className="min-h-screen bg-[#FFF6DE] text-[#2C2621] flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
         <div className="max-w-md w-full bg-card border border-border/60 shadow-xl rounded-2xl p-8 text-center space-y-6">
-          <div className="mx-auto w-12 h-12 bg-brand-teal/15 border border-brand-teal/20 text-[#1E5C5A] rounded-full flex items-center justify-center">
+          <div className="mx-auto w-12 h-12 bg-brand-teal/15 border border-brand-teal/20 text-foreground rounded-full flex items-center justify-center">
             <AlertTriangle className="h-6 w-6" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-xl font-bold text-[#2C2621]">Delivery Operations Only</h1>
+            <h1 className="text-xl font-bold text-foreground">Delivery Operations Only</h1>
             <p className="text-sm text-muted-foreground">
               This QR code is reserved for batch and delivery operations.
             </p>
@@ -64,7 +64,7 @@ export default async function ConsumerQRLandingPage({ params }: Props) {
             <Button asChild className="w-full bg-brand-teal hover:bg-brand-teal/90 text-white rounded-xl shadow-sm transition-all">
               <Link href={`/d/${code}`}>Go to Delivery Scanner</Link>
             </Button>
-            <Button asChild variant="ghost" className="w-full text-muted-foreground hover:text-[#2C2621]">
+            <Button asChild variant="ghost" className="w-full text-muted-foreground hover:text-foreground">
               <Link href="/login">Retailer Login</Link>
             </Button>
           </div>
@@ -75,13 +75,13 @@ export default async function ConsumerQRLandingPage({ params }: Props) {
 
   if (result.status === "INACTIVE" || result.status === "WRONG_TYPE") {
     return (
-      <div className="min-h-screen bg-[#FFF6DE] text-[#2C2621] flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
         <div className="max-w-md w-full bg-card border border-border/60 shadow-xl rounded-2xl p-8 text-center space-y-6">
-          <div className="mx-auto w-12 h-12 bg-brand-coral/15 border border-brand-coral/20 text-[#8C3A1B] rounded-full flex items-center justify-center">
+          <div className="mx-auto w-12 h-12 bg-brand-coral/15 border border-brand-coral/20 text-foreground rounded-full flex items-center justify-center">
             <Ban className="h-6 w-6" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-xl font-bold text-[#2C2621]">Campaign Inactive</h1>
+            <h1 className="text-xl font-bold text-foreground">Campaign Inactive</h1>
             <p className="text-sm text-muted-foreground">
               This campaign or promotional offer is not currently active.
             </p>

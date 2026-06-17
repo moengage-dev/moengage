@@ -53,7 +53,7 @@ export default async function HeatmapsPage({ searchParams }: PageProps) {
   } = data;
 
   return (
-    <div className="min-h-screen bg-[#FFF6DE] p-8 md:p-12 space-y-10">
+    <div className="min-h-screen bg-background p-8 md:p-12 space-y-10">
       <DashboardSectionHeader
         title="Heatmaps"
         description="Compare consumer engagement scans and delivery distribution activity."

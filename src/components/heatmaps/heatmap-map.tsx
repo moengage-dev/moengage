@@ -44,10 +44,10 @@ export function HeatmapMap({ locationMarkers }: HeatmapMapProps) {
     return (
       <Card className="bg-card border-border/50 shadow-sm rounded-2xl overflow-hidden">
         <CardContent className="flex flex-col items-center justify-center min-h-[420px] text-center p-8 bg-gradient-to-b from-transparent to-muted/20">
-          <div className="p-4 bg-muted/50 rounded-full border border-border/60 mb-4 text-[#F48F68] animate-pulse">
+          <div className="p-4 bg-muted/50 rounded-full border border-border/60 mb-4 text-primary animate-pulse">
             <AlertTriangle className="h-10 w-10" />
           </div>
-          <h3 className="text-xl font-semibold text-[#2C2621] tracking-tight">
+          <h3 className="text-xl font-semibold text-foreground tracking-tight">
             Map Tiles Not Configured
           </h3>
           <p className="text-muted-foreground text-sm max-w-lg mt-3 leading-relaxed">
@@ -60,7 +60,7 @@ export function HeatmapMap({ locationMarkers }: HeatmapMapProps) {
           </p>
           <div className="mt-6 flex flex-wrap gap-4 justify-center bg-card border border-border/50 rounded-xl p-5 max-w-md w-full shadow-sm">
             <div className="text-left text-xs text-muted-foreground space-y-1.5 w-full">
-              <span className="font-semibold text-[#2C2621] block mb-2 uppercase tracking-wider text-[10px]">
+              <span className="font-semibold text-foreground block mb-2 uppercase tracking-wider text-[10px]">
                 Aggregated Location Points:
               </span>
               <div className="flex justify-between border-b border-border/40 pb-1.5">
@@ -432,7 +432,7 @@ export function HeatmapMap({ locationMarkers }: HeatmapMapProps) {
 
       {/* ── Legend ──────────────────────────────────────────────────────────── */}
       <div className="absolute bottom-4 left-4 bg-card/95 backdrop-blur-md border border-border/50 rounded-xl p-3.5 text-xs text-muted-foreground shadow-sm space-y-2 pointer-events-none">
-        <span className="font-semibold text-[#2C2621] uppercase tracking-wider text-[10px] block border-b border-border/40 pb-1.5 mb-2">
+        <span className="font-semibold text-foreground uppercase tracking-wider text-[10px] block border-b border-border/40 pb-1.5 mb-2">
           Legend
         </span>
         <div className="flex items-center gap-2">

@@ -168,7 +168,7 @@ export function ReportsClient({
       {/* Date Filters Card */}
       <Card className="border border-border/50 shadow-sm bg-card rounded-2xl">
         <CardHeader className="py-4">
-          <CardTitle className="text-base font-semibold text-[#2C2621] flex items-center gap-2">
+          <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
             Filter Report Dates
           </CardTitle>
           <CardDescription className="text-xs text-muted-foreground">
@@ -209,7 +209,7 @@ export function ReportsClient({
         {availableCards.map((report) => (
           <Card key={report.title} className="flex flex-col border border-border/50 shadow-sm bg-card rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-base font-bold text-[#2C2621]">{report.title}</CardTitle>
+              <CardTitle className="text-base font-bold text-foreground">{report.title}</CardTitle>
               <CardDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
                 {report.description}
               </CardDescription>
@@ -226,20 +226,20 @@ export function ReportsClient({
                     {isDownloading === report.csvType ? (
                       <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Table className="mr-1.5 h-3.5 w-3.5 text-[#156D6B]" />
+                      <Table className="mr-1.5 h-3.5 w-3.5 text-foreground" />
                     )}
                     Download CSV
                   </Button>
                   <Button
                     variant="outline"
-                    className="w-full justify-start h-9 px-3 text-xs border-brand-teal/20 text-[#1E5C5A] hover:bg-brand-teal/[0.04]"
+                    className="w-full justify-start h-9 px-3 text-xs border-brand-teal/20 text-foreground hover:bg-brand-teal/[0.04]"
                     disabled={isDownloading !== null || isPreviewLoading !== null}
                     onClick={() => handlePreview(report.csvType!, report.title)}
                   >
                     {isPreviewLoading === report.csvType ? (
                       <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Eye className="mr-1.5 h-3.5 w-3.5 text-[#1E5C5A]" />
+                      <Eye className="mr-1.5 h-3.5 w-3.5 text-foreground" />
                     )}
                     Preview
                   </Button>
@@ -256,20 +256,20 @@ export function ReportsClient({
                     {isDownloading === report.pdfType ? (
                       <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <FileText className="mr-1.5 h-3.5 w-3.5 text-[#8C3A1B]" />
+                      <FileText className="mr-1.5 h-3.5 w-3.5 text-destructive" />
                     )}
                     Download PDF
                   </Button>
                   <Button
                     variant="outline"
-                    className="w-full justify-start h-9 px-3 text-xs border-brand-teal/20 text-[#1E5C5A] hover:bg-brand-teal/[0.04]"
+                    className="w-full justify-start h-9 px-3 text-xs border-brand-teal/20 text-foreground hover:bg-brand-teal/[0.04]"
                     disabled={isDownloading !== null || isPreviewLoading !== null}
                     onClick={() => handlePreview(report.pdfType!, report.title)}
                   >
                     {isPreviewLoading === report.pdfType ? (
                       <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Eye className="mr-1.5 h-3.5 w-3.5 text-[#1E5C5A]" />
+                      <Eye className="mr-1.5 h-3.5 w-3.5 text-foreground" />
                     )}
                     Preview
                   </Button>
@@ -285,7 +285,7 @@ export function ReportsClient({
         <Card className="mt-8 border border-border/50 shadow-sm bg-card rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between pb-4">
             <div>
-              <CardTitle className="text-base font-semibold text-[#2C2621]">
+              <CardTitle className="text-base font-semibold text-foreground">
                 Preview: {previewType}
               </CardTitle>
               <CardDescription className="text-xs text-muted-foreground mt-1">
@@ -322,7 +322,7 @@ export function ReportsClient({
               <div className="overflow-x-auto border rounded-xl border-border/30">
                 <table className="w-full text-left border-collapse text-xs bg-transparent">
                   <thead>
-                    <tr className="border-b border-border/30 bg-[#F5EFE0]/40">
+                    <tr className="border-b border-border/30 bg-muted/40">
                       {Object.keys(previewData[0]).map((key) => (
                         <th
                           key={key}
@@ -337,7 +337,7 @@ export function ReportsClient({
                     {previewData.map((row, idx) => (
                       <tr
                         key={idx}
-                        className="border-b border-border/20 last:border-0 hover:bg-[#F5EFE0]/20 transition-colors"
+                        className="border-b border-border/20 last:border-0 hover:bg-muted/20 transition-colors"
                       >
                         {Object.values(row).map((val: any, colIdx) => (
                           <td

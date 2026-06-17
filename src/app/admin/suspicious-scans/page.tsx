@@ -33,7 +33,7 @@ export default async function SuspiciousScansPage({
   const data = await getSuspiciousScansPageData(filters);
 
   return (
-    <div className="min-h-screen bg-[#FFF6DE] p-8 md:p-12 space-y-10">
+    <div className="min-h-screen bg-background p-8 md:p-12 space-y-10">
       <DashboardSectionHeader
         title="Abuse Controls & Suspicious Scans"
         description="Investigate suspicious scan behavior, repeat IPs, and exclude fraudulent activities from billing."
