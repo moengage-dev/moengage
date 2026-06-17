@@ -18,6 +18,7 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --color-header-bg: var(--header-bg);
 
   /* Brand Theme Extensions */
   --color-brand-cream: var(--brand-cream);
@@ -62,8 +63,8 @@
 /* Base Light Mode Tokens - Warm, Organic SaaS Style */
 :root {
   /* Brand Palette */
-  --brand-cream: #FFF6DE;
-  --brand-teal: #8BDFDD;
+  --brand-cream: #F3F7FC;
+  --brand-teal: #2A7F82;
   --brand-coral: #F48F68;
   --brand-yellow: #FFE394;
 
@@ -71,30 +72,31 @@
   --font-mono: var(--font-geist-mono);
 
   /* Core Layout - brand-mapped */
-  --background: var(--brand-cream);
-  --foreground: #2C2621;
+  --background: #F3F7FC;
+  --foreground: #243247;
+  --header-bg: #F7FAFE;
 
-  /* Elevated elements pop against the cream canvas */
-  --card: #FFFBF5;
-  --card-foreground: #2C2621;
-  --popover: #FFFBF5;
-  --popover-foreground: #2C2621;
+  /* Elevated elements */
+  --card: #FFFFFF;
+  --card-foreground: #243247;
+  --popover: #FFFFFF;
+  --popover-foreground: #243247;
 
   /* Interactive */
   --primary: var(--brand-coral);
   --primary-foreground: #ffffff;
-  --secondary: #F4EBD4;
-  --secondary-foreground: #2C2621;
+  --secondary: #F7FAFE;
+  --secondary-foreground: #243247;
 
-  --muted: #F5EFE0;
-  --muted-foreground: #7D756E;
-  --accent: #F5EFE0;
-  --accent-foreground: #2C2621;
+  --muted: #DDEAF7;
+  --muted-foreground: #68778C;
+  --accent: #DDEAF7;
+  --accent-foreground: #243247;
   --destructive: #E15A3E;
   --destructive-foreground: #ffffff;
 
-  --border: #EFE6D0;
-  --input: #EFE6D0;
+  --border: #D8E3F0;
+  --input: #D8E3F0;
   --ring: var(--brand-teal);
 
   /* Chart colours mapped to brand palette */
@@ -107,13 +109,13 @@
   --radius: 0.85rem;
 
   /* Navigation Sidebar */
-  --sidebar: #FFFBF5;
-  --sidebar-foreground: #2C2621;
+  --sidebar: #E8F1FB;
+  --sidebar-foreground: #243247;
   --sidebar-primary: var(--brand-coral);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: var(--brand-cream);
-  --sidebar-accent-foreground: #2C2621;
-  --sidebar-border: #EFE6D0;
+  --sidebar-accent: #DDEAF7;
+  --sidebar-accent-foreground: #243247;
+  --sidebar-border: #D8E3F0;
   --sidebar-ring: var(--brand-teal);
 }
 
@@ -121,6 +123,7 @@
 .dark {
   --background: #181512;
   --foreground: #F7F5F0;
+  --header-bg: #181512;
 
   --card: #221E1A;
   --card-foreground: #F7F5F0;
@@ -183,6 +186,14 @@
   .public-page-bg::before {
     content: "";
     @apply pointer-events-none absolute inset-x-0 top-0 h-32 border-b border-border/40 bg-card/55 backdrop-blur-xl;
+  }
+
+  .auth-page-bg {
+    @apply relative min-h-screen overflow-hidden bg-background text-foreground;
+    background:
+      radial-gradient(circle at top left, color-mix(in oklch, var(--primary) 20%, transparent), transparent 34rem),
+      radial-gradient(circle at bottom right, color-mix(in oklch, var(--brand-teal) 24%, transparent), transparent 30rem),
+      var(--background);
   }
 
   .public-card {

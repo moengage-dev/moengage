@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download, FileText, Table, Eye, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export const DEFAULT_REPORT_CARDS = [
   {
@@ -214,65 +215,78 @@ export function ReportsClient({
                 {report.description}
               </CardDescription>
             </CardHeader>
-            <CardContent className="mt-auto flex flex-col gap-2">
+            <CardContent className="mt-auto space-y-4 pt-2">
               {report.csvType && (
-                <div className="grid grid-cols-2 gap-2 w-full">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start h-9 px-3 text-xs"
-                    disabled={isDownloading !== null || isPreviewLoading !== null}
-                    onClick={() => handleDownload(report.csvType!)}
-                  >
-                    {isDownloading === report.csvType ? (
-                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Table className="mr-1.5 h-3.5 w-3.5 text-foreground" />
-                    )}
-                    Download CSV
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start h-9 px-3 text-xs border-brand-teal/20 text-foreground hover:bg-brand-teal/[0.04]"
-                    disabled={isDownloading !== null || isPreviewLoading !== null}
-                    onClick={() => handlePreview(report.csvType!, report.title)}
-                  >
-                    {isPreviewLoading === report.csvType ? (
-                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Eye className="mr-1.5 h-3.5 w-3.5 text-foreground" />
-                    )}
-                    Preview
-                  </Button>
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 px-1">
+                    CSV Format
+                  </div>
+                  <div className="flex flex-wrap gap-2 w-full">
+                    <Button
+                      variant="outline"
+                      className="flex-grow flex-shrink-0 flex-1 min-w-[130px] justify-center sm:justify-start h-9 px-3 text-xs"
+                      disabled={isDownloading !== null || isPreviewLoading !== null}
+                      onClick={() => handleDownload(report.csvType!)}
+                    >
+                      {isDownloading === report.csvType ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Table className="mr-1.5 h-3.5 w-3.5 text-foreground" />
+                      )}
+                      Download CSV
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-grow flex-shrink-0 flex-1 min-w-[100px] justify-center sm:justify-start h-9 px-3 text-xs border-brand-teal/20 text-foreground hover:bg-brand-teal/[0.04]"
+                      disabled={isDownloading !== null || isPreviewLoading !== null}
+                      onClick={() => handlePreview(report.csvType!, report.title)}
+                    >
+                      {isPreviewLoading === report.csvType ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Eye className="mr-1.5 h-3.5 w-3.5 text-foreground" />
+                      )}
+                      Preview
+                    </Button>
+                  </div>
                 </div>
               )}
               {report.pdfType && (
-                <div className="grid grid-cols-2 gap-2 w-full">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start h-9 px-3 text-xs"
-                    disabled={isDownloading !== null || isPreviewLoading !== null}
-                    onClick={() => handleDownload(report.pdfType!)}
-                  >
-                    {isDownloading === report.pdfType ? (
-                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <FileText className="mr-1.5 h-3.5 w-3.5 text-destructive" />
-                    )}
-                    Download PDF
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start h-9 px-3 text-xs border-brand-teal/20 text-foreground hover:bg-brand-teal/[0.04]"
-                    disabled={isDownloading !== null || isPreviewLoading !== null}
-                    onClick={() => handlePreview(report.pdfType!, report.title)}
-                  >
-                    {isPreviewLoading === report.pdfType ? (
-                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Eye className="mr-1.5 h-3.5 w-3.5 text-foreground" />
-                    )}
-                    Preview
-                  </Button>
+                <div className={cn(
+                  "space-y-1.5",
+                  report.csvType && "border-t border-border/70 pt-4 mt-2"
+                )}>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 px-1">
+                    PDF Format
+                  </div>
+                  <div className="flex flex-wrap gap-2 w-full">
+                    <Button
+                      variant="outline"
+                      className="flex-grow flex-shrink-0 flex-1 min-w-[130px] justify-center sm:justify-start h-9 px-3 text-xs"
+                      disabled={isDownloading !== null || isPreviewLoading !== null}
+                      onClick={() => handleDownload(report.pdfType!)}
+                    >
+                      {isDownloading === report.pdfType ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <FileText className="mr-1.5 h-3.5 w-3.5 text-destructive" />
+                      )}
+                      Download PDF
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-grow flex-shrink-0 flex-1 min-w-[100px] justify-center sm:justify-start h-9 px-3 text-xs border-brand-teal/20 text-foreground hover:bg-brand-teal/[0.04]"
+                      disabled={isDownloading !== null || isPreviewLoading !== null}
+                      onClick={() => handlePreview(report.pdfType!, report.title)}
+                    >
+                      {isPreviewLoading === report.pdfType ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Eye className="mr-1.5 h-3.5 w-3.5 text-foreground" />
+                      )}
+                      Preview
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>

@@ -167,71 +167,84 @@ export function BillingClient({
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="flex flex-col h-full">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 min-h-[3.5rem]">
             <CardTitle className="text-sm font-medium">Units Placed</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col flex-grow justify-between pt-0">
             <div className="text-2xl font-bold">
               {formatNumber(data.totals.estimatedUnitsPlaced)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Estimated delivered
-            </p>
+            <div className="min-h-[1.25rem] mt-1">
+              <p className="text-xs text-muted-foreground">
+                Estimated delivered
+              </p>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+
+        <Card className="flex flex-col h-full">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 min-h-[3.5rem]">
             <CardTitle className="text-sm font-medium">Billable Scans</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col flex-grow justify-between pt-0">
             <div className="text-2xl font-bold">
               {formatNumber(data.totals.billableScans)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Excl. suspicious & test
-            </p>
+            <div className="min-h-[1.25rem] mt-1">
+              <p className="text-xs text-muted-foreground">
+                Excl. suspicious & test
+              </p>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+
+        <Card className="flex flex-col h-full">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 min-h-[3.5rem]">
             <CardTitle className="text-sm font-medium">Fixed Fees</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+          <CardContent className="flex flex-col flex-grow justify-between pt-0">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {formatCurrency(data.totals.fixedFees)}
             </div>
+            <div className="min-h-[1.25rem] mt-1" />
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+
+        <Card className="flex flex-col h-full">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 min-h-[3.5rem]">
             <CardTitle className="text-sm font-medium">Engagement Fees</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
+          <CardContent className="flex flex-col flex-grow justify-between pt-0">
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
               {formatCurrency(data.totals.engagementFees)}
             </div>
+            <div className="min-h-[1.25rem] mt-1" />
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+
+        <Card className="flex flex-col h-full">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 min-h-[3.5rem]">
             <CardTitle className="text-sm font-medium">Approved Rewards</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">
+          <CardContent className="flex flex-col flex-grow justify-between pt-0">
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
               {formatNumber(data.totals.approvedRewards)}
             </div>
+            <div className="min-h-[1.25rem] mt-1" />
           </CardContent>
         </Card>
-        <Card className="border-primary/50 bg-primary/5">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+
+        <Card className="border-primary/50 bg-primary/5 flex flex-col h-full">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 min-h-[3.5rem]">
             <CardTitle className="text-sm font-medium">Total Billing</CardTitle>
-            <Coins className="h-4 w-4 text-primary" />
+            <Coins className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col flex-grow justify-between pt-0">
             <div className="text-2xl font-bold text-primary">
               {formatCurrency(data.totals.totalAmount)}
             </div>
+            <div className="min-h-[1.25rem] mt-1" />
           </CardContent>
         </Card>
       </div>

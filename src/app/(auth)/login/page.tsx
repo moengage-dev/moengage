@@ -213,7 +213,7 @@ function LoginPageInner() {
   };
 
   return (
-    <div className="public-page-bg flex flex-col justify-center items-center px-4 py-12">
+    <div className="auth-page-bg flex flex-col justify-center items-center px-4 py-16 md:py-24">
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm" aria-live="polite" aria-busy="true">
           <div className="public-card flex flex-col items-center gap-4 px-8 py-7">
@@ -223,19 +223,19 @@ function LoginPageInner() {
         </div>
       )}
 
-      <div className="relative z-10 w-full max-w-md flex flex-col gap-6">
-        <div className="flex flex-col gap-2 text-center">
-          <div className="mx-auto mb-1 inline-flex rounded-full border border-border/60 bg-card/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-muted-foreground">
+      <div className="relative z-10 w-full max-w-[420px] flex flex-col gap-8">
+        <div className="flex flex-col gap-3 text-center">
+          <div className="mx-auto mb-1 inline-flex rounded-full border border-border/60 bg-card/75 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-muted-foreground">
             Secure access
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight">MoEngage</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight text-foreground">MoEngage</h1>
           <p className="text-sm text-muted-foreground">
             FMCG Engagement Platform
           </p>
         </div>
 
-        <Card className="public-card w-full">
-          <CardHeader className="pb-2">
+        <Card className="public-card w-full shadow-lg border border-border/80">
+          <CardHeader className="pb-4 pt-6">
             <CardDescription className="text-center">
               {message ? (
                 <div
@@ -260,9 +260,9 @@ function LoginPageInner() {
               onLogin();
             }}
           >
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+            <CardContent className="space-y-4 px-6">
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-xs font-semibold text-foreground/90">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -273,12 +273,13 @@ function LoginPageInner() {
                   onChange={(e) =>
                     setUser({ ...user, email: e.target.value })
                   }
+                  className="h-10 bg-background focus-visible:ring-ring"
                   required
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-xs font-semibold text-foreground/90">Password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -289,16 +290,17 @@ function LoginPageInner() {
                   onChange={(e) =>
                     setUser({ ...user, password: e.target.value })
                   }
+                  className="h-10 bg-background focus-visible:ring-ring"
                   required
                 />
               </div>
             </CardContent>
 
-            <CardFooter className="flex flex-col gap-3">
+            <CardFooter className="flex flex-col gap-4 px-6 pb-8 pt-4">
               <Button
                 type="submit"
                 disabled={buttonDisabled || loading}
-                className="w-full"
+                className="w-full h-10 text-sm font-semibold"
               >
                 Login
               </Button>
