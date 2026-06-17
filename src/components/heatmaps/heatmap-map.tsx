@@ -7,7 +7,8 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { CombinedLocationMarker } from "@/lib/heatmap-grouping";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertTriangle, Scan, Truck } from "lucide-react";
+import { AlertTriangle, Scan, Truck, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { formatNumber, formatDateTime } from "@/lib/format";
 
 interface HeatmapMapProps {
@@ -126,21 +127,6 @@ export function HeatmapMap({ locationMarkers }: HeatmapMapProps) {
         .maplibregl-popup-anchor-right .maplibregl-popup-tip {
           border-left-color: #e2e8f0 !important;
         }
-        .maplibregl-popup-close-button {
-          color: #94a3b8 !important;
-          padding: 4px 8px !important;
-          font-size: 14px !important;
-          outline: none !important;
-          border-radius: 0.5rem;
-        }
-        .maplibregl-popup-close-button:hover {
-          color: #0f172a !important;
-          background: #f1f5f9 !important;
-        }
-        .maplibregl-popup-close-button:focus-visible {
-          outline: 2px solid #6366f1 !important;
-          outline-offset: 1px !important;
-        }
       `}</style>
 
       <Map
@@ -251,12 +237,21 @@ export function HeatmapMap({ locationMarkers }: HeatmapMapProps) {
             anchor="top"
             offset={14}
             onClose={() => setSelectedLocation(null)}
-            closeButton
+            closeButton={false}
             closeOnClick={false}
           >
-            <div className="text-xs bg-white rounded-xl overflow-hidden w-[280px]">
+            <div className="relative text-xs bg-white rounded-xl overflow-hidden w-[280px]">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="absolute right-1.5 top-1.5 z-20 h-9 w-9 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors"
+                onClick={() => setSelectedLocation(null)}
+                aria-label="Close popup"
+              >
+                <X className="h-4 w-4" />
+              </Button>
               {/* Location header */}
-              <div className="px-4 pt-4 pb-2 border-b border-slate-100">
+              <div className="pl-4 pr-11 pt-4 pb-2 border-b border-slate-100">
                 <p className="font-semibold text-slate-800 text-[11px] leading-tight">
                   {locationLabel(
                     selectedLocation.consumer?.displayCity ??

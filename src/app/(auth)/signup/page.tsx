@@ -98,7 +98,7 @@ function SignupPageInner() {
   };
 
   return (
-    <div className="public-page-bg flex flex-col justify-center items-center px-4 py-12">
+    <div className="auth-page-bg flex flex-col justify-center items-center px-4 py-12">
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm" aria-live="polite" aria-busy="true">
           <div className="public-card flex flex-col items-center gap-4 px-8 py-7">
