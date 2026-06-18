@@ -1,1035 +1,1291 @@
-# Graph Report - src + prisma  (2026-06-04)
+# Graph Report - .  (2026-06-18)
 
 ## Corpus Check
-- 182 files · ~63,107 words
+- 198 files · ~0 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 509 nodes · 413 edges · 160 communities detected
-- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
+- 750 nodes · 692 edges · 201 communities detected
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 9 edges (avg confidence: 0.88)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_Login & Auth Page Flow|Login & Auth Page Flow]]
+- [[_COMMUNITY_Architectural Docs & Core Deps|Architectural Docs & Core Deps]]
+- [[_COMMUNITY_Codebase Map & Role Security|Codebase Map & Role Security]]
 - [[_COMMUNITY_Role-Scoped Dashboard Pages|Role-Scoped Dashboard Pages]]
 - [[_COMMUNITY_Users Service|Users Service]]
-- [[_COMMUNITY_Auth API & Email Verification|Auth API & Email Verification]]
+- [[_COMMUNITY_Login & Auth Page Flow|Login & Auth Page Flow]]
 - [[_COMMUNITY_Campaigns Service|Campaigns Service]]
-- [[_COMMUNITY_Reports & Billing Service|Reports & Billing Service]]
-- [[_COMMUNITY_Batches Service|Batches Service]]
-- [[_COMMUNITY_Pagination UI Component|Pagination UI Component]]
+- [[_COMMUNITY_Reports Service|Reports Service]]
 - [[_COMMUNITY_Format Utilities|Format Utilities]]
+- [[_COMMUNITY_Prisma Seed Data|Prisma Seed Data]]
 - [[_COMMUNITY_QR Codes Admin Client|QR Codes Admin Client]]
 - [[_COMMUNITY_Users Admin Client|Users Admin Client]]
 - [[_COMMUNITY_Campaigns Admin Client|Campaigns Admin Client]]
 - [[_COMMUNITY_Batches Admin Client|Batches Admin Client]]
-- [[_COMMUNITY_QR Codes Service|QR Codes Service]]
-- [[_COMMUNITY_Sheet UI Component|Sheet UI Component]]
-- [[_COMMUNITY_Sidebar Navigation|Sidebar Navigation]]
-- [[_COMMUNITY_Supabase Storage|Supabase Storage]]
+- [[_COMMUNITY_Batches Service|Batches Service]]
+- [[_COMMUNITY_Public Consumer Scan Service|Public Consumer Scan Service]]
+- [[_COMMUNITY_Pagination Component|Pagination Component]]
+- [[_COMMUNITY_Supabase Storage Upload|Supabase Storage Upload]]
+- [[_COMMUNITY_Route Middleware & Proxy|Route Middleware & Proxy]]
 - [[_COMMUNITY_Products Admin Client|Products Admin Client]]
 - [[_COMMUNITY_Brands Admin Client|Brands Admin Client]]
 - [[_COMMUNITY_Advertisers Admin Client|Advertisers Admin Client]]
+- [[_COMMUNITY_Auth API Routes|Auth API Routes]]
+- [[_COMMUNITY_Billing Service|Billing Service]]
+- [[_COMMUNITY_QR Codes Service|QR Codes Service]]
+- [[_COMMUNITY_Sheet UI Component|Sheet UI Component]]
+- [[_COMMUNITY_Sidebar Navigation|Sidebar Navigation]]
+- [[_COMMUNITY_Retailer Form with Geocoding|Retailer Form with Geocoding]]
+- [[_COMMUNITY_Heatmap Location Grouping|Heatmap Location Grouping]]
+- [[_COMMUNITY_Delivery DTO Converters|Delivery DTO Converters]]
+- [[_COMMUNITY_MoEngage Brand Assets|MoEngage Brand Assets]]
+- [[_COMMUNITY_QR Code Generation|QR Code Generation]]
 - [[_COMMUNITY_Users Server Actions|Users Server Actions]]
+- [[_COMMUNITY_Delivery Scan Service|Delivery Scan Service]]
 - [[_COMMUNITY_Products Service|Products Service]]
 - [[_COMMUNITY_Advertisers Service|Advertisers Service]]
 - [[_COMMUNITY_Brands Service|Brands Service]]
-- [[_COMMUNITY_Analytics Service|Analytics Service]]
 - [[_COMMUNITY_Dialog UI Component|Dialog UI Component]]
-- [[_COMMUNITY_Select UI Component|Select UI Component]]
-- [[_COMMUNITY_QR Code Generation|QR Code Generation]]
-- [[_COMMUNITY_Route Middleware & Proxy|Route Middleware & Proxy]]
+- [[_COMMUNITY_Vercel Deployment|Vercel Deployment]]
+- [[_COMMUNITY_Classification Concurrency Tests|Classification Concurrency Tests]]
+- [[_COMMUNITY_Retailers Admin Client|Retailers Admin Client]]
+- [[_COMMUNITY_API Route Handlers|API Route Handlers]]
+- [[_COMMUNITY_Scan Classification Service|Scan Classification Service]]
+- [[_COMMUNITY_Client Experience Utilities|Client Experience Utilities]]
+- [[_COMMUNITY_Breadcrumb Component|Breadcrumb Component]]
+- [[_COMMUNITY_Table Component|Table Component]]
+- [[_COMMUNITY_Select Component|Select Component]]
+- [[_COMMUNITY_Billing Dashboard Client|Billing Dashboard Client]]
+- [[_COMMUNITY_Reports Client|Reports Client]]
+- [[_COMMUNITY_Delivery QR Scanner|Delivery QR Scanner]]
+- [[_COMMUNITY_Delivery Scan Form|Delivery Scan Form]]
+- [[_COMMUNITY_Heatmap Grouping Tests|Heatmap Grouping Tests]]
+- [[_COMMUNITY_Brands Server Actions|Brands Server Actions]]
+- [[_COMMUNITY_Advertisers Server Actions|Advertisers Server Actions]]
+- [[_COMMUNITY_Mobile Number Hashing|Mobile Number Hashing]]
+- [[_COMMUNITY_Products Server Actions|Products Server Actions]]
+- [[_COMMUNITY_QR Codes Server Actions|QR Codes Server Actions]]
+- [[_COMMUNITY_Campaigns Server Actions|Campaigns Server Actions]]
+- [[_COMMUNITY_Batches Server Actions|Batches Server Actions]]
+- [[_COMMUNITY_Retailers Service|Retailers Service]]
+- [[_COMMUNITY_Analytics Service|Analytics Service]]
+- [[_COMMUNITY_Alert Dialog Component|Alert Dialog Component]]
+- [[_COMMUNITY_Card Component|Card Component]]
+- [[_COMMUNITY_Popover Component|Popover Component]]
+- [[_COMMUNITY_Command Component|Command Component]]
+- [[_COMMUNITY_Signup Form|Signup Form]]
+- [[_COMMUNITY_Public Campaign Landing|Public Campaign Landing]]
+- [[_COMMUNITY_Email Verification OTP|Email Verification OTP]]
+- [[_COMMUNITY_Reward OTP Logic|Reward OTP Logic]]
+- [[_COMMUNITY_Campaign Form|Campaign Form]]
+- [[_COMMUNITY_Delivery Admin Actions|Delivery Admin Actions]]
+- [[_COMMUNITY_Retailers Server Actions|Retailers Server Actions]]
+- [[_COMMUNITY_Billing Server Actions|Billing Server Actions]]
+- [[_COMMUNITY_Heatmaps Service|Heatmaps Service]]
+- [[_COMMUNITY_Reward Claim Service|Reward Claim Service]]
+- [[_COMMUNITY_Input Group Component|Input Group Component]]
+- [[_COMMUNITY_Alert Component|Alert Component]]
+- [[_COMMUNITY_Avatar Component|Avatar Component]]
+- [[_COMMUNITY_Dropdown Menu Component|Dropdown Menu Component]]
+- [[_COMMUNITY_Brand Form|Brand Form]]
+- [[_COMMUNITY_Advertiser Form|Advertiser Form]]
+- [[_COMMUNITY_Role-Based Nav Items|Role-Based Nav Items]]
+- [[_COMMUNITY_Overflow Scroll Text|Overflow Scroll Text]]
+- [[_COMMUNITY_Heatmap Map Component|Heatmap Map Component]]
+- [[_COMMUNITY_Delivery QR Parser|Delivery QR Parser]]
+- [[_COMMUNITY_Report Generator CSVPDF|Report Generator CSV/PDF]]
+- [[_COMMUNITY_Role Scope Filters|Role Scope Filters]]
+- [[_COMMUNITY_Delivery QR Parser Tests|Delivery QR Parser Tests]]
+- [[_COMMUNITY_Auth Provider Context|Auth Provider Context]]
+- [[_COMMUNITY_Root Home Page|Root Home Page]]
+- [[_COMMUNITY_Admin Layout|Admin Layout]]
+- [[_COMMUNITY_Signup Layout|Signup Layout]]
+- [[_COMMUNITY_Login Layout|Login Layout]]
+- [[_COMMUNITY_Common Navbar|Common Navbar]]
+- [[_COMMUNITY_Dashboard Topbar User|Dashboard Topbar User]]
+- [[_COMMUNITY_Experience Shell|Experience Shell]]
+- [[_COMMUNITY_Separator Component|Separator Component]]
+- [[_COMMUNITY_Collapsible Component|Collapsible Component]]
+- [[_COMMUNITY_Batch Form|Batch Form]]
+- [[_COMMUNITY_Product Form|Product Form]]
+- [[_COMMUNITY_Admin Page Shell|Admin Page Shell]]
+- [[_COMMUNITY_Slug Utility|Slug Utility]]
+- [[_COMMUNITY_Tailwind Class Utility|Tailwind Class Utility]]
+- [[_COMMUNITY_Require Role Guard|Require Role Guard]]
+- [[_COMMUNITY_Role Redirect Helper|Role Redirect Helper]]
+- [[_COMMUNITY_Device Parser|Device Parser]]
+- [[_COMMUNITY_IP Location|IP Location]]
+- [[_COMMUNITY_Batch Validator|Batch Validator]]
+- [[_COMMUNITY_Product Validator|Product Validator]]
+- [[_COMMUNITY_Campaign Validator|Campaign Validator]]
+- [[_COMMUNITY_Email Mailer|Email Mailer]]
+- [[_COMMUNITY_Authorization Test Script|Authorization Test Script]]
+- [[_COMMUNITY_Concurrency Test Script|Concurrency Test Script]]
+- [[_COMMUNITY_Duplicate Claim Test|Duplicate Claim Test]]
+- [[_COMMUNITY_Billing Aggregation Test|Billing Aggregation Test]]
+- [[_COMMUNITY_Root Layout|Root Layout]]
+- [[_COMMUNITY_Error Page|Error Page]]
+- [[_COMMUNITY_Not Found Page|Not Found Page]]
+- [[_COMMUNITY_Advertiser Layout|Advertiser Layout]]
+- [[_COMMUNITY_Advertiser Billing Page|Advertiser Billing Page]]
+- [[_COMMUNITY_Advertiser Reports Page|Advertiser Reports Page]]
+- [[_COMMUNITY_Brand Layout|Brand Layout]]
+- [[_COMMUNITY_Brand Billing Page|Brand Billing Page]]
+- [[_COMMUNITY_Brand Reports Page|Brand Reports Page]]
+- [[_COMMUNITY_Admin Products Page|Admin Products Page]]
+- [[_COMMUNITY_Admin QR Codes Page|Admin QR Codes Page]]
+- [[_COMMUNITY_Admin Brands Page|Admin Brands Page]]
+- [[_COMMUNITY_Admin Advertisers Page|Admin Advertisers Page]]
+- [[_COMMUNITY_Admin Users Page|Admin Users Page]]
+- [[_COMMUNITY_Admin Retailers Page|Admin Retailers Page]]
+- [[_COMMUNITY_Admin Campaigns Page|Admin Campaigns Page]]
+- [[_COMMUNITY_Admin Batches Page|Admin Batches Page]]
+- [[_COMMUNITY_Admin Billing Page|Admin Billing Page]]
+- [[_COMMUNITY_Suspicious Scans Actions|Suspicious Scans Actions]]
 - [[_COMMUNITY_Suspicious Scans Client|Suspicious Scans Client]]
-- [[_COMMUNITY_Community 30|Community 30]]
-- [[_COMMUNITY_Community 31|Community 31]]
-- [[_COMMUNITY_Community 32|Community 32]]
-- [[_COMMUNITY_Community 33|Community 33]]
-- [[_COMMUNITY_Community 34|Community 34]]
-- [[_COMMUNITY_Community 35|Community 35]]
-- [[_COMMUNITY_Community 36|Community 36]]
-- [[_COMMUNITY_Community 37|Community 37]]
-- [[_COMMUNITY_Community 38|Community 38]]
-- [[_COMMUNITY_Community 39|Community 39]]
-- [[_COMMUNITY_Community 40|Community 40]]
-- [[_COMMUNITY_Community 41|Community 41]]
-- [[_COMMUNITY_Community 42|Community 42]]
-- [[_COMMUNITY_Community 43|Community 43]]
-- [[_COMMUNITY_Community 44|Community 44]]
-- [[_COMMUNITY_Community 45|Community 45]]
-- [[_COMMUNITY_Community 46|Community 46]]
-- [[_COMMUNITY_Community 47|Community 47]]
-- [[_COMMUNITY_Community 48|Community 48]]
-- [[_COMMUNITY_Community 49|Community 49]]
-- [[_COMMUNITY_Community 50|Community 50]]
-- [[_COMMUNITY_Community 51|Community 51]]
-- [[_COMMUNITY_Community 52|Community 52]]
-- [[_COMMUNITY_Community 53|Community 53]]
-- [[_COMMUNITY_Community 54|Community 54]]
-- [[_COMMUNITY_Community 55|Community 55]]
-- [[_COMMUNITY_Community 56|Community 56]]
-- [[_COMMUNITY_Community 57|Community 57]]
-- [[_COMMUNITY_Community 58|Community 58]]
-- [[_COMMUNITY_Community 59|Community 59]]
-- [[_COMMUNITY_Community 60|Community 60]]
-- [[_COMMUNITY_Community 61|Community 61]]
-- [[_COMMUNITY_Community 62|Community 62]]
-- [[_COMMUNITY_Community 63|Community 63]]
-- [[_COMMUNITY_Community 64|Community 64]]
-- [[_COMMUNITY_Community 65|Community 65]]
-- [[_COMMUNITY_Community 66|Community 66]]
-- [[_COMMUNITY_Community 67|Community 67]]
-- [[_COMMUNITY_Community 68|Community 68]]
-- [[_COMMUNITY_Community 69|Community 69]]
-- [[_COMMUNITY_Community 70|Community 70]]
-- [[_COMMUNITY_Community 71|Community 71]]
-- [[_COMMUNITY_Community 72|Community 72]]
-- [[_COMMUNITY_Community 73|Community 73]]
-- [[_COMMUNITY_Community 74|Community 74]]
-- [[_COMMUNITY_Community 75|Community 75]]
-- [[_COMMUNITY_Community 76|Community 76]]
-- [[_COMMUNITY_Community 77|Community 77]]
-- [[_COMMUNITY_Community 78|Community 78]]
-- [[_COMMUNITY_Community 79|Community 79]]
-- [[_COMMUNITY_Community 80|Community 80]]
-- [[_COMMUNITY_Community 81|Community 81]]
-- [[_COMMUNITY_Community 82|Community 82]]
-- [[_COMMUNITY_Community 83|Community 83]]
-- [[_COMMUNITY_Community 84|Community 84]]
-- [[_COMMUNITY_Community 85|Community 85]]
-- [[_COMMUNITY_Community 86|Community 86]]
-- [[_COMMUNITY_Community 87|Community 87]]
-- [[_COMMUNITY_Community 88|Community 88]]
-- [[_COMMUNITY_Community 89|Community 89]]
-- [[_COMMUNITY_Community 90|Community 90]]
-- [[_COMMUNITY_Community 91|Community 91]]
-- [[_COMMUNITY_Community 92|Community 92]]
-- [[_COMMUNITY_Community 93|Community 93]]
-- [[_COMMUNITY_Community 94|Community 94]]
-- [[_COMMUNITY_Community 95|Community 95]]
-- [[_COMMUNITY_Community 96|Community 96]]
-- [[_COMMUNITY_Community 97|Community 97]]
-- [[_COMMUNITY_Community 98|Community 98]]
-- [[_COMMUNITY_Community 99|Community 99]]
-- [[_COMMUNITY_Community 100|Community 100]]
-- [[_COMMUNITY_Community 101|Community 101]]
-- [[_COMMUNITY_Community 102|Community 102]]
-- [[_COMMUNITY_Community 103|Community 103]]
-- [[_COMMUNITY_Community 104|Community 104]]
-- [[_COMMUNITY_Community 105|Community 105]]
-- [[_COMMUNITY_Community 106|Community 106]]
-- [[_COMMUNITY_Community 107|Community 107]]
-- [[_COMMUNITY_Community 108|Community 108]]
-- [[_COMMUNITY_Community 109|Community 109]]
-- [[_COMMUNITY_Community 110|Community 110]]
-- [[_COMMUNITY_Community 111|Community 111]]
-- [[_COMMUNITY_Community 112|Community 112]]
-- [[_COMMUNITY_Community 113|Community 113]]
-- [[_COMMUNITY_Community 114|Community 114]]
-- [[_COMMUNITY_Community 115|Community 115]]
-- [[_COMMUNITY_Community 116|Community 116]]
-- [[_COMMUNITY_Community 117|Community 117]]
-- [[_COMMUNITY_Community 118|Community 118]]
-- [[_COMMUNITY_Community 119|Community 119]]
-- [[_COMMUNITY_Community 120|Community 120]]
-- [[_COMMUNITY_Community 121|Community 121]]
-- [[_COMMUNITY_Community 122|Community 122]]
-- [[_COMMUNITY_Community 123|Community 123]]
-- [[_COMMUNITY_Community 124|Community 124]]
-- [[_COMMUNITY_Community 125|Community 125]]
-- [[_COMMUNITY_Community 126|Community 126]]
-- [[_COMMUNITY_Community 127|Community 127]]
-- [[_COMMUNITY_Community 128|Community 128]]
-- [[_COMMUNITY_Community 129|Community 129]]
-- [[_COMMUNITY_Community 130|Community 130]]
-- [[_COMMUNITY_Community 131|Community 131]]
-- [[_COMMUNITY_Community 132|Community 132]]
-- [[_COMMUNITY_Community 133|Community 133]]
-- [[_COMMUNITY_Community 134|Community 134]]
-- [[_COMMUNITY_Community 135|Community 135]]
-- [[_COMMUNITY_Community 136|Community 136]]
-- [[_COMMUNITY_Community 137|Community 137]]
-- [[_COMMUNITY_Community 138|Community 138]]
-- [[_COMMUNITY_Community 139|Community 139]]
-- [[_COMMUNITY_Community 140|Community 140]]
-- [[_COMMUNITY_Community 141|Community 141]]
-- [[_COMMUNITY_Community 142|Community 142]]
-- [[_COMMUNITY_Community 143|Community 143]]
-- [[_COMMUNITY_Community 144|Community 144]]
-- [[_COMMUNITY_Community 145|Community 145]]
-- [[_COMMUNITY_Community 146|Community 146]]
-- [[_COMMUNITY_Community 147|Community 147]]
-- [[_COMMUNITY_Community 148|Community 148]]
-- [[_COMMUNITY_Community 149|Community 149]]
-- [[_COMMUNITY_Community 150|Community 150]]
-- [[_COMMUNITY_Community 151|Community 151]]
-- [[_COMMUNITY_Community 152|Community 152]]
-- [[_COMMUNITY_Community 153|Community 153]]
-- [[_COMMUNITY_Community 154|Community 154]]
-- [[_COMMUNITY_Community 155|Community 155]]
-- [[_COMMUNITY_Community 156|Community 156]]
-- [[_COMMUNITY_Community 157|Community 157]]
-- [[_COMMUNITY_Community 158|Community 158]]
-- [[_COMMUNITY_Community 159|Community 159]]
+- [[_COMMUNITY_Admin Suspicious Scans Page|Admin Suspicious Scans Page]]
+- [[_COMMUNITY_Admin Reports Page|Admin Reports Page]]
+- [[_COMMUNITY_Retail Layout|Retail Layout]]
+- [[_COMMUNITY_Campaign Manager Layout|Campaign Manager Layout]]
+- [[_COMMUNITY_Campaign Manager Reports Page|Campaign Manager Reports Page]]
+- [[_COMMUNITY_Signup Page|Signup Page]]
+- [[_COMMUNITY_Verify Email Layout|Verify Email Layout]]
+- [[_COMMUNITY_Delivery Scan Action|Delivery Scan Action]]
+- [[_COMMUNITY_Delivery Scan Page|Delivery Scan Page]]
+- [[_COMMUNITY_QR Code Root Page|QR Code Root Page]]
+- [[_COMMUNITY_Scan Event Aggregation|Scan Event Aggregation]]
+- [[_COMMUNITY_Admin Dashboard Stats|Admin Dashboard Stats]]
+- [[_COMMUNITY_Tabs Component|Tabs Component]]
+- [[_COMMUNITY_Label Component|Label Component]]
+- [[_COMMUNITY_Tooltip Component|Tooltip Component]]
+- [[_COMMUNITY_Badge Component|Badge Component]]
+- [[_COMMUNITY_Button Component|Button Component]]
+- [[_COMMUNITY_Checkbox Component|Checkbox Component]]
+- [[_COMMUNITY_Textarea Component|Textarea Component]]
+- [[_COMMUNITY_Input Component|Input Component]]
+- [[_COMMUNITY_Skeleton Component|Skeleton Component]]
+- [[_COMMUNITY_QR Code Form|QR Code Form]]
+- [[_COMMUNITY_Delivery Correction Form|Delivery Correction Form]]
+- [[_COMMUNITY_User Form|User Form]]
+- [[_COMMUNITY_App Sidebar|App Sidebar]]
+- [[_COMMUNITY_User Menu|User Menu]]
+- [[_COMMUNITY_Delivery Waterfall Filters|Delivery Waterfall Filters]]
+- [[_COMMUNITY_Dashboard Shell|Dashboard Shell]]
+- [[_COMMUNITY_Heatmap Filters|Heatmap Filters]]
+- [[_COMMUNITY_Heatmap Data Tables|Heatmap Data Tables]]
+- [[_COMMUNITY_Mobile Hook|Mobile Hook]]
+- [[_COMMUNITY_Get Current User|Get Current User]]
+- [[_COMMUNITY_Anonymous Visitor ID|Anonymous Visitor ID]]
+- [[_COMMUNITY_Reward Request Metadata|Reward Request Metadata]]
+- [[_COMMUNITY_Advertiser Validator|Advertiser Validator]]
+- [[_COMMUNITY_Brand Validator|Brand Validator]]
+- [[_COMMUNITY_NextAuth Type Extensions|NextAuth Type Extensions]]
+- [[_COMMUNITY_NextAuth Route Handler|NextAuth Route Handler]]
+- [[_COMMUNITY_App Sidebar (alt)|App Sidebar (alt)]]
+- [[_COMMUNITY_ToastSonner Component|Toast/Sonner Component]]
+- [[_COMMUNITY_Prisma Client|Prisma Client]]
+- [[_COMMUNITY_Reward Claim Validator|Reward Claim Validator]]
+- [[_COMMUNITY_Prisma Config|Prisma Config]]
+- [[_COMMUNITY_Next.js Env Types|Next.js Env Types]]
+- [[_COMMUNITY_Next.js Config|Next.js Config]]
+- [[_COMMUNITY_Advertiser Dashboard|Advertiser Dashboard]]
+- [[_COMMUNITY_Brand Dashboard|Brand Dashboard]]
+- [[_COMMUNITY_Admin Dashboard|Admin Dashboard]]
+- [[_COMMUNITY_Admin Delivery Page|Admin Delivery Page]]
+- [[_COMMUNITY_Admin Heatmaps Page|Admin Heatmaps Page]]
+- [[_COMMUNITY_Retail Dashboard|Retail Dashboard]]
+- [[_COMMUNITY_Retail Deliveries Page|Retail Deliveries Page]]
+- [[_COMMUNITY_Campaign Manager Dashboard|Campaign Manager Dashboard]]
+- [[_COMMUNITY_NextAuth Options|NextAuth Options]]
+- [[_COMMUNITY_Consumer QR Landing Page|Consumer QR Landing Page]]
+- [[_COMMUNITY_Analytics Table Section|Analytics Table Section]]
+- [[_COMMUNITY_Dashboard Header|Dashboard Header]]
+- [[_COMMUNITY_Analytics Stat Card|Analytics Stat Card]]
+- [[_COMMUNITY_Dashboard Section Header|Dashboard Section Header]]
+- [[_COMMUNITY_Delivery Scan Validator|Delivery Scan Validator]]
+- [[_COMMUNITY_User Validator|User Validator]]
+- [[_COMMUNITY_QR Code Validator|QR Code Validator]]
+- [[_COMMUNITY_Retailer Validator|Retailer Validator]]
+- [[_COMMUNITY_Report Filter Validator|Report Filter Validator]]
+- [[_COMMUNITY_Heatmap Filter Validator|Heatmap Filter Validator]]
+- [[_COMMUNITY_Billing Validator|Billing Validator]]
+- [[_COMMUNITY_Retailer Model|Retailer Model]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `Page()` - 12 edges
-2. `POST()` - 8 edges
-3. `buildDateFilter()` - 6 edges
-4. `hashOtp()` - 5 edges
-5. `getErrorMessage()` - 5 edges
-6. `createCampaign()` - 5 edges
-7. `updateCampaign()` - 5 edges
-8. `applyRoleScope()` - 5 edges
-9. `computeMetricsAndPerformance()` - 5 edges
-10. `proxy()` - 4 edges
+1. `MoEngage Platform` - 16 edges
+2. `Page()` - 12 edges
+3. `Model: QRCode` - 9 edges
+4. `Model: ScanEvent (Aggregated Bucket)` - 9 edges
+5. `CRUD Pattern (RSC → client → server action → service)` - 9 edges
+6. `Model: Brand` - 8 edges
+7. `Service: scan-event-aggregation.service.ts` - 8 edges
+8. `main()` - 6 edges
+9. `proxy()` - 6 edges
+10. `POST()` - 6 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `onSignup()` --calls--> `getErrorMessage()`  [EXTRACTED]
-  src/app/(auth)/signup/page.tsx → src/app/(auth)/verify-email/page.tsx
-- `Home()` --calls--> `getDefaultDashboard()`  [EXTRACTED]
-  src/app/page.tsx → src/app/(auth)/login/page.tsx
-- `POST()` --calls--> `generateOtp()`  [EXTRACTED]
-  src/app/api/public/rewards/start/route.ts → src/app/api/auth/send-email-verification/route.ts
-- `POST()` --calls--> `hashOtp()`  [EXTRACTED]
-  src/app/api/public/rewards/start/route.ts → src/app/api/auth/send-email-verification/route.ts
+- `Demo Walkthrough` --references--> `MoEngage Platform`  [EXTRACTED]
+  DEMO_WALKTHROUGH.md → CLAUDE.md
+- `Graphify Graph Report` --references--> `MoEngage Codebase Map`  [EXTRACTED]
+  graphify-out/GRAPH_REPORT.md → docs/codebase-map.md
+- `MoEngage Platform` --references--> `Upstash Redis (Rate Limiting)`  [EXTRACTED]
+  CLAUDE.md → docs/codebase-map.md
+- `MoEngage Platform` --references--> `Resend (Transactional Email)`  [EXTRACTED]
+  CLAUDE.md → docs/codebase-map.md
+- `MoEngage Platform` --references--> `MapTiler / MapLibre (Heatmaps)`  [EXTRACTED]
+  CLAUDE.md → docs/codebase-map.md
 
 ## Communities
 
-### Community 0 - "Login & Auth Page Flow"
-Cohesion: 0.2
-Nodes (7): getDefaultDashboard(), getErrorMessage(), Home(), normalizeNextPath(), onSignup(), resendCode(), verifyOtp()
+### Community 0 - "Architectural Docs & Core Deps"
+Cohesion: 0.05
+Nodes (50): Auth Helper: requireRole(), Prod Blocker CB-2: Campaign Manager Analytics Wrong Scope, CLAUDE.md / AGENTS.md Project Instructions, CRUD Pattern (RSC → client → server action → service), Demo Walkthrough, MapTiler / MapLibre (Heatmaps), Model: Advertiser, Model: Batch (+42 more)
 
-### Community 1 - "Role-Scoped Dashboard Pages"
+### Community 1 - "Codebase Map & Role Security"
+Cohesion: 0.06
+Nodes (45): Auth Helper: getRoleScopeFilters(), Billing Model (Fixed Fee + Engagement Fee), Prod Blocker CB-1: Rate Limiter Fails Open, Senior Architecture & Security Audit (Opus), MoEngage Codebase Map, Delivery Scan Flow (Cartons × unitsPerCarton), Scan fingerprintKey Concept, Fraud/Suspicious Scan Classification (+37 more)
+
+### Community 2 - "Role-Scoped Dashboard Pages"
 Cohesion: 0.15
 Nodes (1): Page()
 
-### Community 2 - "Users Service"
+### Community 3 - "Users Service"
 Cohesion: 0.27
 Nodes (4): createUnassignedUser(), createUser(), toUserRow(), updateUser()
 
-### Community 3 - "Auth API & Email Verification"
-Cohesion: 0.42
-Nodes (3): generateOtp(), hashOtp(), POST()
+### Community 4 - "Login & Auth Page Flow"
+Cohesion: 0.28
+Nodes (4): getErrorMessage(), normalizeNextPath(), resendCode(), verifyOtp()
 
-### Community 4 - "Campaigns Service"
+### Community 5 - "Campaigns Service"
 Cohesion: 0.44
 Nodes (6): createCampaign(), toCampaignRow(), toDate(), toDecimal(), toNull(), updateCampaign()
 
-### Community 5 - "Reports & Billing Service"
+### Community 6 - "Reports Service"
 Cohesion: 0.47
 Nodes (7): applyRoleScope(), buildDateFilter(), getCampaignSummaryData(), getDeliveryScansData(), getRewardClaimsData(), getScanEventsData(), getSuspiciousScansData()
 
-### Community 6 - "Batches Service"
-Cohesion: 0.46
-Nodes (5): createBatch(), toBatchRow(), toInt(), toNull(), updateBatch()
-
-### Community 7 - "Pagination UI Component"
+### Community 7 - "Format Utilities"
 Cohesion: 0.25
 Nodes (0): 
 
-### Community 8 - "Format Utilities"
-Cohesion: 0.25
-Nodes (0): 
+### Community 8 - "Prisma Seed Data"
+Cohesion: 0.5
+Nodes (7): bucketTime(), createScanBucket(), hoursAgo(), last4(), main(), resetDemoData(), sha256()
 
 ### Community 9 - "QR Codes Admin Client"
-Cohesion: 0.29
+Cohesion: 0.25
 Nodes (0): 
 
 ### Community 10 - "Users Admin Client"
-Cohesion: 0.29
+Cohesion: 0.25
 Nodes (0): 
 
 ### Community 11 - "Campaigns Admin Client"
-Cohesion: 0.29
+Cohesion: 0.25
 Nodes (0): 
 
 ### Community 12 - "Batches Admin Client"
-Cohesion: 0.29
+Cohesion: 0.25
 Nodes (0): 
 
-### Community 13 - "QR Codes Service"
-Cohesion: 0.38
-Nodes (3): createQRCode(), toQRCodeRow(), updateQRCode()
+### Community 13 - "Batches Service"
+Cohesion: 0.46
+Nodes (5): createBatch(), toBatchRow(), toInt(), toNull(), updateBatch()
 
-### Community 14 - "Sheet UI Component"
-Cohesion: 0.29
+### Community 14 - "Public Consumer Scan Service"
+Cohesion: 0.43
+Nodes (6): buildAdvisoryLockKeys(), deriveIpHash(), logConsumerScan(), processConsumerScan(), runWithRetry(), scopeToLockKey()
+
+### Community 15 - "Pagination Component"
+Cohesion: 0.25
 Nodes (0): 
 
-### Community 15 - "Sidebar Navigation"
-Cohesion: 0.33
-Nodes (2): SidebarMenuButton(), useSidebar()
-
-### Community 16 - "Supabase Storage"
+### Community 16 - "Supabase Storage Upload"
 Cohesion: 0.48
 Nodes (5): deleteStorageFile(), getPublicStorageUrl(), getSupabaseAdminClient(), uploadBufferToStorage(), uploadJsonToStorage()
 
-### Community 17 - "Products Admin Client"
+### Community 17 - "Route Middleware & Proxy"
+Cohesion: 0.52
+Nodes (6): getDefaultDashboard(), normalizeMobileNumber(), proxy(), redirectToLogin(), roleIsAllowed(), sha256()
+
+### Community 18 - "Products Admin Client"
+Cohesion: 0.29
+Nodes (0): 
+
+### Community 19 - "Brands Admin Client"
+Cohesion: 0.29
+Nodes (0): 
+
+### Community 20 - "Advertisers Admin Client"
+Cohesion: 0.29
+Nodes (0): 
+
+### Community 21 - "Auth API Routes"
+Cohesion: 0.29
+Nodes (1): POST()
+
+### Community 22 - "Billing Service"
+Cohesion: 0.48
+Nodes (6): generateCampaignBillingSummary(), getAdminBillingPageData(), getAdvertiserBillingPageData(), getBrandBillingPageData(), getCampaignBillingSummaries(), regenerateAllCampaignBillingSummaries()
+
+### Community 23 - "QR Codes Service"
+Cohesion: 0.38
+Nodes (3): createQRCode(), toQRCodeRow(), updateQRCode()
+
+### Community 24 - "Sheet UI Component"
+Cohesion: 0.29
+Nodes (0): 
+
+### Community 25 - "Sidebar Navigation"
+Cohesion: 0.33
+Nodes (2): SidebarMenuButton(), useSidebar()
+
+### Community 26 - "Retailer Form with Geocoding"
+Cohesion: 0.43
+Nodes (5): getCountryCode(), handleGeocode(), handleReverseGeocode(), onMapClick(), onMarkerDragEnd()
+
+### Community 27 - "Heatmap Location Grouping"
+Cohesion: 0.57
+Nodes (5): addUnique(), decodeLabel(), geoKey(), groupConsumerMarkers(), groupDeliveryMarkers()
+
+### Community 28 - "Delivery DTO Converters"
+Cohesion: 0.52
+Nodes (4): convertDecimal(), toCampaignDTO(), toDeliveryScanDTO(), toRetailerDTO()
+
+### Community 29 - "MoEngage Brand Assets"
+Cohesion: 0.43
+Nodes (7): MoEngage Brand Logo, Stylized M Icon, MoEngage Brand, Orange Brand Color, Platform Visual Identity, Public Static Asset, moEngage Wordmark Text
+
+### Community 30 - "QR Code Generation"
 Cohesion: 0.33
 Nodes (0): 
 
-### Community 18 - "Brands Admin Client"
+### Community 31 - "Users Server Actions"
 Cohesion: 0.33
 Nodes (0): 
 
-### Community 19 - "Advertisers Admin Client"
+### Community 32 - "Delivery Scan Service"
 Cohesion: 0.33
 Nodes (0): 
 
-### Community 20 - "Users Server Actions"
-Cohesion: 0.33
-Nodes (0): 
-
-### Community 21 - "Products Service"
+### Community 33 - "Products Service"
 Cohesion: 0.47
 Nodes (3): createProduct(), toNull(), updateProduct()
 
-### Community 22 - "Advertisers Service"
+### Community 34 - "Advertisers Service"
 Cohesion: 0.47
 Nodes (3): createAdvertiser(), toNull(), updateAdvertiser()
 
-### Community 23 - "Brands Service"
+### Community 35 - "Brands Service"
 Cohesion: 0.47
 Nodes (3): createBrand(), toNull(), updateBrand()
 
-### Community 24 - "Analytics Service"
+### Community 36 - "Dialog UI Component"
+Cohesion: 0.33
+Nodes (0): 
+
+### Community 37 - "Vercel Deployment"
+Cohesion: 0.4
+Nodes (6): Deployment Platform, Next.js Hosting, Public Static Asset, Triangle Logotype, Vercel Brand, Vercel SVG Logo
+
+### Community 38 - "Classification Concurrency Tests"
 Cohesion: 0.6
-Nodes (5): computeMetricsAndPerformance(), getAdminAnalyticsDashboardData(), getAdvertiserAnalyticsDashboardData(), getBrandAnalyticsDashboardData(), getCampaignManagerAnalyticsDashboardData()
+Nodes (3): main(), runIpThresholdTest(), runVisitorThresholdTest()
 
-### Community 25 - "Dialog UI Component"
-Cohesion: 0.33
-Nodes (0): 
-
-### Community 26 - "Select UI Component"
-Cohesion: 0.33
-Nodes (0): 
-
-### Community 27 - "QR Code Generation"
-Cohesion: 0.33
-Nodes (0): 
-
-### Community 28 - "Route Middleware & Proxy"
-Cohesion: 0.7
-Nodes (4): getDefaultDashboard(), proxy(), redirectToLogin(), roleIsAllowed()
-
-### Community 29 - "Suspicious Scans Client"
+### Community 39 - "Retailers Admin Client"
 Cohesion: 0.4
 Nodes (0): 
 
-### Community 30 - "Community 30"
+### Community 40 - "API Route Handlers"
 Cohesion: 0.4
-Nodes (0): 
-
-### Community 31 - "Community 31"
-Cohesion: 0.4
-Nodes (0): 
-
-### Community 32 - "Community 32"
-Cohesion: 0.4
-Nodes (0): 
-
-### Community 33 - "Community 33"
-Cohesion: 0.5
-Nodes (0): 
-
-### Community 34 - "Community 34"
-Cohesion: 0.5
-Nodes (0): 
-
-### Community 35 - "Community 35"
-Cohesion: 0.5
-Nodes (0): 
-
-### Community 36 - "Community 36"
-Cohesion: 0.5
-Nodes (0): 
-
-### Community 37 - "Community 37"
-Cohesion: 0.5
-Nodes (0): 
-
-### Community 38 - "Community 38"
-Cohesion: 0.5
-Nodes (0): 
-
-### Community 39 - "Community 39"
-Cohesion: 0.5
 Nodes (1): GET()
 
-### Community 40 - "Community 40"
+### Community 41 - "Scan Classification Service"
+Cohesion: 0.6
+Nodes (3): classifyConsumerScan(), classifyConsumerScanTx(), _classifyWithClient()
+
+### Community 42 - "Client Experience Utilities"
+Cohesion: 0.4
+Nodes (0): 
+
+### Community 43 - "Breadcrumb Component"
+Cohesion: 0.4
+Nodes (0): 
+
+### Community 44 - "Table Component"
+Cohesion: 0.4
+Nodes (0): 
+
+### Community 45 - "Select Component"
+Cohesion: 0.4
+Nodes (0): 
+
+### Community 46 - "Billing Dashboard Client"
+Cohesion: 0.4
+Nodes (0): 
+
+### Community 47 - "Reports Client"
+Cohesion: 0.6
+Nodes (3): handleDownload(), handlePreview(), validateDates()
+
+### Community 48 - "Delivery QR Scanner"
+Cohesion: 0.5
+Nodes (2): handleSwitchCamera(), startCamera()
+
+### Community 49 - "Delivery Scan Form"
+Cohesion: 0.5
+Nodes (2): applyIpFallback(), requestGeolocation()
+
+### Community 50 - "Heatmap Grouping Tests"
+Cohesion: 0.4
+Nodes (0): 
+
+### Community 51 - "Brands Server Actions"
 Cohesion: 0.5
 Nodes (0): 
 
-### Community 41 - "Community 41"
+### Community 52 - "Advertisers Server Actions"
 Cohesion: 0.5
 Nodes (0): 
 
-### Community 42 - "Community 42"
-Cohesion: 0.5
-Nodes (0): 
-
-### Community 43 - "Community 43"
-Cohesion: 0.5
-Nodes (0): 
-
-### Community 44 - "Community 44"
+### Community 53 - "Mobile Number Hashing"
 Cohesion: 0.83
 Nodes (3): getMobileNumberLast4(), hashMobileNumber(), normalizeMobileNumber()
 
-### Community 45 - "Community 45"
+### Community 54 - "Products Server Actions"
+Cohesion: 0.5
+Nodes (0): 
+
+### Community 55 - "QR Codes Server Actions"
+Cohesion: 0.5
+Nodes (0): 
+
+### Community 56 - "Campaigns Server Actions"
+Cohesion: 0.5
+Nodes (0): 
+
+### Community 57 - "Batches Server Actions"
+Cohesion: 0.5
+Nodes (0): 
+
+### Community 58 - "Retailers Service"
+Cohesion: 0.5
+Nodes (0): 
+
+### Community 59 - "Analytics Service"
+Cohesion: 0.67
+Nodes (2): computeMetricsAndPerformance(), getAnalyticsDashboardData()
+
+### Community 60 - "Alert Dialog Component"
+Cohesion: 0.5
+Nodes (0): 
+
+### Community 61 - "Card Component"
+Cohesion: 0.5
+Nodes (0): 
+
+### Community 62 - "Popover Component"
+Cohesion: 0.5
+Nodes (0): 
+
+### Community 63 - "Command Component"
+Cohesion: 0.5
+Nodes (0): 
+
+### Community 64 - "Signup Form"
+Cohesion: 0.67
+Nodes (2): getErrorMessage(), onSignup()
+
+### Community 65 - "Public Campaign Landing"
+Cohesion: 0.5
+Nodes (0): 
+
+### Community 66 - "Email Verification OTP"
+Cohesion: 0.67
+Nodes (2): getEmailVerificationSecret(), hashEmailVerificationOtp()
+
+### Community 67 - "Reward OTP Logic"
 Cohesion: 0.67
 Nodes (2): hashRewardOtp(), verifyRewardOtpHash()
 
-### Community 46 - "Community 46"
-Cohesion: 0.83
-Nodes (3): main(), resetDemoData(), sha256()
-
-### Community 47 - "Community 47"
+### Community 68 - "Campaign Form"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 48 - "Community 48"
+### Community 69 - "Delivery Admin Actions"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 49 - "Community 49"
+### Community 70 - "Retailers Server Actions"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 50 - "Community 50"
-Cohesion: 1.0
-Nodes (2): buildDateFilter(), getCampaignBillingSummaries()
-
-### Community 51 - "Community 51"
+### Community 71 - "Billing Server Actions"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 52 - "Community 52"
-Cohesion: 0.67
-Nodes (1): AppSidebar()
-
-### Community 53 - "Community 53"
+### Community 72 - "Heatmaps Service"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 54 - "Community 54"
+### Community 73 - "Reward Claim Service"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 55 - "Community 55"
+### Community 74 - "Input Group Component"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 56 - "Community 56"
+### Community 75 - "Alert Component"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 57 - "Community 57"
+### Community 76 - "Avatar Component"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 58 - "Community 58"
+### Community 77 - "Dropdown Menu Component"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 59 - "Community 59"
+### Community 78 - "Brand Form"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 60 - "Community 60"
+### Community 79 - "Advertiser Form"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 61 - "Community 61"
+### Community 80 - "Role-Based Nav Items"
+Cohesion: 1.0
+Nodes (2): getNavGroupsForRole(), getNavItemsForRole()
+
+### Community 81 - "Overflow Scroll Text"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 62 - "Community 62"
+### Community 82 - "Heatmap Map Component"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 63 - "Community 63"
+### Community 83 - "Delivery QR Parser"
 Cohesion: 1.0
+Nodes (2): extractCodeFromPath(), parseDeliveryQrPayload()
+
+### Community 84 - "Report Generator CSV/PDF"
+Cohesion: 0.67
+Nodes (0): 
+
+### Community 85 - "Role Scope Filters"
+Cohesion: 1.0
+Nodes (2): getAssignedCampaignIds(), getRoleScopeFilters()
+
+### Community 86 - "Delivery QR Parser Tests"
+Cohesion: 0.67
+Nodes (0): 
+
+### Community 87 - "Auth Provider Context"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 88 - "Root Home Page"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 89 - "Admin Layout"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 90 - "Signup Layout"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 91 - "Login Layout"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 92 - "Common Navbar"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 93 - "Dashboard Topbar User"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 94 - "Experience Shell"
+Cohesion: 1.0
 Nodes (0): 
 
-### Community 64 - "Community 64"
+### Community 95 - "Separator Component"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 65 - "Community 65"
+### Community 96 - "Collapsible Component"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 66 - "Community 66"
+### Community 97 - "Batch Form"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 67 - "Community 67"
+### Community 98 - "Product Form"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 68 - "Community 68"
+### Community 99 - "Admin Page Shell"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 69 - "Community 69"
+### Community 100 - "Slug Utility"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 70 - "Community 70"
+### Community 101 - "Tailwind Class Utility"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 71 - "Community 71"
+### Community 102 - "Require Role Guard"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 72 - "Community 72"
+### Community 103 - "Role Redirect Helper"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 73 - "Community 73"
+### Community 104 - "Device Parser"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 74 - "Community 74"
+### Community 105 - "IP Location"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 75 - "Community 75"
+### Community 106 - "Batch Validator"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 76 - "Community 76"
+### Community 107 - "Product Validator"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 77 - "Community 77"
+### Community 108 - "Campaign Validator"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 78 - "Community 78"
+### Community 109 - "Email Mailer"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 79 - "Community 79"
+### Community 110 - "Authorization Test Script"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 80 - "Community 80"
+### Community 111 - "Concurrency Test Script"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 81 - "Community 81"
+### Community 112 - "Duplicate Claim Test"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 82 - "Community 82"
+### Community 113 - "Billing Aggregation Test"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 83 - "Community 83"
+### Community 114 - "Root Layout"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 84 - "Community 84"
+### Community 115 - "Error Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 85 - "Community 85"
+### Community 116 - "Not Found Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 86 - "Community 86"
+### Community 117 - "Advertiser Layout"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 87 - "Community 87"
+### Community 118 - "Advertiser Billing Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 88 - "Community 88"
+### Community 119 - "Advertiser Reports Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 89 - "Community 89"
+### Community 120 - "Brand Layout"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 90 - "Community 90"
+### Community 121 - "Brand Billing Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 91 - "Community 91"
+### Community 122 - "Brand Reports Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 92 - "Community 92"
+### Community 123 - "Admin Products Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 93 - "Community 93"
+### Community 124 - "Admin QR Codes Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 94 - "Community 94"
+### Community 125 - "Admin Brands Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 95 - "Community 95"
+### Community 126 - "Admin Advertisers Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 96 - "Community 96"
+### Community 127 - "Admin Users Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 97 - "Community 97"
+### Community 128 - "Admin Retailers Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 98 - "Community 98"
+### Community 129 - "Admin Campaigns Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 99 - "Community 99"
+### Community 130 - "Admin Batches Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 100 - "Community 100"
+### Community 131 - "Admin Billing Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 101 - "Community 101"
+### Community 132 - "Suspicious Scans Actions"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 102 - "Community 102"
+### Community 133 - "Suspicious Scans Client"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 103 - "Community 103"
+### Community 134 - "Admin Suspicious Scans Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 104 - "Community 104"
+### Community 135 - "Admin Reports Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 105 - "Community 105"
+### Community 136 - "Retail Layout"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 106 - "Community 106"
+### Community 137 - "Campaign Manager Layout"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 107 - "Community 107"
+### Community 138 - "Campaign Manager Reports Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 108 - "Community 108"
+### Community 139 - "Signup Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 109 - "Community 109"
+### Community 140 - "Verify Email Layout"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 110 - "Community 110"
+### Community 141 - "Delivery Scan Action"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 111 - "Community 111"
+### Community 142 - "Delivery Scan Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 112 - "Community 112"
+### Community 143 - "QR Code Root Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 113 - "Community 113"
+### Community 144 - "Scan Event Aggregation"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 114 - "Community 114"
+### Community 145 - "Admin Dashboard Stats"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 115 - "Community 115"
+### Community 146 - "Tabs Component"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 116 - "Community 116"
+### Community 147 - "Label Component"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 117 - "Community 117"
+### Community 148 - "Tooltip Component"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 118 - "Community 118"
+### Community 149 - "Badge Component"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 119 - "Community 119"
+### Community 150 - "Button Component"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 120 - "Community 120"
+### Community 151 - "Checkbox Component"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 121 - "Community 121"
+### Community 152 - "Textarea Component"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 122 - "Community 122"
+### Community 153 - "Input Component"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 123 - "Community 123"
+### Community 154 - "Skeleton Component"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 124 - "Community 124"
+### Community 155 - "QR Code Form"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 125 - "Community 125"
+### Community 156 - "Delivery Correction Form"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 126 - "Community 126"
+### Community 157 - "User Form"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 127 - "Community 127"
+### Community 158 - "App Sidebar"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 128 - "Community 128"
+### Community 159 - "User Menu"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 129 - "Community 129"
+### Community 160 - "Delivery Waterfall Filters"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 130 - "Community 130"
+### Community 161 - "Dashboard Shell"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 131 - "Community 131"
+### Community 162 - "Heatmap Filters"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 132 - "Community 132"
+### Community 163 - "Heatmap Data Tables"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 133 - "Community 133"
+### Community 164 - "Mobile Hook"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 134 - "Community 134"
+### Community 165 - "Get Current User"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 135 - "Community 135"
+### Community 166 - "Anonymous Visitor ID"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 136 - "Community 136"
+### Community 167 - "Reward Request Metadata"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 137 - "Community 137"
+### Community 168 - "Advertiser Validator"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 138 - "Community 138"
+### Community 169 - "Brand Validator"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 139 - "Community 139"
+### Community 170 - "NextAuth Type Extensions"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 140 - "Community 140"
+### Community 171 - "NextAuth Route Handler"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 141 - "Community 141"
+### Community 172 - "App Sidebar (alt)"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 142 - "Community 142"
+### Community 173 - "Toast/Sonner Component"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 143 - "Community 143"
+### Community 174 - "Prisma Client"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 144 - "Community 144"
+### Community 175 - "Reward Claim Validator"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 145 - "Community 145"
+### Community 176 - "Prisma Config"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 146 - "Community 146"
+### Community 177 - "Next.js Env Types"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 147 - "Community 147"
+### Community 178 - "Next.js Config"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 148 - "Community 148"
+### Community 179 - "Advertiser Dashboard"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 149 - "Community 149"
+### Community 180 - "Brand Dashboard"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 150 - "Community 150"
+### Community 181 - "Admin Dashboard"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 151 - "Community 151"
+### Community 182 - "Admin Delivery Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 152 - "Community 152"
+### Community 183 - "Admin Heatmaps Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 153 - "Community 153"
+### Community 184 - "Retail Dashboard"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 154 - "Community 154"
+### Community 185 - "Retail Deliveries Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 155 - "Community 155"
+### Community 186 - "Campaign Manager Dashboard"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 156 - "Community 156"
+### Community 187 - "NextAuth Options"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 157 - "Community 157"
+### Community 188 - "Consumer QR Landing Page"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 158 - "Community 158"
+### Community 189 - "Analytics Table Section"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 159 - "Community 159"
+### Community 190 - "Dashboard Header"
 Cohesion: 1.0
 Nodes (0): 
+
+### Community 191 - "Analytics Stat Card"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 192 - "Dashboard Section Header"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 193 - "Delivery Scan Validator"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 194 - "User Validator"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 195 - "QR Code Validator"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 196 - "Retailer Validator"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 197 - "Report Filter Validator"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 198 - "Heatmap Filter Validator"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 199 - "Billing Validator"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 200 - "Retailer Model"
+Cohesion: 1.0
+Nodes (1): Model: Retailer
 
 ## Knowledge Gaps
-- **Thin community `Community 63`** (2 nodes): `AuthProvider()`, `AuthProvider.tsx`
+- **30 isolated node(s):** `Demo Walkthrough`, `README`, `CLAUDE.md / AGENTS.md Project Instructions`, `Plan: Admin Users CRUD`, `Resend (Transactional Email)` (+25 more)
+  These have ≤1 connection - possible missing edges or undocumented components.
+- **Thin community `Auth Provider Context`** (2 nodes): `AuthProvider()`, `AuthProvider.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 64`** (2 nodes): `RootLayout()`, `layout.tsx`
+- **Thin community `Root Home Page`** (2 nodes): `Home()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 65`** (2 nodes): `AdvertiserLayout()`, `layout.tsx`
+- **Thin community `Admin Layout`** (2 nodes): `AdminLayout()`, `layout.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 66`** (2 nodes): `AdvertiserBillingPage()`, `page.tsx`
+- **Thin community `Signup Layout`** (2 nodes): `SignupLayout()`, `layout.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 67`** (2 nodes): `AdvertiserReportsPage()`, `page.tsx`
+- **Thin community `Login Layout`** (2 nodes): `LoginLayout()`, `layout.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 68`** (2 nodes): `BrandLayout()`, `layout.tsx`
+- **Thin community `Common Navbar`** (2 nodes): `CommonNavbar()`, `commonNavbar.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 69`** (2 nodes): `BrandBillingPage()`, `page.tsx`
+- **Thin community `Dashboard Topbar User`** (2 nodes): `DashboardTopbarUser()`, `dashboard-topbar-user.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 70`** (2 nodes): `BrandReportsPage()`, `page.tsx`
+- **Thin community `Experience Shell`** (2 nodes): `PageCard()`, `experience-shell.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 71`** (2 nodes): `AdminLayout()`, `layout.tsx`
+- **Thin community `Separator Component`** (2 nodes): `Separator()`, `separator.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 72`** (2 nodes): `ProductsPage()`, `page.tsx`
+- **Thin community `Collapsible Component`** (2 nodes): `Collapsible()`, `collapsible.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 73`** (2 nodes): `QRCodesPage()`, `page.tsx`
+- **Thin community `Batch Form`** (2 nodes): `onSubmit()`, `batch-form.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 74`** (2 nodes): `BrandsPage()`, `page.tsx`
+- **Thin community `Product Form`** (2 nodes): `onSubmit()`, `product-form.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 75`** (2 nodes): `AdvertisersPage()`, `page.tsx`
+- **Thin community `Admin Page Shell`** (2 nodes): `AdminPageShell()`, `page-shell.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 76`** (2 nodes): `UsersPage()`, `page.tsx`
+- **Thin community `Slug Utility`** (2 nodes): `slugify()`, `slug.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 77`** (2 nodes): `CampaignsPage()`, `page.tsx`
+- **Thin community `Tailwind Class Utility`** (2 nodes): `utils.ts`, `cn()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 78`** (2 nodes): `HeatmapsPage()`, `page.tsx`
+- **Thin community `Require Role Guard`** (2 nodes): `requireRole()`, `require-role.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 79`** (2 nodes): `BatchesPage()`, `page.tsx`
+- **Thin community `Role Redirect Helper`** (2 nodes): `getDashboardForRole()`, `role-redirect.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 80`** (2 nodes): `AdminBillingPage()`, `page.tsx`
+- **Thin community `Device Parser`** (2 nodes): `parseUserAgent()`, `device-parser.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 81`** (2 nodes): `toggleScanSuspicious()`, `actions.ts`
+- **Thin community `IP Location`** (2 nodes): `getApproximateLocationFromHeaders()`, `ip-location.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 82`** (2 nodes): `SuspiciousScansPage()`, `page.tsx`
+- **Thin community `Batch Validator`** (2 nodes): `emptyStringToUndefined()`, `batch.validator.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 83`** (2 nodes): `AdminReportsPage()`, `page.tsx`
+- **Thin community `Product Validator`** (2 nodes): `emptyStringToUndefined()`, `product.validator.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 84`** (2 nodes): `RetailLayout()`, `layout.tsx`
+- **Thin community `Campaign Validator`** (2 nodes): `emptyStringToUndefined()`, `campaign.validator.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 85`** (2 nodes): `CampaignManagerLayout()`, `layout.tsx`
+- **Thin community `Email Mailer`** (2 nodes): `sendVerificationEmail()`, `mailer.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 86`** (2 nodes): `CampaignManagerReportsPage()`, `page.tsx`
+- **Thin community `Authorization Test Script`** (2 nodes): `test-authorization.ts`, `main()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 87`** (2 nodes): `SignupLayout()`, `layout.tsx`
+- **Thin community `Concurrency Test Script`** (2 nodes): `test-concurrency.ts`, `main()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 88`** (2 nodes): `LoginLayout()`, `layout.tsx`
+- **Thin community `Duplicate Claim Test`** (2 nodes): `test-duplicate-claim-attempt.ts`, `main()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 89`** (2 nodes): `createDeliveryScanAction()`, `actions.ts`
+- **Thin community `Billing Aggregation Test`** (2 nodes): `test-billing-aggregation.ts`, `main()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 90`** (2 nodes): `DeliveryScanPage()`, `page.tsx`
+- **Thin community `Root Layout`** (2 nodes): `RootLayout()`, `layout.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 91`** (2 nodes): `ConsumerQRPage()`, `page.tsx`
+- **Thin community `Error Page`** (2 nodes): `Error()`, `error.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 92`** (2 nodes): `getAdminDashboardStats()`, `admin-dashboard.service.ts`
+- **Thin community `Not Found Page`** (2 nodes): `NotFound()`, `not-found.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 93`** (2 nodes): `CommonNavbar()`, `commonNavbar.tsx`
+- **Thin community `Advertiser Layout`** (2 nodes): `AdvertiserLayout()`, `layout.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 94`** (2 nodes): `DashboardTopbarUser()`, `dashboard-topbar-user.tsx`
+- **Thin community `Advertiser Billing Page`** (2 nodes): `AdvertiserBillingPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 95`** (2 nodes): `PageCard()`, `experience-shell.tsx`
+- **Thin community `Advertiser Reports Page`** (2 nodes): `AdvertiserReportsPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 96`** (2 nodes): `tabs.tsx`, `cn()`
+- **Thin community `Brand Layout`** (2 nodes): `BrandLayout()`, `layout.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 97`** (2 nodes): `Label()`, `label.tsx`
+- **Thin community `Brand Billing Page`** (2 nodes): `BrandBillingPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 98`** (2 nodes): `tooltip.tsx`, `TooltipContent()`
+- **Thin community `Brand Reports Page`** (2 nodes): `BrandReportsPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 99`** (2 nodes): `Badge()`, `badge.tsx`
+- **Thin community `Admin Products Page`** (2 nodes): `ProductsPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 100`** (2 nodes): `Separator()`, `separator.tsx`
+- **Thin community `Admin QR Codes Page`** (2 nodes): `QRCodesPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 101`** (2 nodes): `cn()`, `button.tsx`
+- **Thin community `Admin Brands Page`** (2 nodes): `BrandsPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 102`** (2 nodes): `Checkbox()`, `checkbox.tsx`
+- **Thin community `Admin Advertisers Page`** (2 nodes): `AdvertisersPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 103`** (2 nodes): `Collapsible()`, `collapsible.tsx`
+- **Thin community `Admin Users Page`** (2 nodes): `UsersPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 104`** (2 nodes): `textarea.tsx`, `cn()`
+- **Thin community `Admin Retailers Page`** (2 nodes): `RetailersPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 105`** (2 nodes): `Input()`, `input.tsx`
+- **Thin community `Admin Campaigns Page`** (2 nodes): `CampaignsPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 106`** (2 nodes): `Skeleton()`, `skeleton.tsx`
+- **Thin community `Admin Batches Page`** (2 nodes): `BatchesPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 107`** (2 nodes): `onSubmit()`, `qr-code-form.tsx`
+- **Thin community `Admin Billing Page`** (2 nodes): `AdminBillingPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 108`** (2 nodes): `onSubmit()`, `batch-form.tsx`
+- **Thin community `Suspicious Scans Actions`** (2 nodes): `toggleScanSuspicious()`, `actions.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 109`** (2 nodes): `onSubmit()`, `product-form.tsx`
+- **Thin community `Suspicious Scans Client`** (2 nodes): `suspicious-scans-client.tsx`, `setAdvertiserId()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 110`** (2 nodes): `user-form.tsx`, `onSubmit()`
+- **Thin community `Admin Suspicious Scans Page`** (2 nodes): `SuspiciousScansPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 111`** (2 nodes): `AdminPageShell()`, `page-shell.tsx`
+- **Thin community `Admin Reports Page`** (2 nodes): `AdminReportsPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 112`** (2 nodes): `getNavItemsForRole()`, `nav-items.ts`
+- **Thin community `Retail Layout`** (2 nodes): `RetailLayout()`, `layout.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 113`** (2 nodes): `user-menu.tsx`, `UserMenu()`
+- **Thin community `Campaign Manager Layout`** (2 nodes): `CampaignManagerLayout()`, `layout.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 114`** (2 nodes): `handleDownload()`, `reports-client.tsx`
+- **Thin community `Campaign Manager Reports Page`** (2 nodes): `CampaignManagerReportsPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 115`** (2 nodes): `DashboardShell()`, `dashboard-shell.tsx`
+- **Thin community `Signup Page`** (2 nodes): `SignupPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 116`** (2 nodes): `PublicCampaignLanding()`, `public-campaign-landing.tsx`
+- **Thin community `Verify Email Layout`** (2 nodes): `VerifyEmailLayout()`, `layout.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 117`** (2 nodes): `handleSubmit()`, `delivery-scan-form.tsx`
+- **Thin community `Delivery Scan Action`** (2 nodes): `createDeliveryScanAction()`, `actions.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 118`** (2 nodes): `HeatmapFilters()`, `heatmap-filters.tsx`
+- **Thin community `Delivery Scan Page`** (2 nodes): `DeliveryScanPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 119`** (2 nodes): `formatCoordinates()`, `heatmap-data-tables.tsx`
+- **Thin community `QR Code Root Page`** (2 nodes): `QRootPage()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 120`** (2 nodes): `use-mobile.ts`, `useIsMobile()`
+- **Thin community `Scan Event Aggregation`** (2 nodes): `aggregateScanEvent()`, `scan-event-aggregation.service.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 121`** (2 nodes): `slugify()`, `slug.ts`
+- **Thin community `Admin Dashboard Stats`** (2 nodes): `getAdminDashboardStats()`, `admin-dashboard.service.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 122`** (2 nodes): `utils.ts`, `cn()`
+- **Thin community `Tabs Component`** (2 nodes): `tabs.tsx`, `cn()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 123`** (2 nodes): `requireRole()`, `require-role.ts`
+- **Thin community `Label Component`** (2 nodes): `Label()`, `label.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 124`** (2 nodes): `getRoleScopeFilters()`, `role-scope.ts`
+- **Thin community `Tooltip Component`** (2 nodes): `tooltip.tsx`, `TooltipContent()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 125`** (2 nodes): `getCurrentUser()`, `get-current-user.ts`
+- **Thin community `Badge Component`** (2 nodes): `Badge()`, `badge.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 126`** (2 nodes): `getDashboardForRole()`, `role-redirect.ts`
+- **Thin community `Button Component`** (2 nodes): `cn()`, `button.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 127`** (2 nodes): `parseUserAgent()`, `device-parser.ts`
+- **Thin community `Checkbox Component`** (2 nodes): `Checkbox()`, `checkbox.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 128`** (2 nodes): `getApproximateLocationFromHeaders()`, `ip-location.ts`
+- **Thin community `Textarea Component`** (2 nodes): `textarea.tsx`, `cn()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 129`** (2 nodes): `getOrCreateAnonymousVisitorId()`, `anonymous-visitor.ts`
+- **Thin community `Input Component`** (2 nodes): `Input()`, `input.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 130`** (2 nodes): `emptyStringToUndefined()`, `batch.validator.ts`
+- **Thin community `Skeleton Component`** (2 nodes): `Skeleton()`, `skeleton.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 131`** (2 nodes): `emptyStringToUndefined()`, `advertiser.validator.ts`
+- **Thin community `QR Code Form`** (2 nodes): `onSubmit()`, `qr-code-form.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 132`** (2 nodes): `emptyStringToUndefined()`, `product.validator.ts`
+- **Thin community `Delivery Correction Form`** (2 nodes): `onSubmit()`, `delivery-correction-form.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 133`** (2 nodes): `emptyStringToUndefined()`, `brand.validator.ts`
+- **Thin community `User Form`** (2 nodes): `user-form.tsx`, `onSubmit()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 134`** (2 nodes): `emptyStringToUndefined()`, `campaign.validator.ts`
+- **Thin community `App Sidebar`** (2 nodes): `AppSidebar()`, `app-sidebar.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 135`** (2 nodes): `sendVerificationEmail()`, `mailer.ts`
+- **Thin community `User Menu`** (2 nodes): `user-menu.tsx`, `getHumanReadableRole()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 136`** (1 nodes): `next-auth.d.ts`
+- **Thin community `Delivery Waterfall Filters`** (2 nodes): `DeliveryFilters()`, `delivery-filters.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 137`** (1 nodes): `page.tsx`
+- **Thin community `Dashboard Shell`** (2 nodes): `DashboardShell()`, `dashboard-shell.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 138`** (1 nodes): `page.tsx`
+- **Thin community `Heatmap Filters`** (2 nodes): `HeatmapFilters()`, `heatmap-filters.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 139`** (1 nodes): `page.tsx`
+- **Thin community `Heatmap Data Tables`** (2 nodes): `formatCoordinates()`, `heatmap-data-tables.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 140`** (1 nodes): `page.tsx`
+- **Thin community `Mobile Hook`** (2 nodes): `use-mobile.ts`, `useIsMobile()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 141`** (1 nodes): `page.tsx`
+- **Thin community `Get Current User`** (2 nodes): `getCurrentUser()`, `get-current-user.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 142`** (1 nodes): `page.tsx`
+- **Thin community `Anonymous Visitor ID`** (2 nodes): `getOrCreateAnonymousVisitorId()`, `anonymous-visitor.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 143`** (1 nodes): `page.tsx`
+- **Thin community `Reward Request Metadata`** (2 nodes): `getRewardRequestMetadata()`, `request-metadata.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 144`** (1 nodes): `route.ts`
+- **Thin community `Advertiser Validator`** (2 nodes): `emptyStringToUndefined()`, `advertiser.validator.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 145`** (1 nodes): `options.ts`
+- **Thin community `Brand Validator`** (2 nodes): `emptyStringToUndefined()`, `brand.validator.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 146`** (1 nodes): `layout.tsx`
+- **Thin community `NextAuth Type Extensions`** (1 nodes): `next-auth.d.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 147`** (1 nodes): `sonner.tsx`
+- **Thin community `NextAuth Route Handler`** (1 nodes): `route.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 148`** (1 nodes): `analytics-table-section.tsx`
+- **Thin community `App Sidebar (alt)`** (1 nodes): `app-sidebar.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 149`** (1 nodes): `dashboard-header.tsx`
+- **Thin community `Toast/Sonner Component`** (1 nodes): `sonner.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 150`** (1 nodes): `analytics-stat-card.tsx`
+- **Thin community `Prisma Client`** (1 nodes): `prisma.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 151`** (1 nodes): `dashboard-section-header.tsx`
+- **Thin community `Reward Claim Validator`** (1 nodes): `reward-claim.validator.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 152`** (1 nodes): `heatmap-map.tsx`
+- **Thin community `Prisma Config`** (1 nodes): `prisma.config.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 153`** (1 nodes): `prisma.ts`
+- **Thin community `Next.js Env Types`** (1 nodes): `next-env.d.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 154`** (1 nodes): `delivery-scan.validator.ts`
+- **Thin community `Next.js Config`** (1 nodes): `next.config.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 155`** (1 nodes): `user.validator.ts`
+- **Thin community `Advertiser Dashboard`** (1 nodes): `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 156`** (1 nodes): `reward-claim.validator.ts`
+- **Thin community `Brand Dashboard`** (1 nodes): `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 157`** (1 nodes): `qr-code.validator.ts`
+- **Thin community `Admin Dashboard`** (1 nodes): `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 158`** (1 nodes): `report-filter.validator.ts`
+- **Thin community `Admin Delivery Page`** (1 nodes): `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 159`** (1 nodes): `heatmap-filter.validator.ts`
+- **Thin community `Admin Heatmaps Page`** (1 nodes): `page.tsx`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Retail Dashboard`** (1 nodes): `page.tsx`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Retail Deliveries Page`** (1 nodes): `page.tsx`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Campaign Manager Dashboard`** (1 nodes): `page.tsx`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `NextAuth Options`** (1 nodes): `options.ts`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Consumer QR Landing Page`** (1 nodes): `page.tsx`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Analytics Table Section`** (1 nodes): `analytics-table-section.tsx`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Dashboard Header`** (1 nodes): `dashboard-header.tsx`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Analytics Stat Card`** (1 nodes): `analytics-stat-card.tsx`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Dashboard Section Header`** (1 nodes): `dashboard-section-header.tsx`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Delivery Scan Validator`** (1 nodes): `delivery-scan.validator.ts`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `User Validator`** (1 nodes): `user.validator.ts`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `QR Code Validator`** (1 nodes): `qr-code.validator.ts`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Retailer Validator`** (1 nodes): `retailer.validator.ts`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Report Filter Validator`** (1 nodes): `report-filter.validator.ts`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Heatmap Filter Validator`** (1 nodes): `heatmap-filter.validator.ts`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Billing Validator`** (1 nodes): `billing.validator.ts`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Retailer Model`** (1 nodes): `Model: Retailer`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
-_Not enough signal to generate questions. This usually means the corpus has no AMBIGUOUS edges, no bridge nodes, no INFERRED relationships, and all communities are tightly cohesive. Add more files or run with --mode deep to extract richer edges._
+_Questions this graph is uniquely positioned to answer:_
+
+- **Why does `MoEngage Platform` connect `Architectural Docs & Core Deps` to `Codebase Map & Role Security`?**
+  _High betweenness centrality (0.005) - this node is a cross-community bridge._
+- **Why does `Model: ScanEvent (Aggregated Bucket)` connect `Codebase Map & Role Security` to `Architectural Docs & Core Deps`?**
+  _High betweenness centrality (0.004) - this node is a cross-community bridge._
+- **Why does `MoEngage Codebase Map` connect `Codebase Map & Role Security` to `Architectural Docs & Core Deps`?**
+  _High betweenness centrality (0.003) - this node is a cross-community bridge._
+- **What connects `Demo Walkthrough`, `README`, `CLAUDE.md / AGENTS.md Project Instructions` to the rest of the system?**
+  _30 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Architectural Docs & Core Deps` be split into smaller, more focused modules?**
+  _Cohesion score 0.05 - nodes in this community are weakly interconnected._
+- **Should `Codebase Map & Role Security` be split into smaller, more focused modules?**
+  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
