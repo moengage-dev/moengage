@@ -167,7 +167,8 @@ export function BillingClient({
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
-        <Card className="flex flex-col h-full">
+        <Card className="flex flex-col h-full relative overflow-hidden">
+          <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1.5 bg-brand-teal" />
           <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 min-h-[3.5rem]">
             <CardTitle className="text-sm font-medium">Units Placed</CardTitle>
           </CardHeader>
@@ -183,7 +184,8 @@ export function BillingClient({
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col h-full">
+        <Card className="flex flex-col h-full relative overflow-hidden">
+          <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1.5 bg-brand-teal" />
           <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 min-h-[3.5rem]">
             <CardTitle className="text-sm font-medium">Billable Scans</CardTitle>
           </CardHeader>
@@ -199,7 +201,8 @@ export function BillingClient({
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col h-full">
+        <Card className="flex flex-col h-full relative overflow-hidden">
+          <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1.5 bg-brand-yellow" />
           <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 min-h-[3.5rem]">
             <CardTitle className="text-sm font-medium">Fixed Fees</CardTitle>
           </CardHeader>
@@ -211,7 +214,8 @@ export function BillingClient({
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col h-full">
+        <Card className="flex flex-col h-full relative overflow-hidden">
+          <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1.5 bg-primary" />
           <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 min-h-[3.5rem]">
             <CardTitle className="text-sm font-medium">Engagement Fees</CardTitle>
           </CardHeader>
@@ -223,7 +227,8 @@ export function BillingClient({
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col h-full">
+        <Card className="flex flex-col h-full relative overflow-hidden">
+          <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1.5 bg-brand-teal" />
           <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 min-h-[3.5rem]">
             <CardTitle className="text-sm font-medium">Approved Rewards</CardTitle>
           </CardHeader>
@@ -235,7 +240,8 @@ export function BillingClient({
           </CardContent>
         </Card>
 
-        <Card className="border-primary/50 bg-primary/5 flex flex-col h-full">
+        <Card className="border-primary/50 bg-primary/5 flex flex-col h-full relative overflow-hidden">
+          <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1.5 bg-primary" />
           <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 min-h-[3.5rem]">
             <CardTitle className="text-sm font-medium">Total Billing</CardTitle>
             <Coins className="h-4 w-4 text-primary shrink-0 mt-0.5" />

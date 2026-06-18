@@ -33,7 +33,7 @@ function LocalTableSection({
   hasData?: boolean;
 }) {
   return (
-    <div className="bg-card rounded-2xl p-8 border border-border/50 shadow-sm flex flex-col justify-between h-full">
+    <div className="bg-card rounded-2xl p-4 border border-border/50 shadow-sm flex flex-col justify-between h-full w-full max-w-full overflow-hidden">
       <div>
         <div className="pb-6">
           <h3 className="text-lg font-semibold tracking-tight text-foreground">{title}</h3>
@@ -49,7 +49,7 @@ function LocalTableSection({
             No analytics data recorded yet.
           </div>
         ) : (
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="rounded-md border pt-2 w-full overflow-x-auto">
             <table className="w-full min-w-[800px] text-left border-collapse text-xs bg-transparent">
               <thead>
                 <tr>
@@ -248,148 +248,160 @@ export default async function AdminDashboardPage() {
 
       {/* Analytics Tables (Middle Layer & Activity Sections) */}
       <div className="grid gap-8 lg:grid-cols-2">
-        <LocalTableSection
-          title="Campaign Performance"
-          description="Top campaigns evaluated by engagement scans, claims, and supply chain drops."
-          headers={["Campaign Name", "Brand", "Advertiser", "Scans", "Claims", "Declines", "Deliveries", "Units"]}
-          hasData={performance.campaignPerformance.length > 0}
-        >
-          {performance.campaignPerformance.map((c, idx) => (
-            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
-              <td className="py-4 px-3 font-semibold text-foreground">{c.name}</td>
-              <td className="py-4 px-3 text-muted-foreground">{c.brandName}</td>
-              <td className="py-4 px-3 text-muted-foreground">{c.advertiserName}</td>
-              <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(c.totalScans)}</td>
-              <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(c.approvedClaims)}</td>
-              <td className="py-4 px-3 text-right font-semibold text-primary">{formatNumber(c.duplicateDeclines)}</td>
-              <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(c.deliveryScans)}</td>
-              <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(c.estimatedUnitsDelivered)}</td>
-            </tr>
-          ))}
-        </LocalTableSection>
+        <div className="min-w-0">
+          <LocalTableSection
+            title="Campaign Performance"
+            description="Top campaigns evaluated by engagement scans, claims, and supply chain drops."
+            headers={["Campaign Name", "Brand", "Advertiser", "Scans", "Claims", "Declines", "Deliveries", "Units"]}
+            hasData={performance.campaignPerformance.length > 0}
+          >
+            {performance.campaignPerformance.map((c, idx) => (
+              <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
+                <td className="py-4 px-3 font-semibold text-foreground">{c.name}</td>
+                <td className="py-4 px-3 text-muted-foreground">{c.brandName}</td>
+                <td className="py-4 px-3 text-muted-foreground">{c.advertiserName}</td>
+                <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(c.totalScans)}</td>
+                <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(c.approvedClaims)}</td>
+                <td className="py-4 px-3 text-right font-semibold text-primary">{formatNumber(c.duplicateDeclines)}</td>
+                <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(c.deliveryScans)}</td>
+                <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(c.estimatedUnitsDelivered)}</td>
+              </tr>
+            ))}
+          </LocalTableSection>
+        </div>
 
-        <LocalTableSection
-          title="Product Performance"
-          description="Top product lines measured by consumer interaction scans and verified retail units."
-          headers={["Product Name", "Brand", "Total Scans", "Claims", "Units Placed"]}
-          hasData={performance.productPerformance.length > 0}
-        >
-          {performance.productPerformance.map((p, idx) => (
-            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
-              <td className="py-4 px-3 font-semibold text-foreground">{p.name}</td>
-              <td className="py-4 px-3 text-muted-foreground">{p.brandName}</td>
-              <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(p.totalScans)}</td>
-              <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(p.approvedClaims)}</td>
-              <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(p.estimatedUnitsDelivered)}</td>
-            </tr>
-          ))}
-        </LocalTableSection>
+        <div className="min-w-0">
+          <LocalTableSection
+            title="Product Performance"
+            description="Top product lines measured by consumer interaction scans and verified retail units."
+            headers={["Product Name", "Brand", "Total Scans", "Claims", "Units Placed"]}
+            hasData={performance.productPerformance.length > 0}
+          >
+            {performance.productPerformance.map((p, idx) => (
+              <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
+                <td className="py-4 px-3 font-semibold text-foreground">{p.name}</td>
+                <td className="py-4 px-3 text-muted-foreground">{p.brandName}</td>
+                <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(p.totalScans)}</td>
+                <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(p.approvedClaims)}</td>
+                <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(p.estimatedUnitsDelivered)}</td>
+              </tr>
+            ))}
+          </LocalTableSection>
+        </div>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <LocalTableSection
-          title="Location Performance"
-          description="Geographic scan centers and placements sorted by scan volume."
-          headers={["Location", "Scans", "Claims", "Deliveries", "Est. Units"]}
-          hasData={performance.locationPerformance.length > 0}
-        >
-          {performance.locationPerformance.map((l, idx) => (
-            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
-              <td className="py-4 px-3 font-semibold text-foreground">{l.location}</td>
-              <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(l.totalScans)}</td>
-              <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(l.approvedClaims)}</td>
-              <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(l.deliveryScans)}</td>
-              <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(l.estimatedUnitsDelivered)}</td>
-            </tr>
-          ))}
-        </LocalTableSection>
+        <div className="min-w-0">
+          <LocalTableSection
+            title="Location Performance"
+            description="Geographic scan centers and placements sorted by scan volume."
+            headers={["Location", "Scans", "Claims", "Deliveries", "Est. Units"]}
+            hasData={performance.locationPerformance.length > 0}
+          >
+            {performance.locationPerformance.map((l, idx) => (
+              <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
+                <td className="py-4 px-3 font-semibold text-foreground">{l.location}</td>
+                <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(l.totalScans)}</td>
+                <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(l.approvedClaims)}</td>
+                <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(l.deliveryScans)}</td>
+                <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(l.estimatedUnitsDelivered)}</td>
+              </tr>
+            ))}
+          </LocalTableSection>
+        </div>
 
-        <LocalTableSection
-          title="Recent Scan Buckets"
-          description="Latest 30-second consumer scan buckets logged on the platform."
-          headers={["Date", "Campaign", "Product", "Location", "Device", "Hits", "Repeat", "Suspicious", "Billable"]}
-          hasData={performance.recentScanEvents.length > 0}
-        >
-          {performance.recentScanEvents.map((s, idx) => (
-            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
-              <td className="py-4 px-3 font-mono text-[10px] text-muted-foreground">
-                {formatDateTime(s.createdAt)}
-              </td>
-              <td className="py-4 px-3 font-semibold text-foreground truncate max-w-[100px]" title={s.campaignName}>
-                {s.campaignName}
-              </td>
-              <td className="py-4 px-3 text-muted-foreground truncate max-w-[80px]" title={s.productName}>{s.productName}</td>
-              <td className="py-4 px-3 text-muted-foreground truncate max-w-[100px]" title={s.location}>{s.location}</td>
-              <td className="py-4 px-3 uppercase text-[9px] tracking-wider text-muted-foreground">
-                {s.deviceType}
-              </td>
-              <td className="py-4 px-3 text-right font-mono">{formatNumber(s.hitCount)}</td>
-              <td className="py-4 px-3 text-right font-mono">{formatNumber(s.repeatCount)}</td>
-              <td className="py-4 px-3 text-right font-mono">{formatNumber(s.suspiciousCount)}</td>
-              <td className="py-4 px-3 text-right font-mono">{formatNumber(s.billableCount)}</td>
-            </tr>
-          ))}
-        </LocalTableSection>
+        <div className="min-w-0">
+          <LocalTableSection
+            title="Recent Scan Buckets"
+            description="Latest 30-second consumer scan buckets logged on the platform."
+            headers={["Date", "Campaign", "Product", "Location", "Device", "Hits", "Repeat", "Suspicious", "Billable"]}
+            hasData={performance.recentScanEvents.length > 0}
+          >
+            {performance.recentScanEvents.map((s, idx) => (
+              <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
+                <td className="py-4 px-3 font-mono text-[10px] text-muted-foreground">
+                  {formatDateTime(s.createdAt)}
+                </td>
+                <td className="py-4 px-3 font-semibold text-foreground truncate max-w-[100px]" title={s.campaignName}>
+                  {s.campaignName}
+                </td>
+                <td className="py-4 px-3 text-muted-foreground truncate max-w-[80px]" title={s.productName}>{s.productName}</td>
+                <td className="py-4 px-3 text-muted-foreground truncate max-w-[100px]" title={s.location}>{s.location}</td>
+                <td className="py-4 px-3 uppercase text-[9px] tracking-wider text-muted-foreground">
+                  {s.deviceType}
+                </td>
+                <td className="py-4 px-3 text-right font-mono">{formatNumber(s.hitCount)}</td>
+                <td className="py-4 px-3 text-right font-mono">{formatNumber(s.repeatCount)}</td>
+                <td className="py-4 px-3 text-right font-mono">{formatNumber(s.suspiciousCount)}</td>
+                <td className="py-4 px-3 text-right font-mono">{formatNumber(s.billableCount)}</td>
+              </tr>
+            ))}
+          </LocalTableSection>
+        </div>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <LocalTableSection
-          title="Recent Reward Claims"
-          description="Latest reward requests and OTP verifications submitted by users."
-          headers={["Date", "Campaign", "Reward Type", "Status", "Mobile Last 4"]}
-          hasData={performance.recentRewardClaims.length > 0}
-        >
-          {performance.recentRewardClaims.map((r, idx) => (
-            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
-              <td className="py-4 px-3 font-mono text-[10px] text-muted-foreground">
-                {formatDateTime(r.createdAt)}
-              </td>
-              <td className="py-4 px-3 font-semibold text-foreground truncate max-w-[120px]" title={r.campaignName}>
-                {r.campaignName}
-              </td>
-              <td className="py-4 px-3">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-muted text-foreground border border-border/40">
-                  {r.rewardType}
-                </span>
-              </td>
-              <td className="py-4 px-3 text-right">
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${
-                  r.status === "APPROVED" 
-                    ? "bg-brand-teal/20 text-foreground border-brand-teal/35"
-                    : "bg-primary/20 text-foreground border-primary/25"
-                }`}>
-                  {r.status}
-                </span>
-              </td>
-              <td className="py-4 px-3 text-right font-mono text-muted-foreground">
-                ···{r.mobileNumberLast4}
-              </td>
-            </tr>
-          ))}
-        </LocalTableSection>
+        <div className="min-w-0">
+          <LocalTableSection
+            title="Recent Reward Claims"
+            description="Latest reward requests and OTP verifications submitted by users."
+            headers={["Date", "Campaign", "Reward Type", "Status", "Mobile Last 4"]}
+            hasData={performance.recentRewardClaims.length > 0}
+          >
+            {performance.recentRewardClaims.map((r, idx) => (
+              <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
+                <td className="py-4 px-3 font-mono text-[10px] text-muted-foreground">
+                  {formatDateTime(r.createdAt)}
+                </td>
+                <td className="py-4 px-3 font-semibold text-foreground truncate max-w-[120px]" title={r.campaignName}>
+                  {r.campaignName}
+                </td>
+                <td className="py-4 px-3">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-muted text-foreground border border-border/40">
+                    {r.rewardType}
+                  </span>
+                </td>
+                <td className="py-4 px-3 text-right">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${
+                    r.status === "APPROVED"
+                      ? "bg-brand-teal/20 text-foreground border-brand-teal/35"
+                      : "bg-primary/20 text-foreground border-primary/25"
+                  }`}>
+                    {r.status}
+                  </span>
+                </td>
+                <td className="py-4 px-3 text-right font-mono text-muted-foreground">
+                  ···{r.mobileNumberLast4}
+                </td>
+              </tr>
+            ))}
+          </LocalTableSection>
+        </div>
 
-        <LocalTableSection
-          title="Recent Delivery Scans"
-          description="Latest batch carton drop-offs completed by retail logistics operators."
-          headers={["Date", "Retailer", "Campaign", "Batch", "Cartons", "Est. Units", "Location"]}
-          hasData={performance.recentDeliveryScans.length > 0}
-        >
-          {performance.recentDeliveryScans.map((d, idx) => (
-            <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
-              <td className="py-4 px-3 font-mono text-[10px] text-muted-foreground">
-                {formatDateTime(d.createdAt)}
-              </td>
-              <td className="py-4 px-3 font-semibold text-foreground truncate max-w-[100px]" title={d.retailerName}>
-                {d.retailerName}
-              </td>
-              <td className="py-4 px-3 text-muted-foreground truncate max-w-[100px]" title={d.campaignName}>{d.campaignName}</td>
-              <td className="py-4 px-3 font-mono text-[10px] text-muted-foreground">{d.batchCode}</td>
-              <td className="py-4 px-3 text-right font-medium text-foreground">{d.cartonsDelivered}</td>
-              <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(d.estimatedUnitsDelivered)}</td>
-              <td className="py-4 px-3 text-muted-foreground truncate max-w-[100px]">{d.location}</td>
-            </tr>
-          ))}
-        </LocalTableSection>
+        <div className="min-w-0">
+          <LocalTableSection
+            title="Recent Delivery Scans"
+            description="Latest batch carton drop-offs completed by retail logistics operators."
+            headers={["Date", "Retailer", "Campaign", "Batch", "Cartons", "Est. Units", "Location"]}
+            hasData={performance.recentDeliveryScans.length > 0}
+          >
+            {performance.recentDeliveryScans.map((d, idx) => (
+              <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
+                <td className="py-4 px-3 font-mono text-[10px] text-muted-foreground">
+                  {formatDateTime(d.createdAt)}
+                </td>
+                <td className="py-4 px-3 font-semibold text-foreground truncate max-w-[100px]" title={d.retailerName}>
+                  {d.retailerName}
+                </td>
+                <td className="py-4 px-3 text-muted-foreground truncate max-w-[100px]" title={d.campaignName}>{d.campaignName}</td>
+                <td className="py-4 px-3 font-mono text-[10px] text-muted-foreground">{d.batchCode}</td>
+                <td className="py-4 px-3 text-right font-medium text-foreground">{d.cartonsDelivered}</td>
+                <td className="py-4 px-3 text-right font-semibold text-foreground">{formatNumber(d.estimatedUnitsDelivered)}</td>
+                <td className="py-4 px-3 text-muted-foreground truncate max-w-[100px]">{d.location}</td>
+              </tr>
+            ))}
+          </LocalTableSection>
+        </div>
       </div>
     </div>
   );

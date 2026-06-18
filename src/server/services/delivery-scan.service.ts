@@ -1,8 +1,11 @@
 // src/server/services/delivery-scan.service.ts
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { deliveryScanSchema } from "@/lib/validators/delivery-scan.validator";
 import type { DeliveryScanFormValues } from "@/lib/validators/delivery-scan.validator";
 import type { CurrentUser } from "@/lib/auth/get-current-user";
+import { toDeliveryScanDTO, toRetailerDTO } from "@/lib/dtos/delivery.dto";
+
 
 export type ServiceResult<T = any> =
   | { ok: true; status: string; data: T }
@@ -332,6 +335,183 @@ export async function getRetailOperationsDashboardData(user: CurrentUser) {
   };
 }
 
+export type DeliveryFilterParams = {
+  brandId?: string;
+  advertiserId?: string;
+  campaignId?: string;
+  productId?: string;
+  batchId?: string;
+  retailerId?: string;
+  startDate?: string;
+  endDate?: string;
+  country?: string;
+  region?: string;
+  city?: string;
+};
+
+export async function getAdminDeliveryPageData(user: CurrentUser, filters: DeliveryFilterParams = {}) {
+  if (user.role !== "ADMIN") {
+    throw new Error("Unauthorized access to admin delivery logs.");
+  }
+
+  let startDate: Date;
+  let endDate: Date;
+
+  if (filters.startDate || filters.endDate) {
+    if (!filters.startDate || !filters.endDate) {
+      return {
+        deliveryScans: [],
+        retailers: [],
+        totalDeliveryScans: 0,
+        totalCartonsDelivered: 0,
+        totalEstimatedUnitsDelivered: 0,
+        error: "Both Start Date and End Date are required when filtering by a date range.",
+      };
+    }
+
+    const startVal = new Date(filters.startDate);
+    const endVal = new Date(filters.endDate);
+
+    if (isNaN(startVal.getTime())) {
+      return {
+        deliveryScans: [],
+        retailers: [],
+        totalDeliveryScans: 0,
+        totalCartonsDelivered: 0,
+        totalEstimatedUnitsDelivered: 0,
+        error: "Start Date is not a valid date.",
+      };
+    }
+
+    if (isNaN(endVal.getTime())) {
+      return {
+        deliveryScans: [],
+        retailers: [],
+        totalDeliveryScans: 0,
+        totalCartonsDelivered: 0,
+        totalEstimatedUnitsDelivered: 0,
+        error: "End Date is not a valid date.",
+      };
+    }
+
+    if (startVal > endVal) {
+      return {
+        deliveryScans: [],
+        retailers: [],
+        totalDeliveryScans: 0,
+        totalCartonsDelivered: 0,
+        totalEstimatedUnitsDelivered: 0,
+        error: "End Date cannot be before Start Date.",
+      };
+    }
+
+    startDate = startVal;
+    endDate = endVal;
+  } else {
+    // 90 days default
+    endDate = new Date();
+    startDate = new Date();
+    startDate.setDate(endDate.getDate() - 90);
+  }
+
+  endDate.setHours(23, 59, 59, 999);
+
+  const where: Prisma.DeliveryScanWhereInput = {};
+
+  if (filters.brandId) {
+    where.brandId = filters.brandId;
+  }
+
+  const campaignWhere: Prisma.CampaignWhereInput = {};
+  let hasCampaignWhere = false;
+
+  if (filters.advertiserId) {
+    campaignWhere.advertiserId = filters.advertiserId;
+    hasCampaignWhere = true;
+  }
+
+  if (filters.campaignId) {
+    campaignWhere.id = filters.campaignId;
+    hasCampaignWhere = true;
+  }
+
+  if (hasCampaignWhere) {
+    where.campaign = campaignWhere;
+  }
+
+  if (filters.productId) {
+    where.qrCode = { productId: filters.productId };
+  }
+
+  if (filters.batchId) {
+    where.batchId = filters.batchId;
+  }
+
+  if (filters.retailerId) {
+    where.retailerId = filters.retailerId;
+  }
+
+  if (filters.country) {
+    where.country = { equals: filters.country, mode: "insensitive" };
+  }
+
+  if (filters.region) {
+    where.region = { equals: filters.region, mode: "insensitive" };
+  }
+
+  if (filters.city) {
+    where.city = { equals: filters.city, mode: "insensitive" };
+  }
+
+  where.createdAt = { gte: startDate, lte: endDate };
+
+  const [
+    deliveryScans,
+    retailers,
+    totalDeliveryScans,
+    cartonsAggregate,
+    unitsAggregate,
+  ] = await Promise.all([
+    prisma.deliveryScan.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      include: {
+        retailer: true,
+        campaign: true,
+        batch: true,
+        brand: true,
+        qrCode: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    }),
+    prisma.retailer.findMany({
+      orderBy: { name: "asc" },
+    }),
+    prisma.deliveryScan.count({
+      where,
+    }),
+    prisma.deliveryScan.aggregate({
+      _sum: { cartonsDelivered: true },
+      where,
+    }),
+    prisma.deliveryScan.aggregate({
+      _sum: { estimatedUnitsDelivered: true },
+      where,
+    }),
+  ]);
+
+  return {
+    deliveryScans: deliveryScans.map(toDeliveryScanDTO),
+    retailers: retailers.map(toRetailerDTO),
+    totalDeliveryScans,
+    totalCartonsDelivered: cartonsAggregate._sum.cartonsDelivered ?? 0,
+    totalEstimatedUnitsDelivered: unitsAggregate._sum.estimatedUnitsDelivered ?? 0,
+  };
+}
+
 export async function getRetailDeliveriesPageData(user: CurrentUser) {
   if (user.role === "RETAIL_OPERATIONS" && !user.brandId) {
     return {
@@ -343,7 +523,11 @@ export async function getRetailDeliveriesPageData(user: CurrentUser) {
     };
   }
 
-  const brandFilter = user.role === "RETAIL_OPERATIONS" ? { brandId: user.brandId! } : {};
+  const where: Prisma.DeliveryScanWhereInput = {};
+
+  if (user.role === "RETAIL_OPERATIONS" && user.brandId) {
+    where.brandId = user.brandId;
+  }
 
   const [
     deliveryScans,
@@ -353,7 +537,7 @@ export async function getRetailDeliveriesPageData(user: CurrentUser) {
     unitsAggregate,
   ] = await Promise.all([
     prisma.deliveryScan.findMany({
-      where: brandFilter,
+      where,
       orderBy: { createdAt: "desc" },
       include: {
         retailer: true,
@@ -376,15 +560,15 @@ export async function getRetailDeliveriesPageData(user: CurrentUser) {
           orderBy: { name: "asc" },
         }),
     prisma.deliveryScan.count({
-      where: brandFilter,
+      where,
     }),
     prisma.deliveryScan.aggregate({
       _sum: { cartonsDelivered: true },
-      where: brandFilter,
+      where,
     }),
     prisma.deliveryScan.aggregate({
       _sum: { estimatedUnitsDelivered: true },
-      where: brandFilter,
+      where,
     }),
   ]);
 

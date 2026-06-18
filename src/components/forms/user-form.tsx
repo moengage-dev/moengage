@@ -76,7 +76,6 @@ export function UserForm({
     brandId: initialData?.brandId ?? "",
     advertiserId: initialData?.advertiserId ?? "",
     isActive: initialData?.isActive ?? true,
-    isEmailVerified: initialData?.isEmailVerified ?? false,
   };
 
   const {
@@ -276,7 +275,6 @@ export function UserForm({
         </div>
       )}
 
-      {/* isActive + isEmailVerified checkboxes */}
       <div className="flex flex-col gap-3">
         <Controller
           name="isActive"
@@ -288,19 +286,6 @@ export function UserForm({
                 onCheckedChange={field.onChange}
               />
               <span className="text-sm font-medium">Active</span>
-            </label>
-          )}
-        />
-        <Controller
-          name="isEmailVerified"
-          control={control}
-          render={({ field }) => (
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <Checkbox
-                checked={field.value}
-                onCheckedChange={field.onChange}
-              />
-              <span className="text-sm font-medium">Email Verified</span>
             </label>
           )}
         />

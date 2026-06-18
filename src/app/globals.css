@@ -176,20 +176,15 @@
 
 @layer components {
   .public-page-bg {
-    @apply relative min-h-screen overflow-hidden bg-background text-foreground;
+    @apply relative min-h-dvh overflow-hidden bg-background text-foreground;
     background:
       radial-gradient(circle at top left, color-mix(in oklch, var(--primary) 20%, transparent), transparent 34rem),
       radial-gradient(circle at bottom right, color-mix(in oklch, var(--brand-teal) 24%, transparent), transparent 30rem),
       var(--background);
   }
 
-  .public-page-bg::before {
-    content: "";
-    @apply pointer-events-none absolute inset-x-0 top-0 h-32 border-b border-border/40 bg-card/55 backdrop-blur-xl;
-  }
-
   .auth-page-bg {
-    @apply relative min-h-screen overflow-hidden bg-background text-foreground;
+    @apply relative min-h-dvh overflow-hidden bg-background text-foreground;
     background:
       radial-gradient(circle at top left, color-mix(in oklch, var(--primary) 20%, transparent), transparent 34rem),
       radial-gradient(circle at bottom right, color-mix(in oklch, var(--brand-teal) 24%, transparent), transparent 30rem),

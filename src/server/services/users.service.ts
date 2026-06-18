@@ -149,7 +149,6 @@ export async function createUser(
     brandId,
     advertiserId,
     isActive,
-    isEmailVerified,
   } = parsed.data;
 
   const existing = await prisma.user.findUnique({
@@ -171,8 +170,8 @@ export async function createUser(
       brandId: brandId ?? null,
       advertiserId: advertiserId ?? null,
       isActive,
-      isEmailVerified,
-      emailVerifiedAt: isEmailVerified ? new Date() : null,
+      isEmailVerified: true,
+      emailVerifiedAt: new Date(),
     },
     include: userInclude,
   });
@@ -200,7 +199,6 @@ export async function updateUser(
     brandId,
     advertiserId,
     isActive,
-    isEmailVerified,
   } = parsed.data;
 
   // Check user exists first
@@ -240,13 +238,6 @@ export async function updateUser(
     ? await bcryptjs.hash(password, 10)
     : undefined;
 
-  let emailVerifiedAt: Date | null | undefined = undefined;
-  if (isEmailVerified && !existing.emailVerifiedAt) {
-    emailVerifiedAt = new Date();
-  } else if (!isEmailVerified) {
-    emailVerifiedAt = null;
-  }
-
   const user = await prisma.user.update({
     where: { id },
     data: {
@@ -256,9 +247,7 @@ export async function updateUser(
       brandId: brandId ?? null,
       advertiserId: advertiserId ?? null,
       isActive,
-      isEmailVerified,
       ...(passwordHash !== undefined && { passwordHash }),
-      ...(emailVerifiedAt !== undefined && { emailVerifiedAt }),
     },
     include: userInclude,
   });

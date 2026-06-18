@@ -167,27 +167,27 @@ export function QRCodesClient({
     <>
       {/* KPI Cards — 2 rows of 3 */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-primary">
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-primary">
           <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Total QR Codes</span>
           <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(totalQRCodes)}</div>
         </div>
-        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-brand-teal">
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-teal">
           <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Active</span>
           <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(activeQRCodes)}</div>
         </div>
-        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-brand-yellow">
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-yellow">
           <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Consumer Campaigns</span>
           <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(consumerCampaignQRCodes)}</div>
         </div>
-        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-muted-foreground/40">
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-muted-foreground/40">
           <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Deliveries</span>
           <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(deliveryQRCodes)}</div>
         </div>
-        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-muted-foreground/40">
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-muted-foreground/40">
           <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Sample Labels</span>
           <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(sampleLabelQRCodes)}</div>
         </div>
-        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-muted-foreground/40">
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-muted-foreground/40">
           <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Internal Tests</span>
           <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(internalTestQRCodes)}</div>
         </div>

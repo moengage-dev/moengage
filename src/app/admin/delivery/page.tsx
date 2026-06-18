@@ -1,10 +1,14 @@
 // src/app/admin/delivery/page.tsx
 import React from "react";
 import { requireRole } from "@/lib/auth/require-role";
-import { getRetailDeliveriesPageData } from "@/server/services/delivery-scan.service";
+import { getAdminDeliveryPageData } from "@/server/services/delivery-scan.service";
+import { getDeliveryFilterOptions } from "@/app/admin/delivery/actions";
 import { formatDateTime, formatNumber } from "@/lib/format";
 import { DashboardSectionHeader } from "@/components/dashboard/dashboard-section-header";
-import { Truck, Layers, Archive, MapPin, Building2 } from "lucide-react";
+import { DeliveryFilters } from "@/components/dashboard/delivery-filters";
+import { DeliveryCorrectionSheet } from "@/components/forms/delivery-correction-form";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Truck, Layers, Archive, MapPin, Building2, AlertTriangle } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -69,17 +73,45 @@ function LocalTableSection({
   );
 }
 
-export default async function AdminDeliveryPage() {
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function AdminDeliveryPage({
+  searchParams,
+}: PageProps) {
   // Enforce admin permission
   const user = await requireRole(["ADMIN"]);
+
+  const params = await searchParams;
+
+  // Parse filters
+  const filters = {
+    brandId: typeof params.brandId === "string" ? params.brandId : undefined,
+    advertiserId: typeof params.advertiserId === "string" ? params.advertiserId : undefined,
+    campaignId: typeof params.campaignId === "string" ? params.campaignId : undefined,
+    productId: typeof params.productId === "string" ? params.productId : undefined,
+    batchId: typeof params.batchId === "string" ? params.batchId : undefined,
+    retailerId: typeof params.retailerId === "string" ? params.retailerId : undefined,
+    startDate: typeof params.startDate === "string" ? params.startDate : undefined,
+    endDate: typeof params.endDate === "string" ? params.endDate : undefined,
+    country: typeof params.country === "string" ? params.country : undefined,
+    region: typeof params.region === "string" ? params.region : undefined,
+    city: typeof params.city === "string" ? params.city : undefined,
+  };
 
   // Fetch all delivery data across all brands
   const {
     deliveryScans,
+    retailers,
     totalDeliveryScans,
     totalCartonsDelivered,
     totalEstimatedUnitsDelivered,
-  } = await getRetailDeliveriesPageData(user);
+    error,
+  } = await getAdminDeliveryPageData(user, filters);
+
+  // Fetch filter options
+  const filterOptions = await getDeliveryFilterOptions();
 
   return (
     <div className="min-h-screen bg-background p-8 md:p-12 space-y-10">
@@ -89,6 +121,17 @@ export default async function AdminDeliveryPage() {
         badgeText="Supply Chain"
         badgeVariant="emerald"
       />
+
+      {/* Filters */}
+      <DeliveryFilters options={filterOptions} />
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Filter Validation Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -139,7 +182,7 @@ export default async function AdminDeliveryPage() {
       <LocalTableSection
         title="Global Supply Chain History"
         description="Audit history of logged cartons and placements."
-        headers={["Date", "Brand", "Retailer", "Campaign", "Product", "Batch Code", "Cartons", "Units/Carton", "Est. Units", "City / Suburb", "Notes"]}
+        headers={["Date", "Brand", "Retailer", "Campaign", "Product", "Batch Code", "Cartons", "Units/Carton", "Est. Units", "City / Suburb", "Notes", "Actions"]}
         hasData={deliveryScans.length > 0}
       >
         {deliveryScans.map((scan) => (
@@ -191,6 +234,9 @@ export default async function AdminDeliveryPage() {
             </td>
             <td className="py-4 px-3 max-w-[150px] truncate italic text-muted-foreground" title={scan.notes ?? undefined}>
               {scan.notes ?? "—"}
+            </td>
+            <td className="py-4 px-3 whitespace-nowrap text-right">
+              <DeliveryCorrectionSheet scan={scan} retailers={retailers} />
             </td>
           </tr>
         ))}

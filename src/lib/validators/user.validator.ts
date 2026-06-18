@@ -33,7 +33,6 @@ export const createUserSchema = z
     brandId: optionalId,
     advertiserId: optionalId,
     isActive: z.boolean(),
-    isEmailVerified: z.boolean(),
   })
   .superRefine((data, ctx) => {
     if (
@@ -70,7 +69,6 @@ export const updateUserSchema = z
     brandId: optionalId,
     advertiserId: optionalId,
     isActive: z.boolean(),
-    isEmailVerified: z.boolean(),
   })
   .superRefine((data, ctx) => {
     if (

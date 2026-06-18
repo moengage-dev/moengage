@@ -1,7 +1,6 @@
 "use client";
 
 import React, { Suspense, useRef, useEffect } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, getSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -45,8 +44,6 @@ function LoginPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextParam = normalizeNextPath(searchParams.get("next"));
-  const signupHref = `/signup${nextParam ? `?next=${encodeURIComponent(nextParam)}` : ""}`;
-
   const [user, setUser] = React.useState({ email: "", password: "" });
   const [loading, setLoading] = React.useState(false);
   const [message, setMessage] = React.useState<Message | null>(null);
@@ -226,7 +223,7 @@ function LoginPageInner() {
       <div className="relative z-10 w-full max-w-[420px] flex flex-col gap-8">
         <div className="flex flex-col gap-3 text-center">
           <div className="mx-auto mb-1 inline-flex rounded-full border border-border/60 bg-card/75 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-muted-foreground">
-            Secure access
+            Login Here
           </div>
           <h1 className="text-4xl font-extrabold tracking-tight text-foreground">MoEngage</h1>
           <p className="text-sm text-muted-foreground">
@@ -304,12 +301,6 @@ function LoginPageInner() {
               >
                 Login
               </Button>
-              <p className="text-center text-xs text-muted-foreground">
-                Need an account?{" "}
-                <Link href={signupHref} className="text-primary hover:underline font-medium">
-                  Sign up
-                </Link>
-              </p>
             </CardFooter>
           </form>
         </Card>

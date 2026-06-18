@@ -105,6 +105,14 @@ export function QRCodeForm({
 
   const isBatchDelivery = selectedType === "BATCH_DELIVERY";
   const isConsumerCampaign = selectedType === "CONSUMER_CAMPAIGN";
+  const isSampleLabel = selectedType === "SAMPLE_LABEL";
+  const isInternalTest = selectedType === "INTERNAL_TEST";
+
+  const brandRequired = isConsumerCampaign || isSampleLabel;
+  const advertiserRequired = isConsumerCampaign;
+  const campaignRequired = isConsumerCampaign || isInternalTest;
+  const productRequired = isSampleLabel;
+  const batchRequired = isBatchDelivery;
 
   // --- Reactive Reset Cascades ---
 
@@ -289,7 +297,7 @@ export function QRCodeForm({
       {/* 1. Brand Dropdown */}
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium" htmlFor="brandId">
-          Brand <span className="text-xs text-muted-foreground">(Optional)</span>
+          Brand {brandRequired ? <span className="text-destructive">*</span> : <span className="text-xs text-muted-foreground">(Optional)</span>}
         </label>
         <Controller
           name="brandId"
@@ -318,7 +326,7 @@ export function QRCodeForm({
       {/* 2. Advertiser Dropdown */}
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium" htmlFor="advertiserId">
-          Advertiser <span className="text-xs text-muted-foreground">(Optional)</span>
+          Advertiser {advertiserRequired ? <span className="text-destructive">*</span> : <span className="text-xs text-muted-foreground">(Optional)</span>}
         </label>
         <Controller
           name="advertiserId"
@@ -347,7 +355,7 @@ export function QRCodeForm({
       {/* 3. Campaign Dropdown */}
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium" htmlFor="campaignId">
-          Campaign {isConsumerCampaign && <span className="text-destructive">*</span>}
+          Campaign {campaignRequired ? <span className="text-destructive">*</span> : <span className="text-xs text-muted-foreground">(Optional)</span>}
         </label>
         <Controller
           name="campaignId"
@@ -379,7 +387,7 @@ export function QRCodeForm({
       {/* 4. Product Dropdown */}
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium" htmlFor="productId">
-          Product <span className="text-xs text-muted-foreground">(Optional)</span>
+          Product {productRequired ? <span className="text-destructive">*</span> : <span className="text-xs text-muted-foreground">(Optional)</span>}
         </label>
         <Controller
           name="productId"
@@ -408,7 +416,7 @@ export function QRCodeForm({
       {/* 5. Batch Dropdown */}
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium" htmlFor="batchId">
-          Batch {isBatchDelivery && <span className="text-destructive">*</span>}
+          Batch {batchRequired ? <span className="text-destructive">*</span> : <span className="text-xs text-muted-foreground">(Optional)</span>}
         </label>
         <Controller
           name="batchId"

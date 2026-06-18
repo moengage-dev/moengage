@@ -342,89 +342,51 @@ export async function createQRCode(
     }
   }
 
-  // Derive from Campaign
-  if (campaignId) {
+  // Strict derivations and validations based on QR Type
+  if (type === "BATCH_DELIVERY") {
+    if (!batchId) return { ok: false, error: "Batch is required for Batch Delivery QR codes" };
+    const batch = await prisma.batch.findUnique({
+      where: { id: batchId },
+      select: { brandId: true, campaignId: true, productId: true, campaign: { select: { advertiserId: true } } },
+    });
+    if (!batch) return { ok: false, error: "Selected batch does not exist" };
+    if (brandId && brandId !== batch.brandId) return { ok: false, error: "Provided brand does not match the batch's brand" };
+    if (campaignId && campaignId !== batch.campaignId) return { ok: false, error: "Provided campaign does not match the batch's campaign" };
+    if (productId && productId !== batch.productId) return { ok: false, error: "Provided product does not match the batch's product" };
+    if (advertiserId && advertiserId !== batch.campaign.advertiserId) return { ok: false, error: "Provided advertiser does not match the batch's advertiser" };
+    brandId = batch.brandId;
+    campaignId = batch.campaignId;
+    productId = batch.productId;
+    advertiserId = batch.campaign.advertiserId;
+  } else if (type === "CONSUMER_CAMPAIGN" || type === "INTERNAL_TEST") {
+    if (!campaignId) return { ok: false, error: "Campaign is required" };
     const campaign = await prisma.campaign.findUnique({
       where: { id: campaignId },
       select: { brandId: true, advertiserId: true, productId: true },
     });
-    if (!campaign) {
-      return { ok: false, error: "Selected campaign does not exist" };
-    }
-    if (!brandId) brandId = campaign.brandId;
-    if (!advertiserId) advertiserId = campaign.advertiserId;
-    if (!productId) productId = campaign.productId;
-  }
-
-  // Derive from Batch
-  if (batchId) {
-    const batch = await prisma.batch.findUnique({
-      where: { id: batchId },
-      select: { brandId: true, campaignId: true, productId: true },
-    });
-    if (!batch) {
-      return { ok: false, error: "Selected batch does not exist" };
-    }
-    if (!brandId) brandId = batch.brandId;
-    if (!campaignId) campaignId = batch.campaignId;
-    if (!productId) productId = batch.productId;
-  }
-
-  // Tenant authorization
-  if (user.role === "BRAND_ADMIN" && brandId !== user.brandId) {
-    return { ok: false, error: "Unauthorized: Invalid brand mapping" };
-  }
-  if (user.role === "ADVERTISER_VIEWER" && advertiserId !== user.advertiserId) {
-    return { ok: false, error: "Unauthorized: Invalid advertiser mapping" };
-  }
-  if (user.role === "CAMPAIGN_MANAGER") {
-    if (!campaignId) {
-      return { ok: false, error: "Unauthorized: Campaign Managers must specify an assigned campaign or batch" };
-    }
-    const assignedCampaignIds = await getAssignedCampaignIds(user.id);
-    if (!assignedCampaignIds.includes(campaignId)) {
-      return { ok: false, error: "Unauthorized: Campaign Managers can only create QR codes for assigned campaigns" };
-    }
-  }
-
-  // Relationship consistency checks
-  if (campaignId && brandId) {
-    const campaign = await prisma.campaign.findUnique({
-      where: { id: campaignId },
-      select: { brandId: true, advertiserId: true },
-    });
-    if (campaign?.brandId !== brandId) {
-      return { ok: false, error: "The selected campaign does not belong to the selected brand" };
-    }
-    if (advertiserId && campaign?.advertiserId !== advertiserId) {
-      return { ok: false, error: "The selected campaign advertiser does not match the selected advertiser" };
-    }
-  }
-
-  if (batchId) {
-    const batch = await prisma.batch.findUnique({
-      where: { id: batchId },
-      select: { brandId: true, campaignId: true },
-    });
-    if (batch?.brandId !== brandId) {
-      return { ok: false, error: "The selected batch does not belong to the selected brand" };
-    }
-    if (campaignId && batch?.campaignId !== campaignId) {
-      return { ok: false, error: "The selected batch does not belong to the selected campaign" };
-    }
-  }
-
-  if (productId && brandId) {
+    if (!campaign) return { ok: false, error: "Selected campaign does not exist" };
+    if (brandId && brandId !== campaign.brandId) return { ok: false, error: "Provided brand does not match the campaign's brand" };
+    if (advertiserId && advertiserId !== campaign.advertiserId) return { ok: false, error: "Provided advertiser does not match the campaign's advertiser" };
+    if (productId && productId !== campaign.productId) return { ok: false, error: "Provided product does not match the campaign's product" };
+    brandId = campaign.brandId;
+    advertiserId = campaign.advertiserId;
+    productId = campaign.productId;
+    batchId = null;
+  } else if (type === "SAMPLE_LABEL") {
+    if (!productId) return { ok: false, error: "Product is required for Sample Labels" };
     const product = await prisma.product.findUnique({
       where: { id: productId },
       select: { brandId: true },
     });
-    if (product?.brandId !== brandId) {
-      return { ok: false, error: "The selected product does not belong to the selected brand" };
-    }
+    if (!product) return { ok: false, error: "Selected product does not exist" };
+    if (brandId && brandId !== product.brandId) return { ok: false, error: "Provided brand does not match the product's brand" };
+    brandId = product.brandId;
+    advertiserId = null;
+    campaignId = null;
+    batchId = null;
   }
 
-  // Auto-generate destination URL if empty
+  // Tenant authorization
   if (!destinationUrl) {
     destinationUrl = buildQrDestinationUrl(code, type);
   }
@@ -507,32 +469,48 @@ export async function updateQRCode(
     code = existing.code;
   }
 
-  // Derive from Campaign
-  if (campaignId) {
+  // Strict derivations and validations based on QR Type
+  if (type === "BATCH_DELIVERY") {
+    if (!batchId) return { ok: false, error: "Batch is required for Batch Delivery QR codes" };
+    const batch = await prisma.batch.findUnique({
+      where: { id: batchId },
+      select: { brandId: true, campaignId: true, productId: true, campaign: { select: { advertiserId: true } } },
+    });
+    if (!batch) return { ok: false, error: "Selected batch does not exist" };
+    if (brandId && brandId !== batch.brandId) return { ok: false, error: "Provided brand does not match the batch's brand" };
+    if (campaignId && campaignId !== batch.campaignId) return { ok: false, error: "Provided campaign does not match the batch's campaign" };
+    if (productId && productId !== batch.productId) return { ok: false, error: "Provided product does not match the batch's product" };
+    if (advertiserId && advertiserId !== batch.campaign.advertiserId) return { ok: false, error: "Provided advertiser does not match the batch's advertiser" };
+    brandId = batch.brandId;
+    campaignId = batch.campaignId;
+    productId = batch.productId;
+    advertiserId = batch.campaign.advertiserId;
+  } else if (type === "CONSUMER_CAMPAIGN" || type === "INTERNAL_TEST") {
+    if (!campaignId) return { ok: false, error: "Campaign is required" };
     const campaign = await prisma.campaign.findUnique({
       where: { id: campaignId },
       select: { brandId: true, advertiserId: true, productId: true },
     });
-    if (!campaign) {
-      return { ok: false, error: "Selected campaign does not exist" };
-    }
-    if (!brandId) brandId = campaign.brandId;
-    if (!advertiserId) advertiserId = campaign.advertiserId;
-    if (!productId) productId = campaign.productId;
-  }
-
-  // Derive from Batch
-  if (batchId) {
-    const batch = await prisma.batch.findUnique({
-      where: { id: batchId },
-      select: { brandId: true, campaignId: true, productId: true },
+    if (!campaign) return { ok: false, error: "Selected campaign does not exist" };
+    if (brandId && brandId !== campaign.brandId) return { ok: false, error: "Provided brand does not match the campaign's brand" };
+    if (advertiserId && advertiserId !== campaign.advertiserId) return { ok: false, error: "Provided advertiser does not match the campaign's advertiser" };
+    if (productId && productId !== campaign.productId) return { ok: false, error: "Provided product does not match the campaign's product" };
+    brandId = campaign.brandId;
+    advertiserId = campaign.advertiserId;
+    productId = campaign.productId;
+    batchId = null;
+  } else if (type === "SAMPLE_LABEL") {
+    if (!productId) return { ok: false, error: "Product is required for Sample Labels" };
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      select: { brandId: true },
     });
-    if (!batch) {
-      return { ok: false, error: "Selected batch does not exist" };
-    }
-    if (!brandId) brandId = batch.brandId;
-    if (!campaignId) campaignId = batch.campaignId;
-    if (!productId) productId = batch.productId;
+    if (!product) return { ok: false, error: "Selected product does not exist" };
+    if (brandId && brandId !== product.brandId) return { ok: false, error: "Provided brand does not match the product's brand" };
+    brandId = product.brandId;
+    advertiserId = null;
+    campaignId = null;
+    batchId = null;
   }
 
   if (user.role !== "ADMIN") {
@@ -543,43 +521,6 @@ export async function updateQRCode(
       if (!campaignId || !assignedCampaignIds.includes(campaignId)) {
         return { ok: false, error: "Unauthorized: Campaign Managers can only assign QR codes to assigned campaigns" };
       }
-    }
-  }
-
-  // Relationship consistency checks
-  if (campaignId && brandId) {
-    const campaign = await prisma.campaign.findUnique({
-      where: { id: campaignId },
-      select: { brandId: true, advertiserId: true },
-    });
-    if (campaign?.brandId !== brandId) {
-      return { ok: false, error: "The selected campaign does not belong to the selected brand" };
-    }
-    if (advertiserId && campaign?.advertiserId !== advertiserId) {
-      return { ok: false, error: "The selected campaign advertiser does not match the selected advertiser" };
-    }
-  }
-
-  if (batchId) {
-    const batch = await prisma.batch.findUnique({
-      where: { id: batchId },
-      select: { brandId: true, campaignId: true },
-    });
-    if (batch?.brandId !== brandId) {
-      return { ok: false, error: "The selected batch does not belong to the selected brand" };
-    }
-    if (campaignId && batch?.campaignId !== campaignId) {
-      return { ok: false, error: "The selected batch does not belong to the selected campaign" };
-    }
-  }
-
-  if (productId && brandId) {
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-      select: { brandId: true },
-    });
-    if (product?.brandId !== brandId) {
-      return { ok: false, error: "The selected product does not belong to the selected brand" };
     }
   }
 

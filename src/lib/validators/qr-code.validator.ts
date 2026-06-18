@@ -52,10 +52,29 @@ export const qrCodeSchema = z
     destinationUrl: optionalString,
   })
   .superRefine((data, ctx) => {
-    if (data.type === "CONSUMER_CAMPAIGN" && !data.campaignId) {
+    if (data.type === "CONSUMER_CAMPAIGN") {
+      if (!data.brandId) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Brand is required for Consumer Campaigns", path: ["brandId"] });
+      }
+      if (!data.advertiserId) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Advertiser is required for Consumer Campaigns", path: ["advertiserId"] });
+      }
+      if (!data.campaignId) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Campaign is required for Consumer Campaigns", path: ["campaignId"] });
+      }
+    }
+    if (data.type === "SAMPLE_LABEL") {
+      if (!data.brandId) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Brand is required for Sample Labels", path: ["brandId"] });
+      }
+      if (!data.productId) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Product is required for Sample Labels", path: ["productId"] });
+      }
+    }
+    if (data.type === "INTERNAL_TEST" && !data.campaignId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Campaign is required for Consumer Campaigns",
+        message: "Campaign is required for Internal Test QR codes",
         path: ["campaignId"],
       });
     }

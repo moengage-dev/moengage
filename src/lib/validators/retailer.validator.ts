@@ -25,6 +25,15 @@ const optionalDecimal = z.preprocess(
   z.number().nullable().optional()
 );
 
+const requiredDecimal = z.preprocess(
+  (v) => {
+    if (v == null || v === "") return undefined;
+    const n = Number(v);
+    return Number.isNaN(n) ? v : n;
+  },
+  z.number()
+);
+
 export const retailerSchema = z.object({
   brandId: optionalString,
   name: z.string().min(1, "Retailer name is required"),
@@ -34,13 +43,13 @@ export const retailerSchema = z.object({
   city: optionalString,
   suburb: optionalString,
   address: optionalString,
-  latitude: optionalDecimal.superRefine((v, ctx) => {
-    if (v != null && (v < -90 || v > 90)) {
+  latitude: requiredDecimal.superRefine((v, ctx) => {
+    if (v < -90 || v > 90) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Latitude must be between -90 and 90" });
     }
   }),
-  longitude: optionalDecimal.superRefine((v, ctx) => {
-    if (v != null && (v < -180 || v > 180)) {
+  longitude: requiredDecimal.superRefine((v, ctx) => {
+    if (v < -180 || v > 180) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Longitude must be between -180 and 180" });
     }
   }),
