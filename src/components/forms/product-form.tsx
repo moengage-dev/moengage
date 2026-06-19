@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type Resolver, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -37,12 +37,10 @@ export function ProductForm({ initialData, brands, onSubmitAction, onSuccess }: 
     register,
     handleSubmit,
     control,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(productSchema) as any,
+    resolver: zodResolver(productSchema) as Resolver<ProductFormValues>,
     defaultValues: {
       brandId: initialData?.brandId ?? "",
       name: initialData?.name ?? "",
@@ -54,7 +52,7 @@ export function ProductForm({ initialData, brands, onSubmitAction, onSuccess }: 
     },
   });
 
-  const nameValue = watch("name");
+  const nameValue = useWatch({ control, name: "name" });
 
   useEffect(() => {
     if (!slugManuallyEdited && !initialData) {

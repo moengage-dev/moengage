@@ -11,6 +11,18 @@ type AppRole =
   | "ADVERTISER_VIEWER"
   | "RETAIL_OPERATIONS";
 
+type NextRequestWithIp = NextRequest & { ip?: string };
+
+function getRequestIp(request: NextRequest): string {
+  const xForwardedFor = request.headers.get("x-forwarded-for");
+  return (
+    (request as NextRequestWithIp).ip ||
+    xForwardedFor?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "127.0.0.1"
+  );
+}
+
 // Initialize Upstash Redis
 const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
 const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -181,16 +193,7 @@ export async function proxy(request: NextRequest) {
     }
 
     // Extract client IP address
-    let ip = (request as any).ip;
-    if (!ip) {
-      const xForwardedFor = request.headers.get("x-forwarded-for");
-      if (xForwardedFor) {
-        ip = xForwardedFor.split(",")[0].trim();
-      }
-    }
-    if (!ip) {
-      ip = request.headers.get("x-real-ip") || "127.0.0.1";
-    }
+    const ip = getRequestIp(request);
 
     // Extract phone number from request body if POST
     let mobileNumber: string | null = null;
@@ -201,7 +204,7 @@ export async function proxy(request: NextRequest) {
         if (body && typeof body === "object" && "mobileNumber" in body && body.mobileNumber) {
           mobileNumber = String(body.mobileNumber).trim();
         }
-      } catch (e) {
+      } catch {
         // Ignore JSON parse errors in middleware
       }
     }
@@ -289,12 +292,7 @@ export async function proxy(request: NextRequest) {
       return NextResponse.next();
     }
 
-    const xForwardedFor = request.headers.get("x-forwarded-for");
-    const ip =
-      (request as any).ip ||
-      xForwardedFor?.split(",")[0]?.trim() ||
-      request.headers.get("x-real-ip") ||
-      "127.0.0.1";
+    const ip = getRequestIp(request);
 
     let email = "";
     try {

@@ -142,7 +142,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token.error === "InactiveUser") {
         // Return an empty object so the session is invalidated
-        return {} as any;
+        return {} as typeof session;
       }
 
       if (!session.user) {

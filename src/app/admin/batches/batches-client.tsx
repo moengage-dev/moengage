@@ -43,7 +43,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { BatchForm } from "@/components/forms/batch-form";
@@ -255,7 +254,6 @@ export function BatchesClient({
                     {formatDate(batch.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <TooltipProvider>
                       <div className="flex justify-end gap-1">
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -307,7 +305,6 @@ export function BatchesClient({
                           </AlertDialog>
                         )}
                       </div>
-                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))

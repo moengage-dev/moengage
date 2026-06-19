@@ -128,16 +128,17 @@ export function DeliveryQrScanner() {
         setSelectedCameraId(targetDeviceId);
       }
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       setIsRequestingCamera(false);
       setIsScanning(false);
       console.error("Camera start error:", err);
+      const errorName = err instanceof Error ? err.name : "";
       
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
         setPermissionDenied(true);
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+      } else if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
         setScanError("No camera found on this device.");
-      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+      } else if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
         setScanError("Camera is already in use by another application.");
       } else {
         setScanError("Failed to start camera. Please ensure you are on a secure connection (HTTPS).");

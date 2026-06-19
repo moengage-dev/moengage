@@ -43,7 +43,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { BrandForm } from "@/components/forms/brand-form";
@@ -230,64 +229,62 @@ export function BrandsClient({ brands, unassignedAdmins }: Props) {
                     {formatDate(brand.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <TooltipProvider>
-                      <div className="flex justify-end gap-1">
-                        {/* Edit */}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label="Edit brand"
-                              onClick={() => openEdit(brand)}
-                              className="text-muted-foreground hover:text-foreground"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top">Edit brand</TooltipContent>
-                        </Tooltip>
+                    <div className="flex justify-end gap-1">
+                      {/* Edit */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="Edit brand"
+                            onClick={() => openEdit(brand)}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">Edit brand</TooltipContent>
+                      </Tooltip>
 
-                        {/* Archive */}
-                        {brand.status !== "ARCHIVED" && (
-                          <AlertDialog>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon-sm"
-                                    aria-label="Archive brand"
-                                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                  >
-                                    <Archive className="h-3.5 w-3.5" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                              </TooltipTrigger>
-                              <TooltipContent side="top">Archive brand</TooltipContent>
-                            </Tooltip>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Archive brand?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will set <strong>{brand.name}</strong> to Archived status.
-                                  No data will be deleted.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleArchive(brand)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      {/* Archive */}
+                      {brand.status !== "ARCHIVED" && (
+                        <AlertDialog>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  aria-label="Archive brand"
+                                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                 >
-                                  Archive
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
-                    </TooltipProvider>
+                                  <Archive className="h-3.5 w-3.5" />
+                                </Button>
+                              </AlertDialogTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Archive brand</TooltipContent>
+                          </Tooltip>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Archive brand?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will set <strong>{brand.name}</strong> to Archived status.
+                                No data will be deleted.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleArchive(brand)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Archive
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

@@ -6,11 +6,6 @@ const optionalUrl = z.preprocess(
   z.string().url("Must be a valid URL").optional()
 );
 
-const optionalEmail = z.preprocess(
-  (v) => (v == null || (typeof v === "string" && v.trim() === "") ? undefined : v),
-  z.string().email("Must be a valid email").optional()
-);
-
 export const advertiserSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   slug: z

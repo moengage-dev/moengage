@@ -52,7 +52,7 @@ export type BillingFilterParams = {
 export async function getAdminBillingPageData(
   filters: BillingFilterParams = {}
 ): Promise<BillingDashboardData> {
-  const where: any = {};
+  const where: Prisma.BillingSummaryWhereInput = {};
   if (filters.brandId) where.brandId = filters.brandId;
   if (filters.advertiserId) where.advertiserId = filters.advertiserId;
   if (filters.campaignId) where.campaignId = filters.campaignId;
@@ -229,9 +229,11 @@ export async function generateCampaignBillingSummary(
   // Total Amount
   const totalAmount = fixedFeeTotal.add(engagementFeeTotal);
 
-  // 3. Upsert into BillingSummary
-  const existing = await prisma.billingSummary.findFirst({
+  // 3. Upsert into BillingSummary (race-safe: unique constraint on campaignId +
+  //    PostgreSQL ON CONFLICT semantics prevent duplicate rows under concurrency).
+  const existingForMeta = await prisma.billingSummary.findUnique({
     where: { campaignId },
+    select: { id: true, totalAmount: true, billableScanCount: true },
   });
 
   const summaryData = {
@@ -256,63 +258,34 @@ export async function generateCampaignBillingSummary(
     generatedAt: new Date(),
   };
 
-  if (existing) {
+  return prisma.$transaction(async (tx) => {
+    const upserted = await tx.billingSummary.upsert({
+      where: { campaignId },
+      create: summaryData,
+      update: summaryData,
+    });
+
     const metadata = {
       campaignId,
-      billingSummaryId: existing.id,
-      previousTotalAmount: existing.totalAmount,
+      billingSummaryId: upserted.id,
+      previousTotalAmount: existingForMeta?.totalAmount ?? 0,
       newTotalAmount: summaryData.totalAmount,
-      previousBillableScans: existing.billableScanCount,
+      previousBillableScans: existingForMeta?.billableScanCount ?? 0,
       newBillableScans: summaryData.billableScanCount,
     };
 
-    // UPDATE path: already atomic from a prior fix
-    const [updated] = await prisma.$transaction([
-      prisma.billingSummary.update({
-        where: { id: existing.id },
-        data: summaryData,
-      }),
-      prisma.auditLog.create({
-        data: {
-          userId: generatedByUserId,
-          action: "GENERATE_BILLING_SUMMARY",
-          entityType: "BillingSummary",
-          entityId: existing.id,
-          metadata,
-        },
-      }),
-    ]);
-    return updated;
-  } else {
-    // CREATE path: wrap creation + audit in an interactive transaction so they
-    // succeed or fail together.
-    return prisma.$transaction(async (tx) => {
-      const created = await tx.billingSummary.create({
-        data: summaryData,
-      });
-
-      const metadata = {
-        campaignId,
-        billingSummaryId: created.id,
-        previousTotalAmount: 0,
-        newTotalAmount: summaryData.totalAmount,
-        previousBillableScans: 0,
-        newBillableScans: summaryData.billableScanCount,
-      };
-
-      await tx.auditLog.create({
-        data: {
-          userId: generatedByUserId,
-          action: "GENERATE_BILLING_SUMMARY",
-          entityType: "BillingSummary",
-          entityId: created.id,
-          metadata,
-        },
-      });
-
-      return created;
+    await tx.auditLog.create({
+      data: {
+        userId: generatedByUserId,
+        action: "GENERATE_BILLING_SUMMARY",
+        entityType: "BillingSummary",
+        entityId: upserted.id,
+        metadata,
+      },
     });
-  }
+
+    return upserted;
+  });
 }
 
 export async function regenerateAllCampaignBillingSummaries(generatedByUserId: string) {

@@ -37,7 +37,10 @@ type Props = {
   debugInfo?: {
     scanEventId: string;
     isRepeatScan: boolean;
-    location: any;
+    location?: {
+      city?: string | null;
+      country?: string | null;
+    } | null;
   } | null;
 };
 
@@ -414,8 +417,8 @@ export function PublicCampaignLanding({ qrCode, scanEventId, debugInfo }: Props)
               </div>
               <div>
                 <span className="text-muted-foreground/70">IP Geolocation:</span>{" "}
-                {debugInfo.location.city || "Unknown City"},{" "}
-                {debugInfo.location.country || "Unknown Country"}
+                {debugInfo.location?.city || "Unknown City"},{" "}
+                {debugInfo.location?.country || "Unknown Country"}
               </div>
               <div>
                 <span className="text-muted-foreground/70">QR Code:</span> {qrCode.code}

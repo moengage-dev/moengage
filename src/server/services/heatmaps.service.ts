@@ -1,5 +1,6 @@
 // src/server/services/heatmaps.service.ts
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getAssignedCampaignIds } from "@/lib/auth/role-scope";
 import type { CurrentUser } from "@/lib/auth/get-current-user";
 import {
@@ -101,19 +102,26 @@ export interface HeatmapData {
   };
 }
 
-function toNumber(val: any): number | null {
+function toNumber(val: unknown): number | null {
   if (val === null || val === undefined) return null;
   if (typeof val === "number") return val;
-  const parsed = parseFloat(val.toString());
-  return isNaN(parsed) ? null : parsed;
+  if (typeof val === "string") {
+    const parsed = Number.parseFloat(val);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+  if (typeof val === "object" && "toString" in val) {
+    const parsed = Number.parseFloat(String(val));
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+  return null;
 }
 
 export async function getAdminHeatmapData(
   filters: HeatmapFilters,
   user?: CurrentUser
 ): Promise<HeatmapData> {
-  const scanWhere: any = {};
-  const deliveryWhere: any = {};
+  const scanWhere: Prisma.ScanEventWhereInput = {};
+  const deliveryWhere: Prisma.DeliveryScanWhereInput = {};
 
   // User scope check (Task B)
   if (user) {
@@ -192,8 +200,8 @@ export async function getAdminHeatmapData(
   }
 
   // Date range filters
-  const scanDateFilter: any = {};
-  const deliveryDateFilter: any = {};
+  const scanDateFilter: Prisma.DateTimeFilter<"ScanEvent"> = {};
+  const deliveryDateFilter: Prisma.DateTimeFilter<"DeliveryScan"> = {};
 
   if (startDate) {
     const start = new Date(startDate);

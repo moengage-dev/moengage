@@ -1,6 +1,6 @@
 // src/server/services/batches.service.ts
 import prisma from "@/lib/prisma";
-import { BatchStatus } from "@prisma/client";
+import { BatchStatus, Prisma } from "@prisma/client";
 import { getAssignedCampaignIds } from "@/lib/auth/role-scope";
 import { batchSchema } from "@/lib/validators/batch.validator";
 import type { BatchFormValues } from "@/lib/validators/batch.validator";
@@ -113,9 +113,9 @@ const batchInclude = {
 } as const;
 
 export async function getBatchesPageData(user: ScopedUser): Promise<AdminBatchesPageData> {
-  const batchFilter: any = {};
+  const batchFilter: Prisma.BatchWhereInput = {};
   if (user.role === "BRAND_ADMIN") {
-    batchFilter.brandId = user.brandId;
+    batchFilter.brandId = user.brandId ?? "__NONE__";
   } else if (user.role === "CAMPAIGN_MANAGER") {
     const assignedCampaignIds = await getAssignedCampaignIds(user.id);
     if (assignedCampaignIds.length === 0) {
@@ -132,27 +132,27 @@ export async function getBatchesPageData(user: ScopedUser): Promise<AdminBatches
     }
     batchFilter.campaignId = { in: assignedCampaignIds };
   } else if (user.role === "ADVERTISER_VIEWER") {
-    batchFilter.campaign = { advertiserId: user.advertiserId };
+    batchFilter.campaign = { advertiserId: user.advertiserId ?? "__NONE__" };
   }
 
-  const brandFilter: any = { status: "ACTIVE" };
+  const brandFilter: Prisma.BrandWhereInput = { status: "ACTIVE" };
   if (user.role === "BRAND_ADMIN") {
-    brandFilter.id = user.brandId;
+    brandFilter.id = user.brandId ?? "__NONE__";
   }
 
-  const campaignFilter: any = { status: { in: ["ACTIVE", "DRAFT", "PAUSED"] } };
+  const campaignFilter: Prisma.CampaignWhereInput = { status: { in: ["ACTIVE", "DRAFT", "PAUSED"] } };
   if (user.role === "BRAND_ADMIN") {
-    campaignFilter.brandId = user.brandId;
+    campaignFilter.brandId = user.brandId ?? "__NONE__";
   } else if (user.role === "CAMPAIGN_MANAGER") {
     const assignedCampaignIds = await getAssignedCampaignIds(user.id);
     campaignFilter.id = { in: assignedCampaignIds };
   } else if (user.role === "ADVERTISER_VIEWER") {
-    campaignFilter.advertiserId = user.advertiserId;
+    campaignFilter.advertiserId = user.advertiserId ?? "__NONE__";
   }
 
-  const productFilter: any = { status: "ACTIVE" };
+  const productFilter: Prisma.ProductWhereInput = { status: "ACTIVE" };
   if (user.role === "BRAND_ADMIN") {
-    productFilter.brandId = user.brandId;
+    productFilter.brandId = user.brandId ?? "__NONE__";
   }
 
   const [

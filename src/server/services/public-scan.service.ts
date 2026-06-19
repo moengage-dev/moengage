@@ -4,8 +4,17 @@ import prisma from "@/lib/prisma";
 import { headers, cookies } from "next/headers";
 import { parseUserAgent } from "@/lib/scans/device-parser";
 import { getApproximateLocationFromHeaders } from "@/lib/scans/ip-location";
-import { classifyConsumerScan, classifyConsumerScanTx } from "./scan-classification.service";
+import { classifyConsumerScanTx } from "./scan-classification.service";
 import { aggregateScanEvent } from "./scan-event-aggregation.service";
+
+function getErrorCode(error: unknown): string | undefined {
+  return typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+    ? error.code
+    : undefined;
+}
 
 export async function getConsumerQRCodeByCode(code: string) {
   const qrCode = await prisma.qRCode.findUnique({
@@ -289,9 +298,10 @@ async function runWithRetry<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T>
   while (true) {
     try {
       return await fn();
-    } catch (error: any) {
+    } catch (error: unknown) {
       attempts++;
-      const isRetryable = error.code === "P2034" || error.code === "P2028";
+      const errorCode = getErrorCode(error);
+      const isRetryable = errorCode === "P2034" || errorCode === "P2028";
 
       if (isRetryable && attempts <= maxRetries) {
         // Jittered short backoff (e.g. 100ms - 300ms)

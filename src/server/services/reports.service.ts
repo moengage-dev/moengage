@@ -1,6 +1,7 @@
 // src/server/services/reports.service.ts
 import prisma from "@/lib/prisma";
-import { ReportFilterParams } from "@/lib/validators/report-filter.validator";
+import { Prisma } from "@prisma/client";
+import type { ReportFilterParams } from "@/lib/validators/report-filter.validator";
 import type { RoleScopeFilters } from "@/lib/auth/role-scope";
 
 export type ReportParams = ReportFilterParams & RoleScopeFilters & {
@@ -12,7 +13,14 @@ type BuildWhereOptions = {
   endDate?: string;
 };
 
-function buildDateFilter(options: BuildWhereOptions) {
+type ScopedReportWhere = {
+  id?: unknown;
+  brandId?: unknown;
+  advertiserId?: unknown;
+  campaignId?: unknown;
+};
+
+function buildDateFilter(options: BuildWhereOptions): Prisma.DateTimeFilter {
   let { startDate, endDate } = options;
   if (!startDate && !endDate) {
     const end = new Date();
@@ -22,7 +30,7 @@ function buildDateFilter(options: BuildWhereOptions) {
     endDate = end.toISOString().split("T")[0];
   }
 
-  const dateFilter: any = {};
+  const dateFilter: Prisma.DateTimeFilter = {};
   if (startDate) {
     dateFilter.gte = new Date(startDate);
   }
@@ -34,7 +42,11 @@ function buildDateFilter(options: BuildWhereOptions) {
   return dateFilter;
 }
 
-function applyRoleScope(where: any, filters: ReportParams, isCampaignModel: boolean = false) {
+function applyRoleScope<T extends ScopedReportWhere>(
+  where: T,
+  filters: ReportParams,
+  isCampaignModel: boolean = false
+): T {
   if (filters.brandId) {
     where.brandId = filters.brandId;
   }
@@ -53,7 +65,7 @@ function applyRoleScope(where: any, filters: ReportParams, isCampaignModel: bool
 
 export async function getCampaignSummaryData(filters: ReportParams) {
   const createdAtFilter = buildDateFilter(filters);
-  const whereClause: any = { createdAt: createdAtFilter };
+  const whereClause: Prisma.CampaignWhereInput = { createdAt: createdAtFilter };
   applyRoleScope(whereClause, filters, true);
 
   const campaigns = await prisma.campaign.findMany({
@@ -71,7 +83,7 @@ export async function getCampaignSummaryData(filters: ReportParams) {
 
 export async function getScanEventsData(filters: ReportParams) {
   const createdAtFilter = buildDateFilter(filters);
-  const whereClause: any = { createdAt: createdAtFilter };
+  const whereClause: Prisma.ScanEventWhereInput = { createdAt: createdAtFilter };
   applyRoleScope(whereClause, filters, false);
 
   const scanEvents = await prisma.scanEvent.findMany({
@@ -91,13 +103,14 @@ export async function getScanEventsData(filters: ReportParams) {
 
 export async function getRewardClaimsData(filters: ReportParams) {
   const createdAtFilter = buildDateFilter(filters);
-  const whereClause: any = { createdAt: createdAtFilter };
+  const whereClause: Prisma.RewardClaimWhereInput = { createdAt: createdAtFilter };
   applyRoleScope(whereClause, filters, false);
 
-  const duplicateAttemptWhere: any = {
-    ...whereClause,
+  const duplicateAttemptWhere: Prisma.RewardClaimAttemptWhereInput = {
+    createdAt: createdAtFilter,
     status: "DECLINED_DUPLICATE",
   };
+  applyRoleScope(duplicateAttemptWhere, filters, false);
 
   const [rewardClaims, duplicateAttempts] = await Promise.all([
     prisma.rewardClaim.findMany({
@@ -162,7 +175,7 @@ export async function getRewardClaimsData(filters: ReportParams) {
 
 export async function getDeliveryScansData(filters: ReportParams) {
   const createdAtFilter = buildDateFilter(filters);
-  const whereClause: any = { createdAt: createdAtFilter };
+  const whereClause: Prisma.DeliveryScanWhereInput = { createdAt: createdAtFilter };
 
   if (filters.brandId) whereClause.brandId = filters.brandId;
   if (filters.campaignId) whereClause.campaignId = filters.campaignId;
@@ -189,7 +202,7 @@ export async function getDeliveryScansData(filters: ReportParams) {
 
 export async function getSuspiciousScansData(filters: ReportParams) {
   const createdAtFilter = buildDateFilter(filters);
-  const whereClause: any = {
+  const whereClause: Prisma.ScanEventWhereInput = {
     OR: [
       { isSuspicious: true },
       { suspiciousReason: { not: null } },
@@ -217,7 +230,7 @@ export async function getSuspiciousScansData(filters: ReportParams) {
 }
 
 export async function getBillingSummaryData(filters: ReportParams) {
-  const where: any = {};
+  const where: Prisma.BillingSummaryWhereInput = {};
   if (filters.brandId) where.brandId = filters.brandId;
   if (filters.advertiserId) where.advertiserId = filters.advertiserId;
   if (filters.campaignId) where.campaignId = filters.campaignId;
@@ -232,13 +245,7 @@ export async function getBillingSummaryData(filters: ReportParams) {
     endDate = end.toISOString().split("T")[0];
   }
 
-  where.generatedAt = {};
-  if (startDate) where.generatedAt.gte = new Date(startDate);
-  if (endDate) {
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-    where.generatedAt.lte = end;
-  }
+  where.generatedAt = buildDateFilter({ startDate, endDate });
 
   const summaries = await prisma.billingSummary.findMany({
     where,

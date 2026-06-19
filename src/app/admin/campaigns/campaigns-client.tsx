@@ -43,7 +43,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { CampaignForm } from "@/components/forms/campaign-form";
@@ -274,7 +273,6 @@ export function CampaignsClient({
                     {formatDate(campaign.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <TooltipProvider>
                       <div className="flex justify-end gap-1">
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -329,7 +327,6 @@ export function CampaignsClient({
                           </AlertDialog>
                         )}
                       </div>
-                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))

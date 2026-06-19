@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -125,51 +124,6 @@ function LocalTableSection({
             </table>
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function KpiCard({
-  label,
-  value,
-  sub,
-  accentColor,
-  icon: Icon,
-  tooltipText,
-}: {
-  label: string;
-  value: number;
-  sub: string;
-  accentColor: string;
-  icon: React.ElementType;
-  tooltipText: string;
-}) {
-  return (
-    <div className={`bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:${accentColor}`}>
-      <div className="flex items-center justify-between pb-3">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">{label}</span>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button type="button" aria-label={`What is ${label}?`} className="text-muted-foreground/60 hover:text-muted-foreground transition-colors">
-                  <Info className="h-3 w-3" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-[200px] text-center">
-                {tooltipText}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        <span className={`p-1.5 rounded-lg bg-[${accentColor}]/10`}><Icon className="h-4 w-4 text-muted-foreground" /></span>
-      </div>
-      <div>
-        <div className="text-3xl font-extrabold tracking-tight">
-          {value}
-        </div>
-        <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">{sub}</p>
       </div>
     </div>
   );
@@ -316,8 +270,12 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
       await toggleScanSuspicious(scanId, !currentSuspicious);
       toast.success("Aggregate scan bucket updated.");
       router.refresh();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update aggregate scan bucket.");
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error && err.message
+          ? err.message
+          : "Failed to update aggregate scan bucket."
+      );
     }
   };
 
@@ -484,7 +442,6 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
       </div>
 
       {/* KPI Cards Grid */}
-      <TooltipProvider>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {/* Card 1: Total Flagged */}
           <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-primary">
@@ -616,7 +573,6 @@ export function SuspiciousScansClient({ data }: { data: PageData }) {
             </div>
           </div>
         </div>
-      </TooltipProvider>
 
       {/* Scans Table */}
       <LocalTableSection

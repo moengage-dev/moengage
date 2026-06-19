@@ -617,9 +617,9 @@ model BillingSummary {
   advertiser Advertiser? @relation(fields: [advertiserId], references: [id], onDelete: SetNull)
   campaign   Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
+  @@unique([campaignId])
   @@index([brandId])
   @@index([advertiserId])
-  @@index([campaignId])
   @@index([generatedAt])
 }
 

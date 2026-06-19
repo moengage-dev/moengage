@@ -1,34 +1,53 @@
-import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Clock } from "lucide-react";
+import { requireRole } from "@/lib/auth/require-role";
+import {
+  getCampaignsPageData,
+  getCampaignManagersForBrand,
+  getAssignedManagersForCampaign,
+} from "@/server/services/campaigns.service";
+import { DashboardSectionHeader } from "@/components/dashboard/dashboard-section-header";
+import { CampaignsBrandClient } from "./campaigns-brand-client";
+import { redirect } from "next/navigation";
 
-export default function Page() {
+export const dynamic = "force-dynamic";
+
+export default async function BrandCampaignsPage() {
+  const user = await requireRole(["BRAND_ADMIN", "ADMIN"]);
+
+  if (!user.brandId) {
+    redirect("/brand");
+  }
+
+  const [pageData, managers] = await Promise.all([
+    getCampaignsPageData(user),
+    getCampaignManagersForBrand(user.brandId),
+  ]);
+
+  // Fetch current assignments for every campaign in parallel
+  const assignmentEntries = await Promise.all(
+    pageData.campaigns.map(async (c) => {
+      const assigned = await getAssignedManagersForCampaign(c.id);
+      return [c.id, assigned] as const;
+    })
+  );
+  const initialAssignments = Object.fromEntries(assignmentEntries);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Campaigns Management</h1>
-          <p className="text-muted-foreground">Create and monitor consumer engagement campaigns for your products.</p>
-        </div>
-        <Badge variant="secondary" className="w-fit">
-          Coming soon
-        </Badge>
-      </div>
+      <DashboardSectionHeader
+        title="Campaigns"
+        description="Brand-scoped campaign overview. Expand any row to assign or remove Campaign Managers."
+        badgeText="Brand Admin"
+        badgeVariant="emerald"
+      />
 
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <Clock className="h-6 w-6" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-base font-semibold">This module is coming soon</p>
-            <p className="max-w-md text-sm text-muted-foreground">
-              A brand-scoped campaign view will appear here. For live metrics, use your dashboard overview.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <CampaignsBrandClient
+        campaigns={pageData.campaigns}
+        totalCampaigns={pageData.totalCampaigns}
+        activeCampaigns={pageData.activeCampaigns}
+        draftCampaigns={pageData.draftCampaigns}
+        availableManagers={managers}
+        initialAssignments={initialAssignments}
+      />
     </div>
   );
 }

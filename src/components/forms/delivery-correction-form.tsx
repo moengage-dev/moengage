@@ -38,18 +38,31 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+type FormInput = z.input<typeof formSchema>;
 
-export function DeliveryCorrectionSheet({ 
-  scan, 
-  retailers 
-}: { 
-  scan: DeliveryScanDTO; 
+export function DeliveryCorrectionSheet({
+  scan,
+  retailers,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+}: {
+  scan: DeliveryScanDTO;
   retailers: RetailerDTO[];
+  /** When provided the Sheet is controlled externally; no trigger button is rendered. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen! : internalOpen;
+  const setOpen = isControlled ? controlledOnOpenChange! : setInternalOpen;
   const [isPending, startTransition] = useTransition();
 
-  const { register, handleSubmit, control, formState: { errors }, reset } = useForm({
+  const { register, handleSubmit, control, formState: { errors }, reset } = useForm<
+    FormInput,
+    unknown,
+    FormValues
+  >({
     resolver: zodResolver(formSchema),
     defaultValues: {
       id: scan.id,
@@ -66,8 +79,7 @@ export function DeliveryCorrectionSheet({
     }
   });
 
-  const onSubmit = (formData: any) => {
-    const data = formData as FormValues;
+  const onSubmit = (data: FormValues) => {
     startTransition(async () => {
       const payload = {
         id: data.id,
@@ -88,7 +100,7 @@ export function DeliveryCorrectionSheet({
       if (res.ok) {
         toast.success("Delivery Corrected", { description: "Audit log recorded and values updated." });
         setOpen(false);
-        reset({ ...(data as any), correctionReason: "" });
+        reset({ ...data, correctionReason: "" });
       } else {
         toast.error("Correction Failed", { description: res.error });
       }
@@ -97,11 +109,13 @@ export function DeliveryCorrectionSheet({
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-        </Button>
-      </SheetTrigger>
+      {!isControlled && (
+        <SheetTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+        </SheetTrigger>
+      )}
       <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Correct Delivery Scan</SheetTitle>

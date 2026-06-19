@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { generateQRCodeDownloadData } from "@/server/services/qr-codes.service";
+import type { ScopedUser } from "@/server/services/qr-codes.service";
 
 export async function GET(
   request: NextRequest,
@@ -13,14 +14,22 @@ export async function GET(
     }
 
     const { id } = await params;
-    const result = await generateQRCodeDownloadData(id, "png", user as any);
+    const scopedUser: ScopedUser = {
+      id: user.id,
+      role: user.role,
+      brandId: user.brandId,
+      advertiserId: user.advertiserId,
+    };
+    const result = await generateQRCodeDownloadData(id, "png", scopedUser);
     if (!result.ok) {
       return new NextResponse(result.error, { status: 404 });
     }
 
     const { code, content } = result.data;
 
-    return new NextResponse(content as any, {
+    const buffer = Buffer.isBuffer(content) ? content : Buffer.from(content);
+
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "image/png",
         "Content-Disposition": `attachment; filename="qr-${code}.png"`,

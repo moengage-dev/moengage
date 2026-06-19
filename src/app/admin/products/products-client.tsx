@@ -43,7 +43,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ProductForm } from "@/components/forms/product-form";
@@ -211,7 +210,6 @@ export function ProductsClient({ products, brands }: Props) {
                     {formatDate(product.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <TooltipProvider>
                       <div className="flex justify-end gap-1">
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -266,7 +264,6 @@ export function ProductsClient({ products, brands }: Props) {
                           </AlertDialog>
                         )}
                       </div>
-                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))

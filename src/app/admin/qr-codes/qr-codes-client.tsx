@@ -43,7 +43,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { QRCodeForm } from "@/components/forms/qr-code-form";
@@ -295,7 +294,6 @@ export function QRCodesClient({
                   </TableCell>
                   <TableCell className="text-muted-foreground">{formatDate(qr.createdAt)}</TableCell>
                   <TableCell className="text-right">
-                    <TooltipProvider>
                       <div className="flex justify-end gap-1">
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -373,7 +371,6 @@ export function QRCodesClient({
                           </AlertDialog>
                         )}
                       </div>
-                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))

@@ -114,7 +114,7 @@ export default async function DeliveryScanPage({ params }: Props) {
 
   // Server-side IP location for fallback
   const reqHeaders = await headers();
-  const ipLocation = getApproximateLocationFromHeaders(reqHeaders as any);
+  const ipLocation = getApproximateLocationFromHeaders(reqHeaders);
 
   return (
     <div className="public-page-bg flex flex-col items-center p-4 pb-12">

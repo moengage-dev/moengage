@@ -43,7 +43,7 @@ async function main() {
   console.log(`Using windowStartedAt: ${windowStartedAt.toISOString()} for visitor: ${anonymousVisitorId}`);
 
   // Create 100 inputs (70 billable, 30 suspicious)
-  const promises: Promise<any>[] = [];
+  const promises: Array<ReturnType<typeof aggregateScanEvent>> = [];
   for (let i = 0; i < 100; i++) {
     const isBillable = i < 70;
     const isSuspicious = !isBillable;

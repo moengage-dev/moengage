@@ -7,6 +7,10 @@ import {
 } from "@/server/services/billing.service";
 import { revalidatePath } from "next/cache";
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 export async function generateCampaignBillingSummaryAction(campaignId: string) {
   try {
     const user = await requireRole(["ADMIN"]);
@@ -18,9 +22,12 @@ export async function generateCampaignBillingSummaryAction(campaignId: string) {
     revalidatePath("/admin/reports");
     
     return { ok: true, message: "Billing summary generated successfully." };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[GENERATE_BILLING_SUMMARY_ACTION]", error);
-    return { ok: false, error: error.message || "Failed to generate billing summary." };
+    return {
+      ok: false,
+      error: getErrorMessage(error, "Failed to generate billing summary."),
+    };
   }
 }
 
@@ -35,8 +42,11 @@ export async function regenerateAllBillingSummariesAction() {
     revalidatePath("/admin/reports");
     
     return { ok: true, message: "All billing summaries regenerated successfully." };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[REGENERATE_ALL_BILLING_SUMMARIES_ACTION]", error);
-    return { ok: false, error: error.message || "Failed to regenerate billing summaries." };
+    return {
+      ok: false,
+      error: getErrorMessage(error, "Failed to regenerate billing summaries."),
+    };
   }
 }

@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useRef, useMemo, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type Resolver, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -57,12 +57,10 @@ export function CampaignForm({
     register,
     handleSubmit,
     control,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<CampaignFormValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(campaignSchema) as any,
+    resolver: zodResolver(campaignSchema) as Resolver<CampaignFormValues>,
     defaultValues: {
       brandId: initialData?.brandId ?? "",
       advertiserId: initialData?.advertiserId ?? "",
@@ -91,8 +89,8 @@ export function CampaignForm({
     },
   });
 
-  const nameValue = watch("name");
-  const selectedBrandId = watch("brandId");
+  const nameValue = useWatch({ control, name: "name" });
+  const selectedBrandId = useWatch({ control, name: "brandId" });
   const prevBrandId = useRef(initialData?.brandId ?? "");
 
   useEffect(() => {

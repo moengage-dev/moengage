@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type Resolver, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2, MapPin } from "lucide-react";
@@ -36,6 +36,26 @@ const RETAILER_TYPES = [
 
 type BrandOption = { id: string; name: string };
 
+type MapTilerFeature = {
+  place_name?: string;
+  text?: string;
+  place_type?: string[];
+  geometry: {
+    coordinates: [number, number];
+  };
+};
+
+type MapTilerGeocodeResponse = {
+  features?: MapTilerFeature[];
+};
+
+type LngLatEvent = {
+  lngLat: {
+    lat: number;
+    lng: number;
+  };
+};
+
 type Props = {
   initialData?: RetailerRow;
   brands: BrandOption[];
@@ -48,12 +68,10 @@ export function RetailerForm({ initialData, brands, onSubmitAction, onSuccess }:
     register,
     handleSubmit,
     control,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<RetailerFormValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(retailerSchema) as any,
+    resolver: zodResolver(retailerSchema) as Resolver<RetailerFormValues>,
     defaultValues: {
       brandId: initialData?.brandId ?? undefined,
       name: initialData?.name ?? "",
@@ -70,10 +88,27 @@ export function RetailerForm({ initialData, brands, onSubmitAction, onSuccess }:
 
   const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY;
   const [isGeocoding, setIsGeocoding] = React.useState(false);
-  const [mapCenter, setMapCenter] = React.useState<{ latitude: number; longitude: number; zoom: number } | null>(null);
+  const [mapCenter, setMapCenter] = React.useState<{
+    latitude: number;
+    longitude: number;
+    zoom: number;
+  } | null>(() =>
+    initialData?.latitude && initialData?.longitude
+      ? {
+          latitude: initialData.latitude,
+          longitude: initialData.longitude,
+          zoom: 12,
+        }
+      : null
+  );
 
-  const latValue = watch("latitude");
-  const lngValue = watch("longitude");
+  const latValue = useWatch({ control, name: "latitude" });
+  const lngValue = useWatch({ control, name: "longitude" });
+  const countryValue = useWatch({ control, name: "country" }) || "";
+  const regionValue = useWatch({ control, name: "region" }) || "";
+  const cityValue = useWatch({ control, name: "city" }) || "";
+  const suburbValue = useWatch({ control, name: "suburb" }) || "";
+  const addressValue = useWatch({ control, name: "address" }) || "";
 
   const [precision, setPrecision] = React.useState<string>(initialData?.latitude ? "Saved coordinates" : "");
   const [formattedAddress, setFormattedAddress] = React.useState<string>(
@@ -83,13 +118,6 @@ export function RetailerForm({ initialData, brands, onSubmitAction, onSuccess }:
           .join(", ")
       : ""
   );
-
-  // Initialize map center if coordinates exist
-  React.useEffect(() => {
-    if (latValue && lngValue && !mapCenter) {
-      setMapCenter({ latitude: latValue, longitude: lngValue, zoom: 12 });
-    }
-  }, [latValue, lngValue, mapCenter]);
 
   const getCountryCode = (countryName: string): string | undefined => {
     const mapping: Record<string, string> = {
@@ -122,7 +150,7 @@ export function RetailerForm({ initialData, brands, onSubmitAction, onSuccess }:
     try {
       const res = await fetch(`https://api.maptiler.com/geocoding/${lng},${lat}.json?key=${maptilerKey}`);
       if (!res.ok) throw new Error("Reverse geocoding failed");
-      const data = await res.json();
+      const data = (await res.json()) as MapTilerGeocodeResponse;
       if (data.features && data.features.length > 0) {
         setFormattedAddress(data.features[0].place_name || data.features[0].text || "");
       } else {
@@ -141,14 +169,19 @@ export function RetailerForm({ initialData, brands, onSubmitAction, onSuccess }:
       toast.error("MapTiler key is missing from environment variables.");
       return;
     }
-    const country = watch("country") || "";
-    const region = watch("region") || "";
-    const city = watch("city") || "";
-    const suburb = watch("suburb") || "";
-    const address = watch("address") || "";
+    const country = countryValue;
+    const region = regionValue;
+    const city = cityValue;
+    const suburb = suburbValue;
+    const address = addressValue;
 
     const buildQuery = (parts: (string | undefined | null)[]) => {
-      return parts.filter(Boolean).map(s => s!.trim()).join(", ");
+      return parts
+        .flatMap((part) => {
+          const trimmed = part?.trim();
+          return trimmed ? [trimmed] : [];
+        })
+        .join(", ");
     };
 
     const attempts = [
@@ -171,7 +204,7 @@ export function RetailerForm({ initialData, brands, onSubmitAction, onSuccess }:
     }
 
     setIsGeocoding(true);
-    let foundFeature: any = null;
+    let foundFeature: MapTilerFeature | null = null;
     let foundPrecision: string = "";
 
     try {
@@ -192,10 +225,10 @@ export function RetailerForm({ initialData, brands, onSubmitAction, onSuccess }:
 
         const res = await fetch(url.toString());
         if (!res.ok) continue;
-        const data = await res.json();
+        const data = (await res.json()) as MapTilerGeocodeResponse;
 
         if (data.features && data.features.length > 0) {
-          const highPrecision = data.features.find((f: any) => {
+          const highPrecision = data.features.find((f) => {
             const types = f.place_type || [];
             return types.includes("address") || types.includes("building") || types.includes("poi");
           });
@@ -227,7 +260,7 @@ export function RetailerForm({ initialData, brands, onSubmitAction, onSuccess }:
 
           const res = await fetch(url.toString());
           if (!res.ok) continue;
-          const data = await res.json();
+          const data = (await res.json()) as MapTilerGeocodeResponse;
 
           if (data.features && data.features.length > 0) {
             foundFeature = data.features[0];
@@ -256,14 +289,14 @@ export function RetailerForm({ initialData, brands, onSubmitAction, onSuccess }:
           setMapCenter({ latitude: 6.5244, longitude: 3.3792, zoom: 6 });
         }
       }
-    } catch (e) {
+    } catch {
       toast.error("Error connecting to geocoding service.");
     } finally {
       setIsGeocoding(false);
     }
   };
 
-  const onMarkerDragEnd = (event: any) => {
+  const onMarkerDragEnd = (event: LngLatEvent) => {
     const lat = event.lngLat.lat;
     const lng = event.lngLat.lng;
     const cleanLat = Number(lat.toFixed(7));
@@ -273,7 +306,7 @@ export function RetailerForm({ initialData, brands, onSubmitAction, onSuccess }:
     handleReverseGeocode(cleanLat, cleanLng);
   };
 
-  const onMapClick = (event: any) => {
+  const onMapClick = (event: LngLatEvent) => {
     const lat = event.lngLat.lat;
     const lng = event.lngLat.lng;
     const cleanLat = Number(lat.toFixed(7));

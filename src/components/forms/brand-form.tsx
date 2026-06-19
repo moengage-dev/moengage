@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type Resolver, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2, Plus, Check, ChevronsUpDown } from "lucide-react";
@@ -83,11 +83,10 @@ export function BrandForm({ initialData, unassignedAdmins, onSubmitAction, onSuc
     register,
     handleSubmit,
     control,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<BrandFormValues>({
-    resolver: zodResolver(brandSchema) as any,
+    resolver: zodResolver(brandSchema) as Resolver<BrandFormValues>,
     defaultValues: {
       name: initialData?.name ?? "",
       slug: initialData?.slug ?? "",
@@ -99,7 +98,7 @@ export function BrandForm({ initialData, unassignedAdmins, onSubmitAction, onSuc
     },
   });
 
-  const nameValue = watch("name");
+  const nameValue = useWatch({ control, name: "name" });
 
   useEffect(() => {
     if (!slugManuallyEdited && !initialData) {
@@ -144,8 +143,12 @@ export function BrandForm({ initialData, unassignedAdmins, onSubmitAction, onSuc
         setDialogPassword("");
         setDialogOpen(false);
       }
-    } catch (err: any) {
-      toast.error(err.message || "An unexpected error occurred");
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error && err.message
+          ? err.message
+          : "An unexpected error occurred"
+      );
     } finally {
       setDialogLoading(false);
     }

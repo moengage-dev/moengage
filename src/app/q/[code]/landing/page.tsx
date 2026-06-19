@@ -98,7 +98,7 @@ export default async function ConsumerQRLandingPage({ params }: Props) {
 
   // Log scan event immediately
   let scanEventId: string | null = null;
-  let scanResult: any = null;
+  let scanResult: Awaited<ReturnType<typeof logConsumerScan>> | null = null;
 
   try {
     scanResult = await logConsumerScan(qrCode);

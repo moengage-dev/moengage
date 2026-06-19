@@ -2,10 +2,11 @@
 import Papa from "papaparse";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { formatCurrency, formatDateTime } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function generateCSV(data: any[], columns: string[]): string {
+type ReportRow = Record<string, unknown>;
+
+export function generateCSV(data: ReportRow[], columns: string[]): string {
   if (!data || data.length === 0) {
     return Papa.unparse({ fields: columns, data: [] });
   }
@@ -16,8 +17,7 @@ export function generateCSV(data: any[], columns: string[]): string {
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function generatePDF(title: string, columns: string[], data: any[], noDataMessage?: string): Buffer {
+export function generatePDF(title: string, columns: string[], data: ReportRow[], noDataMessage?: string): Buffer {
   const doc = new jsPDF();
   
   // Add title
@@ -37,7 +37,7 @@ export function generatePDF(title: string, columns: string[], data: any[], noDat
       startY: 36,
       head: [columns],
       // Ensure data is mapped to arrays in the order of columns
-      body: data.map(item => columns.map(col => item[col])),
+      body: data.map(item => columns.map(col => String(item[col] ?? ""))),
       styles: { fontSize: 8 },
       headStyles: { fillColor: [41, 128, 185] },
     });

@@ -18,7 +18,6 @@ import {
   Archive,
   BarChart3,
   Award,
-  Calendar,
 } from "lucide-react";
 import prisma from "@/lib/prisma";
 

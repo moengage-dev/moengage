@@ -1,5 +1,6 @@
 // src/server/services/retailers.service.ts
 import prisma from "@/lib/prisma";
+import { Prisma, RetailerType } from "@prisma/client";
 import { retailerSchema } from "@/lib/validators/retailer.validator";
 import type { RetailerFormValues } from "@/lib/validators/retailer.validator";
 
@@ -37,9 +38,14 @@ export async function getAdminRetailersPageData(filters: {
   type?: string;
   country?: string;
 }) {
-  const where: any = {};
+  const where: Prisma.RetailerWhereInput = {};
   if (filters.brandId) where.brandId = filters.brandId;
-  if (filters.type) where.type = filters.type;
+  if (
+    filters.type &&
+    Object.values(RetailerType).includes(filters.type as RetailerType)
+  ) {
+    where.type = filters.type as RetailerType;
+  }
   if (filters.country) where.country = { contains: filters.country, mode: "insensitive" };
   if (filters.search) {
     const q = filters.search.trim();

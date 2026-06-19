@@ -21,7 +21,7 @@ import {
 } from "@/lib/rewards/otp";
 import type { RewardRequestMetadata } from "@/lib/rewards/request-metadata";
 
-export type ServiceResult<T = any> =
+export type ServiceResult<T = unknown> =
   | { ok: true; status: string; data: T }
   | { ok: false; status: string; error: string };
 
@@ -470,7 +470,7 @@ export async function verifyRewardOtpAndClaim(
         rewardClaimId: result.rewardClaimId,
       },
     };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("[verifyRewardOtpAndClaim] Error:", e);
     return {
       ok: false,

@@ -4,9 +4,12 @@ import prisma from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/require-role";
 import { revalidatePath } from "next/cache";
 import { generateCampaignBillingSummary } from "@/server/services/billing.service";
-import { Prisma } from "@prisma/client";
 
 import { toCampaignOptionDTO, toRetailerOptionDTO } from "@/lib/dtos/delivery.dto";
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
 
 export async function getDeliveryFilterOptions() {
   await requireRole(["ADMIN"]);
@@ -175,8 +178,11 @@ export async function correctDeliveryScan(input: DeliveryCorrectionInput) {
 
     revalidatePath("/admin/delivery");
     return { ok: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error correcting delivery scan:", err);
-    return { ok: false, error: err.message || "Failed to update delivery scan." };
+    return {
+      ok: false,
+      error: getErrorMessage(err, "Failed to update delivery scan."),
+    };
   }
 }

@@ -12,7 +12,9 @@ export type ApproximateLocation = {
   locationSource: "IP";
 };
 
-export function getApproximateLocationFromHeaders(headers: Headers): ApproximateLocation {
+export function getApproximateLocationFromHeaders(
+  headers: Pick<Headers, "get">
+): ApproximateLocation {
   // Extract client IP
   let ip: string | null = null;
   const xForwardedFor = headers.get("x-forwarded-for");
@@ -47,8 +49,8 @@ export function getApproximateLocationFromHeaders(headers: Headers): Approximate
     region,
     city,
     suburb,
-    latitude: isNaN(latitude as any) ? null : latitude,
-    longitude: isNaN(longitude as any) ? null : longitude,
+    latitude: latitude != null && Number.isNaN(latitude) ? null : latitude,
+    longitude: longitude != null && Number.isNaN(longitude) ? null : longitude,
     locationSource: "IP",
   };
 }

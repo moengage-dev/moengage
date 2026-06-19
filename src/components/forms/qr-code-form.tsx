@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useRef, useMemo } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type Resolver, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -88,20 +88,18 @@ export function QRCodeForm({
     register,
     handleSubmit,
     control,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<QRCodeFormValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(qrCodeSchema) as any,
+    resolver: zodResolver(qrCodeSchema) as Resolver<QRCodeFormValues>,
     defaultValues,
   });
 
-  const selectedType = watch("type");
-  const selectedBrandId = watch("brandId");
-  const selectedAdvertiserId = watch("advertiserId");
-  const selectedCampaignId = watch("campaignId");
-  const selectedProductId = watch("productId");
+  const selectedType = useWatch({ control, name: "type" });
+  const selectedBrandId = useWatch({ control, name: "brandId" });
+  const selectedAdvertiserId = useWatch({ control, name: "advertiserId" });
+  const selectedCampaignId = useWatch({ control, name: "campaignId" });
+  const selectedProductId = useWatch({ control, name: "productId" });
 
   const isBatchDelivery = selectedType === "BATCH_DELIVERY";
   const isConsumerCampaign = selectedType === "CONSUMER_CAMPAIGN";

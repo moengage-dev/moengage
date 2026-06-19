@@ -11,6 +11,7 @@ import {
   getBillingSummaryData,
   getSuspiciousScansData,
 } from "@/server/services/reports.service";
+import type { ReportParams } from "@/server/services/reports.service";
 import { generateCSV, generatePDF } from "@/lib/report-generator";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 
@@ -54,7 +55,7 @@ export async function GET(request: Request) {
       return new NextResponse(errorMsg, { status: 400 });
     }
 
-    const filters: any = { ...parseResult.data, ...scope };
+    const filters: ReportParams = { ...parseResult.data, ...scope };
 
     // Additional Role constraints on Report Types
     if (user.role === "ADVERTISER_VIEWER" && filters.type === "SUSPICIOUS_SCANS_CSV") {
@@ -474,7 +475,9 @@ export async function GET(request: Request) {
     headers.set("Cache-Control", "no-store");
     headers.set("X-Content-Type-Options", "nosniff");
 
-    return new NextResponse(fileBuffer as any, { headers });
+    const body =
+      typeof fileBuffer === "string" ? fileBuffer : new Uint8Array(fileBuffer);
+    return new NextResponse(body, { headers });
   } catch (error) {
     console.error("[REPORTS_GET]", error);
     return new NextResponse("Internal error", { status: 500 });

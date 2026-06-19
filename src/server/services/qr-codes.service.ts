@@ -1,6 +1,6 @@
 // src/server/services/qr-codes.service.ts
 import prisma from "@/lib/prisma";
-import { QRCodeType, QRCodeStatus } from "@prisma/client";
+import { QRCodeType, QRCodeStatus, Prisma } from "@prisma/client";
 import { qrCodeSchema } from "@/lib/validators/qr-code.validator";
 import type { QRCodeFormValues } from "@/lib/validators/qr-code.validator";
 import { getAssignedCampaignIds } from "@/lib/auth/role-scope";
@@ -79,6 +79,62 @@ export type ServiceResult<T = void> =
   | { ok: true; data: T }
   | { ok: false; error: string };
 
+type QRMutationScopeContext = {
+  assignedCampaignIds?: string[];
+};
+
+type QRMutationTarget = {
+  brandId: string | null | undefined;
+  advertiserId: string | null | undefined;
+  campaignId: string | null | undefined;
+};
+
+async function getQRMutationScopeContext(
+  user: ScopedUser
+): Promise<QRMutationScopeContext> {
+  if (user.role !== "CAMPAIGN_MANAGER") {
+    return {};
+  }
+
+  return {
+    assignedCampaignIds: await getAssignedCampaignIds(user.id),
+  };
+}
+
+function canMutateQRTarget(
+  user: ScopedUser,
+  target: QRMutationTarget,
+  context: QRMutationScopeContext
+): boolean {
+  if (user.role === "ADMIN") {
+    return true;
+  }
+
+  if (user.role === "BRAND_ADMIN") {
+    return Boolean(user.brandId && target.brandId === user.brandId);
+  }
+
+  if (user.role === "CAMPAIGN_MANAGER") {
+    if (target.campaignId) {
+      return Boolean(context.assignedCampaignIds?.includes(target.campaignId));
+    }
+
+    // Sample-label QR codes have no campaign; scope them by the derived product brand.
+    return Boolean(user.brandId && target.brandId === user.brandId);
+  }
+
+  // QR create/update mutations are not supported for advertiser or retail roles.
+  return false;
+}
+
+function qrMutationDenied(user: ScopedUser): ServiceResult<never> {
+  if (user.role === "CAMPAIGN_MANAGER") {
+    return { ok: false, error: "QR Code not found" };
+  }
+
+  return { ok: false, error: "Unauthorized" };
+}
+
 const qrInclude = {
   brand: { select: { name: true } },
   advertiser: { select: { name: true } },
@@ -130,7 +186,7 @@ function toQRCodeRow(q: {
 }
 
 export async function getQRCodesPageData(user: ScopedUser): Promise<AdminQRCodesPageData> {
-  const qrFilter: any = {};
+  const qrFilter: Prisma.QRCodeWhereInput = {};
   let assignedCampaignIds: string[] = [];
 
   if (user.role === "CAMPAIGN_MANAGER") {
@@ -153,42 +209,42 @@ export async function getQRCodesPageData(user: ScopedUser): Promise<AdminQRCodes
     }
     qrFilter.campaignId = { in: assignedCampaignIds };
   } else if (user.role === "BRAND_ADMIN") {
-    qrFilter.brandId = user.brandId;
+    qrFilter.brandId = user.brandId ?? "__NONE__";
   } else if (user.role === "ADVERTISER_VIEWER") {
-    qrFilter.advertiserId = user.advertiserId;
+    qrFilter.advertiserId = user.advertiserId ?? "__NONE__";
   }
 
-  const brandFilter: any = { status: "ACTIVE" };
+  const brandFilter: Prisma.BrandWhereInput = { status: "ACTIVE" };
   if (user.role === "BRAND_ADMIN") {
-    brandFilter.id = user.brandId;
+    brandFilter.id = user.brandId ?? "__NONE__";
   }
 
-  const advertiserFilter: any = { status: "ACTIVE" };
+  const advertiserFilter: Prisma.AdvertiserWhereInput = { status: "ACTIVE" };
   if (user.role === "ADVERTISER_VIEWER") {
-    advertiserFilter.id = user.advertiserId;
+    advertiserFilter.id = user.advertiserId ?? "__NONE__";
   }
 
-  const campaignFilter: any = { status: { in: ["ACTIVE", "DRAFT", "PAUSED"] } };
+  const campaignFilter: Prisma.CampaignWhereInput = { status: { in: ["ACTIVE", "DRAFT", "PAUSED"] } };
   if (user.role === "BRAND_ADMIN") {
-    campaignFilter.brandId = user.brandId;
+    campaignFilter.brandId = user.brandId ?? "__NONE__";
   } else if (user.role === "CAMPAIGN_MANAGER") {
     campaignFilter.id = { in: assignedCampaignIds };
   } else if (user.role === "ADVERTISER_VIEWER") {
-    campaignFilter.advertiserId = user.advertiserId;
+    campaignFilter.advertiserId = user.advertiserId ?? "__NONE__";
   }
 
-  const productFilter: any = { status: "ACTIVE" };
+  const productFilter: Prisma.ProductWhereInput = { status: "ACTIVE" };
   if (user.role === "BRAND_ADMIN") {
-    productFilter.brandId = user.brandId;
+    productFilter.brandId = user.brandId ?? "__NONE__";
   }
 
-  const batchFilter: any = { status: { in: ["CREATED", "ACTIVE", "DELIVERING", "DELIVERED"] } };
+  const batchFilter: Prisma.BatchWhereInput = { status: { in: ["CREATED", "ACTIVE", "DELIVERING", "DELIVERED"] } };
   if (user.role === "BRAND_ADMIN") {
-    batchFilter.brandId = user.brandId;
+    batchFilter.brandId = user.brandId ?? "__NONE__";
   } else if (user.role === "CAMPAIGN_MANAGER") {
     batchFilter.campaignId = { in: assignedCampaignIds };
   } else if (user.role === "ADVERTISER_VIEWER") {
-    batchFilter.campaign = { advertiserId: user.advertiserId };
+    batchFilter.campaign = { advertiserId: user.advertiserId ?? "__NONE__" };
   }
 
   const [
@@ -299,16 +355,18 @@ export async function createQRCode(
     };
   }
 
-  let {
-    code,
+  const {
     type,
     status,
+    label,
+  } = parsed.data;
+  let {
+    code,
     brandId,
     advertiserId,
     campaignId,
     productId,
     batchId,
-    label,
     destinationUrl,
   } = parsed.data;
 
@@ -386,7 +444,17 @@ export async function createQRCode(
     batchId = null;
   }
 
-  // Tenant authorization
+  const scopeContext = await getQRMutationScopeContext(user);
+  if (
+    !canMutateQRTarget(
+      user,
+      { brandId, advertiserId, campaignId },
+      scopeContext
+    )
+  ) {
+    return qrMutationDenied(user);
+  }
+
   if (!destinationUrl) {
     destinationUrl = buildQrDestinationUrl(code, type);
   }
@@ -425,16 +493,18 @@ export async function updateQRCode(
     };
   }
 
-  let {
-    code,
+  const {
     type,
     status,
+    label,
+  } = parsed.data;
+  let {
+    code,
     brandId,
     advertiserId,
     campaignId,
     productId,
     batchId,
-    label,
     destinationUrl,
   } = parsed.data;
 
@@ -445,15 +515,19 @@ export async function updateQRCode(
     return { ok: false, error: "QR Code not found" };
   }
 
-  if (user.role !== "ADMIN") {
-    if (user.role === "BRAND_ADMIN" && existing.brandId !== user.brandId) return { ok: false, error: "Unauthorized" };
-    if (user.role === "ADVERTISER_VIEWER" && existing.advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized" };
-    if (user.role === "CAMPAIGN_MANAGER") {
-      const assignedCampaignIds = await getAssignedCampaignIds(user.id);
-      if (!existing.campaignId || !assignedCampaignIds.includes(existing.campaignId)) {
-        return { ok: false, error: "QR Code not found" };
-      }
-    }
+  const scopeContext = await getQRMutationScopeContext(user);
+  if (
+    !canMutateQRTarget(
+      user,
+      {
+        brandId: existing.brandId,
+        advertiserId: existing.advertiserId,
+        campaignId: existing.campaignId,
+      },
+      scopeContext
+    )
+  ) {
+    return qrMutationDenied(user);
   }
 
   // Verify code uniqueness
@@ -513,15 +587,14 @@ export async function updateQRCode(
     batchId = null;
   }
 
-  if (user.role !== "ADMIN") {
-    if (user.role === "BRAND_ADMIN" && brandId !== user.brandId) return { ok: false, error: "Unauthorized: Invalid brand mapping" };
-    if (user.role === "ADVERTISER_VIEWER" && advertiserId !== user.advertiserId) return { ok: false, error: "Unauthorized: Invalid advertiser mapping" };
-    if (user.role === "CAMPAIGN_MANAGER") {
-      const assignedCampaignIds = await getAssignedCampaignIds(user.id);
-      if (!campaignId || !assignedCampaignIds.includes(campaignId)) {
-        return { ok: false, error: "Unauthorized: Campaign Managers can only assign QR codes to assigned campaigns" };
-      }
-    }
+  if (
+    !canMutateQRTarget(
+      user,
+      { brandId, advertiserId, campaignId },
+      scopeContext
+    )
+  ) {
+    return qrMutationDenied(user);
   }
 
   // Re-generate destination URL if empty
@@ -629,7 +702,7 @@ export async function generateQRCodeDownloadData(
       content = await generateQrCodeDataUrl(url);
     }
     return { ok: true, data: { code: qr.code, content } };
-  } catch (e) {
+  } catch {
     return { ok: false, error: "Failed to generate QR Code image" };
   }
 }

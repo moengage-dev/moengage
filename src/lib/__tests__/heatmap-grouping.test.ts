@@ -191,9 +191,20 @@ suite("Encoded location labels", () => {
 
 // ─── Test 5: Markers without coordinates are excluded ─────────────────────────
 suite("Markers without coordinates are excluded from grouping", () => {
+  const markerWithoutCoordinates: Omit<
+    ReturnType<typeof makeScanBucket>,
+    "latitude" | "longitude"
+  > & {
+    latitude: null;
+    longitude: null;
+  } = {
+    ...makeScanBucket({ id: "no-coords", latitude: 0, longitude: 0, hitCount: 3 }),
+    latitude: null,
+    longitude: null,
+  };
   const scans = [
     makeScanBucket({ id: "valid", latitude: 1.0, longitude: 2.0, hitCount: 5 }),
-    { ...makeScanBucket({ id: "no-coords", latitude: 0, longitude: 0, hitCount: 3 }), latitude: null as any, longitude: null as any },
+    markerWithoutCoordinates,
   ];
   const groups = groupConsumerMarkers(scans);
   // Only the valid marker should appear

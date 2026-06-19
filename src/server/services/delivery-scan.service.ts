@@ -7,14 +7,39 @@ import type { CurrentUser } from "@/lib/auth/get-current-user";
 import { toDeliveryScanDTO, toRetailerDTO } from "@/lib/dtos/delivery.dto";
 
 
-export type ServiceResult<T = any> =
+export type ServiceResult<T = unknown> =
   | { ok: true; status: string; data: T }
   | { ok: false; status: string; error: string };
+
+type DeliveryQRCodePageData = {
+  qrCode: {
+    id: string;
+    code: string;
+    type: string;
+    status: string;
+    brandId: string | null;
+    campaignId: string | null;
+    productId: string | null;
+    batchId: string | null;
+    brand: { name: string } | null;
+    campaign: { name: string; offerTitle: string } | null;
+    product: { name: string } | null;
+    batch: {
+      id: string;
+      batchCode: string;
+      unitsPerCarton: number | null;
+    } | null;
+  };
+};
+
+type CreatedDeliveryScanData = {
+  id: string;
+};
 
 export async function getDeliveryQRCodePageData(
   code: string,
   user: CurrentUser
-): Promise<ServiceResult> {
+): Promise<ServiceResult<DeliveryQRCodePageData>> {
   const qrCode = await prisma.qRCode.findUnique({
     where: { code },
     select: {
@@ -101,7 +126,7 @@ export async function getDeliveryQRCodePageData(
 export async function createDeliveryScan(
   input: DeliveryScanFormValues,
   user: CurrentUser
-): Promise<ServiceResult> {
+): Promise<ServiceResult<CreatedDeliveryScanData>> {
   const parsed = deliveryScanSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -244,7 +269,7 @@ export async function createDeliveryScan(
           suburb: data.suburb ?? null,
           latitude: data.latitude ?? null,
           longitude: data.longitude ?? null,
-          locationSource: (data.locationSource as any) ?? "MANUAL",
+          locationSource: data.locationSource ?? "MANUAL",
           notes: data.notes ?? null,
         },
       });
@@ -263,7 +288,7 @@ export async function createDeliveryScan(
       status: "CREATED",
       data: result,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof Error && error.message === "RETAILER_SCOPE_MISMATCH") {
       return {
         ok: false,
@@ -334,6 +359,9 @@ export async function getRetailOperationsDashboardData(user: CurrentUser) {
     recentDeliveryScans,
   };
 }
+
+/** Maximum rows returned by delivery list queries. Aggregation / KPI queries are unaffected. */
+export const DELIVERY_LIST_LIMIT = 500;
 
 export type DeliveryFilterParams = {
   brandId?: string;
@@ -466,7 +494,7 @@ export async function getAdminDeliveryPageData(user: CurrentUser, filters: Deliv
   where.createdAt = { gte: startDate, lte: endDate };
 
   const [
-    deliveryScans,
+    scansRaw,
     retailers,
     totalDeliveryScans,
     cartonsAggregate,
@@ -474,7 +502,8 @@ export async function getAdminDeliveryPageData(user: CurrentUser, filters: Deliv
   ] = await Promise.all([
     prisma.deliveryScan.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: DELIVERY_LIST_LIMIT + 1,
       include: {
         retailer: true,
         campaign: true,
@@ -503,12 +532,17 @@ export async function getAdminDeliveryPageData(user: CurrentUser, filters: Deliv
     }),
   ]);
 
+  const isTruncated = scansRaw.length > DELIVERY_LIST_LIMIT;
+  const deliveryScans = scansRaw.slice(0, DELIVERY_LIST_LIMIT).map(toDeliveryScanDTO);
+
   return {
-    deliveryScans: deliveryScans.map(toDeliveryScanDTO),
+    deliveryScans,
     retailers: retailers.map(toRetailerDTO),
     totalDeliveryScans,
     totalCartonsDelivered: cartonsAggregate._sum.cartonsDelivered ?? 0,
     totalEstimatedUnitsDelivered: unitsAggregate._sum.estimatedUnitsDelivered ?? 0,
+    isTruncated,
+    returnedCount: deliveryScans.length,
   };
 }
 
@@ -530,7 +564,7 @@ export async function getRetailDeliveriesPageData(user: CurrentUser) {
   }
 
   const [
-    deliveryScans,
+    scansRaw,
     retailers,
     totalDeliveryScans,
     cartonsAggregate,
@@ -538,7 +572,8 @@ export async function getRetailDeliveriesPageData(user: CurrentUser) {
   ] = await Promise.all([
     prisma.deliveryScan.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: DELIVERY_LIST_LIMIT + 1,
       include: {
         retailer: true,
         campaign: true,
@@ -572,11 +607,16 @@ export async function getRetailDeliveriesPageData(user: CurrentUser) {
     }),
   ]);
 
+  const isTruncated = scansRaw.length > DELIVERY_LIST_LIMIT;
+  const deliveryScans = scansRaw.slice(0, DELIVERY_LIST_LIMIT);
+
   return {
     deliveryScans,
     retailers,
     totalDeliveryScans,
     totalCartonsDelivered: cartonsAggregate._sum.cartonsDelivered ?? 0,
     totalEstimatedUnitsDelivered: unitsAggregate._sum.estimatedUnitsDelivered ?? 0,
+    isTruncated,
+    returnedCount: deliveryScans.length,
   };
 }

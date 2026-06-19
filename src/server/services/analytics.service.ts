@@ -101,17 +101,24 @@ export type AnalyticsDashboardData = {
   hasData: boolean;
 };
 
+type AnalyticsFilters = {
+  campaign: Prisma.CampaignWhereInput;
+  qrCode: Prisma.QRCodeWhereInput;
+  scanEvent: Prisma.ScanEventWhereInput;
+  rewardClaim: Prisma.RewardClaimWhereInput;
+  rewardClaimAttempt: Prisma.RewardClaimAttemptWhereInput;
+  deliveryScan: Prisma.DeliveryScanWhereInput;
+};
+
 // Generic helper to compute scoped metrics and performance groups
-async function computeMetricsAndPerformance(filters: {
-  campaign: any;
-  qrCode: any;
-  scanEvent: any;
-  rewardClaim: any;
-  deliveryScan: any;
-}): Promise<AnalyticsDashboardData> {
-  const productWhere =
-    filters.campaign.brandId
-      ? { brandId: filters.campaign.brandId }
+async function computeMetricsAndPerformance(filters: AnalyticsFilters): Promise<AnalyticsDashboardData> {
+  const campaignBrandId =
+    typeof filters.campaign.brandId === "string"
+      ? filters.campaign.brandId
+      : undefined;
+  const productWhere: Prisma.ProductWhereInput =
+    campaignBrandId
+      ? { brandId: campaignBrandId }
       : Object.keys(filters.campaign).length > 0
         ? { campaigns: { some: filters.campaign } }
         : {};
@@ -153,7 +160,7 @@ async function computeMetricsAndPerformance(filters: {
       where: { ...filters.scanEvent, anonymousVisitorId: { not: null } },
     }),
     prisma.rewardClaim.count({ where: { ...filters.rewardClaim, status: "APPROVED" } }),
-    prisma.rewardClaimAttempt.count({ where: { ...filters.rewardClaim, status: "DECLINED_DUPLICATE" } }),
+    prisma.rewardClaimAttempt.count({ where: { ...filters.rewardClaimAttempt, status: "DECLINED_DUPLICATE" } }),
     prisma.deliveryScan.count({ where: filters.deliveryScan }),
     prisma.deliveryScan.aggregate({ _sum: { cartonsDelivered: true }, where: filters.deliveryScan }),
     prisma.deliveryScan.aggregate({ _sum: { estimatedUnitsDelivered: true }, where: filters.deliveryScan }),
@@ -238,7 +245,7 @@ async function computeMetricsAndPerformance(filters: {
             where: { ...filters.rewardClaim, campaignId: c.id, status: "APPROVED" },
           }),
           prisma.rewardClaimAttempt.count({
-            where: { ...filters.rewardClaim, campaignId: c.id, status: "DECLINED_DUPLICATE" },
+            where: { ...filters.rewardClaimAttempt, campaignId: c.id, status: "DECLINED_DUPLICATE" },
           }),
           prisma.deliveryScan.count({ where: { ...filters.deliveryScan, campaignId: c.id } }),
           prisma.deliveryScan.aggregate({
@@ -419,11 +426,12 @@ const EMPTY_ANALYTICS_DATA: AnalyticsDashboardData = {
 };
 
 export async function getAnalyticsDashboardData(user: ScopedUser): Promise<AnalyticsDashboardData> {
-  const filters: any = {
+  const filters: AnalyticsFilters = {
     campaign: {},
     qrCode: {},
     scanEvent: {},
     rewardClaim: {},
+    rewardClaimAttempt: {},
     deliveryScan: {},
   };
 
@@ -438,6 +446,7 @@ export async function getAnalyticsDashboardData(user: ScopedUser): Promise<Analy
     filters.qrCode.brandId = user.brandId;
     filters.scanEvent.brandId = user.brandId;
     filters.rewardClaim.brandId = user.brandId;
+    filters.rewardClaimAttempt.brandId = user.brandId;
     filters.deliveryScan.brandId = user.brandId;
   } else if (user.role === "CAMPAIGN_MANAGER") {
     // Scope by the campaigns explicitly assigned to this manager.
@@ -449,6 +458,7 @@ export async function getAnalyticsDashboardData(user: ScopedUser): Promise<Analy
     filters.qrCode.campaignId = { in: campaignIds };
     filters.scanEvent.campaignId = { in: campaignIds };
     filters.rewardClaim.campaignId = { in: campaignIds };
+    filters.rewardClaimAttempt.campaignId = { in: campaignIds };
     filters.deliveryScan.campaignId = { in: campaignIds };
   } else if (user.role === "ADVERTISER_VIEWER") {
     // Fail closed: ADVERTISER_VIEWER must have an advertiserId.
@@ -459,6 +469,7 @@ export async function getAnalyticsDashboardData(user: ScopedUser): Promise<Analy
     filters.qrCode.advertiserId = user.advertiserId;
     filters.scanEvent.advertiserId = user.advertiserId;
     filters.rewardClaim.advertiserId = user.advertiserId;
+    filters.rewardClaimAttempt.advertiserId = user.advertiserId;
     filters.deliveryScan.campaign = { advertiserId: user.advertiserId };
   } else {
     // Unknown role: fail closed.
