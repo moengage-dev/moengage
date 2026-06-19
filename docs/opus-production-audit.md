@@ -12,7 +12,7 @@
 **Top 5 risks:**
 
 1. **Rate limiting fails OPEN when Upstash env is missing** — in production this silently disables all OTP edge rate limiting (`src/proxy.ts`).
-2. **Campaign-Manager analytics scoping is broken** — it scopes by `advertiserId`, which is `null` for campaign managers (the validator requires `brandId`, not `advertiserId`), so the role's dashboard is both wrong and not fail-closed (`analytics.service.ts`).
+2. ~~**Campaign-Manager analytics scoping is broken**~~ — **RESOLVED** (2026-06-18): `CAMPAIGN_MANAGER` now scopes by assigned campaign IDs via `getAssignedCampaignIds`; `ADVERTISER_VIEWER` is branched separately. See `analytics.service.ts:500–552`.
 3. **No composite indexes for the per-scan classification lookbacks** — 4 time-windowed aggregate queries run on every consumer scan against single-column indexes; this is a scalability cliff.
 4. **The scan-collapse migration is table-locking** — full-table `UPDATE` backfill + `SET NOT NULL` + non-concurrent `UNIQUE INDEX` build will lock `ScanEvent` on a populated production DB.
 5. **Weak OTP primitives + unverified DB TLS + test-fallback data poisoning** — `Math.random()` OTP, plain-SHA256 OTP hash, `rejectUnauthorized:false` by default, and hardcoded test fallbacks that can execute in prod.
@@ -37,28 +37,20 @@
 - **Mitigation already present:** DB-level 60s cooldown (`/start`) and 3-attempt OTP lockout (`/verify`) survive a proxy bypass, so this is not a total hole — but IP-distributed abuse is unprotected.
 - **Exact fix:** Fail closed in production. If `process.env.VERCEL_ENV === "production"` (or `NODE_ENV === "production"`) and `redis` is null, return `503` for `/api/public/rewards/*` instead of `NextResponse.next()`. Keep the bypass only for local/dev.
 
-### CB-2 — Campaign-Manager analytics scoped by the wrong (null) field
-- **Risk:** `getAnalyticsDashboardData` scopes `CAMPAIGN_MANAGER` by `advertiserId`. Per `user.validator.ts`, campaign managers require `brandId`, **not** `advertiserId`, so `user.advertiserId` is `null`. The dashboard then filters every model by `advertiserId: null`, which (a) shows `0` campaigns, (b) surfaces orphan `null`-advertiser scan rows that don't belong to the user, and (c) never shows the manager's actually-assigned campaigns.
-- **Why it matters:** The campaign-manager dashboard is both broken (shows nothing useful) and leaks unrelated `null`-advertiser scan data. If `advertiserId` were ever `undefined` instead of `null`, Prisma would drop the filter entirely → **full cross-tenant global leak**. The correct scoping (assigned campaigns via `CampaignAssignment`) already exists in `getRoleScopeFilters` but is ignored here.
-- **File:** `src/server/services/analytics.service.ts:390-396`; page `src/app/campaign-manager/page.tsx:31` (no null guard).
-- **Evidence:**
-  ```ts
-  } else if (user.role === "CAMPAIGN_MANAGER" || user.role === "ADVERTISER_VIEWER") {
-    filters.campaign.advertiserId = user.advertiserId;     // null for CM
-    filters.scanEvent.advertiserId = user.advertiserId;
-    ...
-  }
-  ```
-- **Exact fix:** Branch `CAMPAIGN_MANAGER` separately and scope by assigned campaign IDs (reuse `getRoleScopeFilters` or query `campaignAssignment`). Fail closed: if a non-admin's scope id/list is empty, return the empty-metrics object (as the function already does for the no-assignments case) — never an unfiltered query.
+### ~~CB-2 — Campaign-Manager analytics scoped by the wrong (null) field~~ — RESOLVED 2026-06-18
+
+> **Status:** Fixed. `CAMPAIGN_MANAGER` is now branched separately in `getAnalyticsDashboardData` and scopes every filter by the list returned from `getAssignedCampaignIds(user.id)`. `ADVERTISER_VIEWER` is also branched separately and scopes by `user.advertiserId`. Fail-closed: empty metrics returned if no assigned campaigns or missing scope id. See `src/server/services/analytics.service.ts:500–552`.
+
+- ~~**Risk:** `getAnalyticsDashboardData` scopes `CAMPAIGN_MANAGER` by `advertiserId`. Per `user.validator.ts`, campaign managers require `brandId`, **not** `advertiserId`, so `user.advertiserId` is `null`. The dashboard then filters every model by `advertiserId: null`, which (a) shows `0` campaigns, (b) surfaces orphan `null`-advertiser scan rows that don't belong to the user, and (c) never shows the manager's actually-assigned campaigns.~~
+- ~~**Exact fix:** Branch `CAMPAIGN_MANAGER` separately and scope by assigned campaign IDs (reuse `getRoleScopeFilters` or query `campaignAssignment`). Fail closed: if a non-admin's scope id/list is empty, return the empty-metrics object (as the function already does for the no-assignments case) — never an unfiltered query.~~
 
 ---
 
 ## 3. High-Risk Issues
 
-### H-1 — Inline analytics scoping does not fail closed
-- **Risk:** `getAnalyticsDashboardData` builds Prisma `where` inline and relies on the page to guard `null` scope ids. `brand/page.tsx` and `advertiser/page.tsx` do guard; `campaign-manager/page.tsx` does not. The service should not depend on page-level guards.
-- **File:** `src/server/services/analytics.service.ts:375-398`.
-- **Fix:** Centralize through `getRoleScopeFilters` (which returns `null` → deny) and have the service return empty metrics when scope is `null` for a non-admin.
+### ~~H-1 — Inline analytics scoping does not fail closed~~ — RESOLVED 2026-06-18
+
+> **Status:** Fixed. `getAnalyticsDashboardData` now fails closed for every non-admin role directly in the service: BRAND_ADMIN returns empty if `brandId` is null; CAMPAIGN_MANAGER returns empty if no assigned campaigns; ADVERTISER_VIEWER returns empty if `advertiserId` is null. Page-level guards are no longer required for correctness. See `src/server/services/analytics.service.ts:500–552`.
 
 ### H-2 — Missing composite indexes on the hot classification path
 - **Risk:** Every consumer scan runs 4 lookbacks in `classifyConsumerScan`: repeat-by-visitor, repeat-by-ip (30 min), high-frequency-by-visitor (5 min), high-frequency-by-ip (10 min). They filter on `(anonymousVisitorId|ipHash) + (campaignId|qrCodeId) + createdAt`. Only single-column indexes exist (`@@index([anonymousVisitorId])`, `@@index([ipHash])`, `@@index([campaignId])`, `@@index([createdAt])`).

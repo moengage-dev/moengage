@@ -551,6 +551,62 @@ export async function getAnalyticsDashboardData(user: ScopedUser): Promise<Analy
   return computeMetricsAndPerformance(filters);
 }
 
+// ── Admin-only top performance lists ────────────────────────────────────────
+
+export type TopBrandRow = { brandId: string; brandName: string; totalHits: number };
+export type TopAdvertiserRow = { advertiserId: string; advertiserName: string; totalHits: number };
+
+export type AdminTopListData = {
+  topBrands: TopBrandRow[];
+  topAdvertisers: TopAdvertiserRow[];
+};
+
+export async function getAdminTopLists(): Promise<AdminTopListData> {
+  const [brandAggs, advertiserAggs] = await Promise.all([
+    prisma.scanEvent.groupBy({
+      by: ["brandId"],
+      where: { brandId: { not: null } },
+      _sum: { hitCount: true },
+      orderBy: { _sum: { hitCount: "desc" } },
+      take: 5,
+    }),
+    prisma.scanEvent.groupBy({
+      by: ["advertiserId"],
+      where: { advertiserId: { not: null } },
+      _sum: { hitCount: true },
+      orderBy: { _sum: { hitCount: "desc" } },
+      take: 5,
+    }),
+  ]);
+
+  const topBrandIds = brandAggs.map((b) => b.brandId).filter((id): id is string => id !== null);
+  const topAdvertiserIds = advertiserAggs.map((a) => a.advertiserId).filter((id): id is string => id !== null);
+
+  const [brands, advertisers] = await Promise.all([
+    topBrandIds.length > 0
+      ? prisma.brand.findMany({ where: { id: { in: topBrandIds } }, select: { id: true, name: true } })
+      : Promise.resolve([]),
+    topAdvertiserIds.length > 0
+      ? prisma.advertiser.findMany({ where: { id: { in: topAdvertiserIds } }, select: { id: true, name: true } })
+      : Promise.resolve([]),
+  ]);
+
+  const brandNameMap = new Map(brands.map((b) => [b.id, b.name]));
+  const advertiserNameMap = new Map(advertisers.map((a) => [a.id, a.name]));
+
+  const topBrands: TopBrandRow[] = topBrandIds.map((id) => {
+    const agg = brandAggs.find((b) => b.brandId === id)!;
+    return { brandId: id, brandName: brandNameMap.get(id) ?? "—", totalHits: agg._sum.hitCount ?? 0 };
+  });
+
+  const topAdvertisers: TopAdvertiserRow[] = topAdvertiserIds.map((id) => {
+    const agg = advertiserAggs.find((a) => a.advertiserId === id)!;
+    return { advertiserId: id, advertiserName: advertiserNameMap.get(id) ?? "—", totalHits: agg._sum.hitCount ?? 0 };
+  });
+
+  return { topBrands, topAdvertisers };
+}
+
 export async function getScanTrendByMinute(campaignId?: string): Promise<Array<{ minute: Date; scanCount: number }>> {
   const result = await prisma.$queryRaw<Array<{ minute: Date; scanCount: number }>>`
     SELECT 

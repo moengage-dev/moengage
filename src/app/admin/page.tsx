@@ -1,8 +1,9 @@
 // src/app/admin/page.tsx
 import React from "react";
-import { getAnalyticsDashboardData } from "@/server/services/analytics.service";
+import { getAnalyticsDashboardData, getAdminTopLists } from "@/server/services/analytics.service";
+import { getAdminBillingPageData } from "@/server/services/billing.service";
 import { requireRole } from "@/lib/auth/require-role";
-import { formatNumber, formatDateTime } from "@/lib/format";
+import { formatNumber, formatDateTime, formatCurrency } from "@/lib/format";
 import { DashboardSectionHeader } from "@/components/dashboard/dashboard-section-header";
 import {
   Layers,
@@ -14,6 +15,9 @@ import {
   Archive,
   BarChart3,
   Award,
+  DollarSign,
+  TrendingUp,
+  Wallet,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -90,9 +94,15 @@ export default async function AdminDashboardPage() {
   // Enforce Admin role
   const user = await requireRole(["ADMIN"]);
 
-  // Fetch admin dashboard analytics
-  const data = await getAnalyticsDashboardData(user);
+  // Fetch admin dashboard data in parallel
+  const [data, billingData, topListData] = await Promise.all([
+    getAnalyticsDashboardData(user),
+    getAdminBillingPageData({}),
+    getAdminTopLists(),
+  ]);
   const { metrics, performance } = data;
+  const { totals } = billingData;
+  const { topBrands, topAdvertisers } = topListData;
 
   return (
     <div className="min-h-screen bg-background p-8 md:p-12 space-y-10">
@@ -243,6 +253,83 @@ export default async function AdminDashboardPage() {
             </div>
             <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Estimated units delivered</p>
           </div>
+        </div>
+      </div>
+
+      {/* Revenue KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-emerald-500">
+          <div className="flex items-center justify-between pb-3">
+            <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Fixed Fee Revenue</span>
+            <span className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-600"><DollarSign className="h-4 w-4" /></span>
+          </div>
+          <div>
+            <div className="text-3xl font-extrabold text-foreground tracking-tight">
+              {formatCurrency(totals.fixedFees)}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Flat campaign fees billed</p>
+          </div>
+        </div>
+
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-emerald-500">
+          <div className="flex items-center justify-between pb-3">
+            <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Engagement Fee Revenue</span>
+            <span className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-600"><TrendingUp className="h-4 w-4" /></span>
+          </div>
+          <div>
+            <div className="text-3xl font-extrabold text-foreground tracking-tight">
+              {formatCurrency(totals.engagementFees)}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Per-scan engagement fees billed</p>
+          </div>
+        </div>
+
+        <div className="bg-card text-card-foreground rounded-xl border border-border/40 p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-emerald-600">
+          <div className="flex items-center justify-between pb-3">
+            <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Combined Revenue</span>
+            <span className="p-1.5 rounded-lg bg-emerald-600/15 text-emerald-600"><Wallet className="h-4 w-4" /></span>
+          </div>
+          <div>
+            <div className="text-3xl font-extrabold text-foreground tracking-tight">
+              {formatCurrency(totals.totalAmount)}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-relaxed">Total estimated revenue to date</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Top Brands & Top Advertisers */}
+      <div className="grid gap-8 lg:grid-cols-2">
+        <div className="min-w-0">
+          <LocalTableSection
+            title="Top Brands by Scans"
+            description="Top 5 brands ranked by total consumer scan hits."
+            headers={["Brand", "Total Scan Hits"]}
+            hasData={topBrands.length > 0}
+          >
+            {topBrands.map((b, idx) => (
+              <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
+                <td className="py-4 px-3 font-semibold text-foreground">{b.brandName}</td>
+                <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(b.totalHits)}</td>
+              </tr>
+            ))}
+          </LocalTableSection>
+        </div>
+
+        <div className="min-w-0">
+          <LocalTableSection
+            title="Top Advertisers by Scans"
+            description="Top 5 advertisers ranked by total consumer scan hits."
+            headers={["Advertiser", "Total Scan Hits"]}
+            hasData={topAdvertisers.length > 0}
+          >
+            {topAdvertisers.map((a, idx) => (
+              <tr key={idx} className="border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
+                <td className="py-4 px-3 font-semibold text-foreground">{a.advertiserName}</td>
+                <td className="py-4 px-3 text-right font-medium text-foreground">{formatNumber(a.totalHits)}</td>
+              </tr>
+            ))}
+          </LocalTableSection>
         </div>
       </div>
 
