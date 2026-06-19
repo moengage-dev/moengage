@@ -16,32 +16,8 @@ interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined>;
 }
 
-export default async function AdvertiserHeatmapsPage({ searchParams }: PageProps) {
-  const user = await requireRole(["ADVERTISER_VIEWER", "ADMIN"]);
-
-  // Fail closed: Advertiser Viewer must have an advertiserId
-  if (user.role === "ADVERTISER_VIEWER" && !user.advertiserId) {
-    return (
-      <div className="min-h-screen bg-background p-8 md:p-12 space-y-10">
-        <DashboardSectionHeader
-          title="Heatmaps"
-          description="Geographic scan engagement for your campaigns."
-          badgeText="Advertiser"
-          badgeVariant="blue"
-        />
-        <Card className="py-12">
-          <CardContent className="text-center space-y-4">
-            <div className="mx-auto w-12 h-12 bg-muted border border-border text-muted-foreground rounded-full flex items-center justify-center">
-              <Map className="h-6 w-6" />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Your account is not linked to an advertiser. Contact your administrator.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+export default async function CampaignManagerHeatmapsPage({ searchParams }: PageProps) {
+  const user = await requireRole(["CAMPAIGN_MANAGER", "ADMIN"]);
 
   const resolvedSearchParams = searchParams instanceof Promise
     ? await searchParams
@@ -58,8 +34,8 @@ export default async function AdvertiserHeatmapsPage({ searchParams }: PageProps
     }
   }
 
-  // Strip advertiser/brand — scope enforced server-side via the authenticated user's advertiserId
-  const STRIPPED = new Set(["advertiserId", "brandId"]);
+  // Strip brandId/advertiserId — scope enforced server-side via the authenticated user
+  const STRIPPED = new Set(["brandId", "advertiserId"]);
   const safeRawFilters = Object.fromEntries(
     Object.entries(rawFilters).filter(([k]) => !STRIPPED.has(k))
   );
@@ -74,9 +50,9 @@ export default async function AdvertiserHeatmapsPage({ searchParams }: PageProps
     <div className="min-h-screen bg-background p-8 md:p-12 space-y-10">
       <DashboardSectionHeader
         title="Heatmaps"
-        description="Geographic scan engagement and delivery distribution for your campaigns."
-        badgeText="Advertiser"
-        badgeVariant="blue"
+        description="Geographic scan engagement and delivery distribution for your assigned campaigns."
+        badgeText="Campaign Manager"
+        badgeVariant="indigo"
       />
 
       {(metadata.isConsumerDataTruncated || metadata.isDeliveryDataTruncated) && (
@@ -97,7 +73,7 @@ export default async function AdvertiserHeatmapsPage({ searchParams }: PageProps
             <div className="max-w-md mx-auto space-y-2">
               <h2 className="text-lg font-bold text-foreground">No Map Data</h2>
               <p className="text-sm text-muted-foreground">
-                No scan or delivery events with location data exist for your campaigns in the selected date range.
+                No scan or delivery events with location data exist for your assigned campaigns in the selected date range.
               </p>
             </div>
           </CardContent>

@@ -425,6 +425,78 @@ const EMPTY_ANALYTICS_DATA: AnalyticsDashboardData = {
   hasData: false,
 };
 
+// ── Advertiser campaign list with scan counter aggregates ────────────────────
+
+export type AdvertiserCampaignRow = {
+  id: string;
+  name: string;
+  brandName: string;
+  productName: string | null;
+  status: string;
+  startDate: string | null;
+  endDate: string | null;
+  totalHits: number;
+  billableHits: number;
+  suspiciousHits: number;
+  approvedClaims: number;
+};
+
+export async function getAdvertiserCampaignsWithStats(
+  user: ScopedUser
+): Promise<AdvertiserCampaignRow[]> {
+  if (user.role !== "ADVERTISER_VIEWER" && user.role !== "ADMIN") return [];
+  if (user.role === "ADVERTISER_VIEWER" && !user.advertiserId) return [];
+
+  const campaignWhere: Prisma.CampaignWhereInput =
+    user.role === "ADVERTISER_VIEWER" ? { advertiserId: user.advertiserId! } : {};
+
+  const campaigns = await prisma.campaign.findMany({
+    where: campaignWhere,
+    include: {
+      brand: { select: { name: true } },
+      product: { select: { name: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (campaigns.length === 0) return [];
+
+  const campaignIds = campaigns.map((c) => c.id);
+
+  const [scanAggs, claimCounts] = await Promise.all([
+    prisma.scanEvent.groupBy({
+      by: ["campaignId"],
+      where: { campaignId: { in: campaignIds } },
+      _sum: { hitCount: true, billableCount: true, suspiciousCount: true },
+    }),
+    prisma.rewardClaim.groupBy({
+      by: ["campaignId"],
+      where: { campaignId: { in: campaignIds }, status: "APPROVED" },
+      _count: { id: true },
+    }),
+  ]);
+
+  const scanMap = new Map(scanAggs.map((s) => [s.campaignId, s._sum]));
+  const claimMap = new Map(claimCounts.map((c) => [c.campaignId, c._count.id]));
+
+  return campaigns.map((c) => {
+    const scans = scanMap.get(c.id);
+    return {
+      id: c.id,
+      name: c.name,
+      brandName: c.brand?.name ?? "—",
+      productName: c.product?.name ?? null,
+      status: c.status,
+      startDate: c.startDate ? c.startDate.toISOString().split("T")[0] : null,
+      endDate: c.endDate ? c.endDate.toISOString().split("T")[0] : null,
+      totalHits: scans?.hitCount ?? 0,
+      billableHits: scans?.billableCount ?? 0,
+      suspiciousHits: scans?.suspiciousCount ?? 0,
+      approvedClaims: claimMap.get(c.id) ?? 0,
+    };
+  });
+}
+
 export async function getAnalyticsDashboardData(user: ScopedUser): Promise<AnalyticsDashboardData> {
   const filters: AnalyticsFilters = {
     campaign: {},

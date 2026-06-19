@@ -374,3 +374,100 @@ export async function getAdminHeatmapData(
     },
   };
 }
+
+// ── Retail delivery-only map ─────────────────────────────────────────────────
+
+const RETAIL_MAP_LIMIT = 500;
+
+export interface RetailDeliveryMapData {
+  aggregatedMarkers: import("@/lib/heatmap-grouping").CombinedLocationMarker[];
+  summaryCounts: {
+    totalDeliveryCount: number;
+    totalCartonsDelivered: number;
+    totalEstimatedUnitsDelivered: number;
+  };
+  metadata: { isDataTruncated: boolean };
+}
+
+const EMPTY_RETAIL_MAP: RetailDeliveryMapData = {
+  aggregatedMarkers: [],
+  summaryCounts: { totalDeliveryCount: 0, totalCartonsDelivered: 0, totalEstimatedUnitsDelivered: 0 },
+  metadata: { isDataTruncated: false },
+};
+
+export async function getRetailDeliveryMapData(
+  user: CurrentUser
+): Promise<RetailDeliveryMapData> {
+  if (user.role !== "RETAIL_OPERATIONS" && user.role !== "ADMIN") return EMPTY_RETAIL_MAP;
+  if (user.role === "RETAIL_OPERATIONS" && !user.brandId) return EMPTY_RETAIL_MAP;
+
+  const brandScope: Prisma.DeliveryScanWhereInput =
+    user.role === "RETAIL_OPERATIONS" ? { brandId: user.brandId! } : {};
+
+  const now = new Date();
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+  const where: Prisma.DeliveryScanWhereInput = {
+    ...brandScope,
+    latitude: { not: null },
+    longitude: { not: null },
+    createdAt: { gte: ninetyDaysAgo, lte: now },
+  };
+
+  const [rows, totalDeliveryCount, cartonsAgg, unitsAgg] = await Promise.all([
+    prisma.deliveryScan.findMany({
+      where,
+      include: {
+        brand: { select: { name: true } },
+        campaign: { select: { name: true } },
+        batch: { select: { batchCode: true } },
+        retailer: { select: { name: true } },
+        qrCode: { include: { product: { select: { name: true } } } },
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: RETAIL_MAP_LIMIT + 1,
+    }),
+    prisma.deliveryScan.count({ where }),
+    prisma.deliveryScan.aggregate({ _sum: { cartonsDelivered: true }, where }),
+    prisma.deliveryScan.aggregate({ _sum: { estimatedUnitsDelivered: true }, where }),
+  ]);
+
+  const isDataTruncated = rows.length > RETAIL_MAP_LIMIT;
+  const deliveryMarkers: DeliveryMarker[] = rows.slice(0, RETAIL_MAP_LIMIT).map((d) => ({
+    id: d.id,
+    type: "DELIVERY",
+    createdAt: d.createdAt,
+    brandName: d.brand?.name ?? "—",
+    campaignName: d.campaign?.name ?? "—",
+    productName: d.qrCode?.product?.name ?? "—",
+    batchCode: d.batch?.batchCode ?? "—",
+    retailerName: d.retailer?.name ?? "—",
+    city: decodeLabel(d.city ?? ""),
+    suburb: decodeLabel(d.suburb ?? ""),
+    country: decodeLabel(d.country ?? ""),
+    latitude: toNumber(d.latitude),
+    longitude: toNumber(d.longitude),
+    cartonsDelivered: d.cartonsDelivered,
+    estimatedUnitsDelivered: d.estimatedUnitsDelivered,
+  }));
+
+  const grouped = groupDeliveryMarkers(deliveryMarkers);
+  const aggregatedMarkers = grouped.map((d) => ({
+    groupKey: d.groupKey,
+    latitude: d.latitude,
+    longitude: d.longitude,
+    consumer: null as null,
+    delivery: d,
+  }));
+
+  return {
+    aggregatedMarkers,
+    summaryCounts: {
+      totalDeliveryCount,
+      totalCartonsDelivered: cartonsAgg._sum.cartonsDelivered ?? 0,
+      totalEstimatedUnitsDelivered: unitsAgg._sum.estimatedUnitsDelivered ?? 0,
+    },
+    metadata: { isDataTruncated },
+  };
+}
