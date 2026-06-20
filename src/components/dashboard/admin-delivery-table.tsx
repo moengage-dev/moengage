@@ -7,7 +7,7 @@ import { DeliveryCorrectionSheet } from "@/components/forms/delivery-correction-
 import { formatDateTime, formatNumber } from "@/lib/format";
 import type { DeliveryScanDTO, RetailerDTO } from "@/lib/dtos/delivery.dto";
 
-const HEADERS = [
+const ALL_HEADERS = [
   "Date", "Brand", "Retailer", "Campaign", "Product", "Batch Code",
   "Cartons", "Units/Carton", "Est. Units", "City / Suburb", "Notes", "Actions",
 ];
@@ -15,10 +15,13 @@ const HEADERS = [
 export function AdminDeliveryTable({
   deliveryScans,
   retailers,
+  readOnly = false,
 }: {
   deliveryScans: DeliveryScanDTO[];
   retailers: RetailerDTO[];
+  readOnly?: boolean;
 }) {
+  const HEADERS = readOnly ? ALL_HEADERS.filter((h) => h !== "Actions") : ALL_HEADERS;
   const [selectedScan, setSelectedScan] = useState<DeliveryScanDTO | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -123,23 +126,25 @@ export function AdminDeliveryTable({
                 >
                   {scan.notes ?? "—"}
                 </td>
-                <td className="py-4 px-3 whitespace-nowrap text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => openSheet(scan)}
-                  >
-                    <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                  </Button>
-                </td>
+                {!readOnly && (
+                  <td className="py-4 px-3 whitespace-nowrap text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => openSheet(scan)}
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {selectedScan && (
+      {!readOnly && selectedScan && (
         <DeliveryCorrectionSheet
           key={selectedScan.id}
           scan={selectedScan}

@@ -50,6 +50,7 @@ import {
   createBatchAction,
   updateBatchAction,
   closeBatchAction,
+  type ActionResult,
 } from "@/app/admin/batches/actions";
 import type {
   BatchRow,
@@ -60,6 +61,12 @@ import type {
 import type { BatchFormValues } from "@/lib/validators/batch.validator";
 import { formatDate, formatStatusLabel, formatNumber } from "@/lib/format";
 
+type BatchesClientActions = {
+  create: (values: BatchFormValues) => Promise<ActionResult>;
+  update: (id: string, values: BatchFormValues) => Promise<ActionResult>;
+  close: (id: string) => Promise<ActionResult>;
+};
+
 type Props = {
   batches: BatchRow[];
   brands: BrandOption[];
@@ -69,6 +76,7 @@ type Props = {
   activeBatches: number;
   deliveringBatches: number;
   closedBatches: number;
+  actions?: BatchesClientActions;
 };
 
 function batchStatusVariant(
@@ -89,7 +97,11 @@ export function BatchesClient({
   activeBatches,
   deliveringBatches,
   closedBatches,
+  actions,
 }: Props) {
+  const create = actions?.create ?? createBatchAction;
+  const update = actions?.update ?? updateBatchAction;
+  const close = actions?.close ?? closeBatchAction;
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingBatch, setEditingBatch] = useState<BatchRow | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
@@ -127,7 +139,7 @@ export function BatchesClient({
   }
 
   async function handleClose(batch: BatchRow) {
-    const result = await closeBatchAction(batch.id);
+    const result = await close(batch.id);
     if (result.ok) {
       toast.success(result.message);
     } else {
@@ -137,7 +149,7 @@ export function BatchesClient({
 
   function makeSubmitAction(batch?: BatchRow) {
     return (values: BatchFormValues) =>
-      batch ? updateBatchAction(batch.id, values) : createBatchAction(values);
+      batch ? update(batch.id, values) : create(values);
   }
 
   const hasActiveFilters = searchQuery !== "" || statusFilter !== "ALL";

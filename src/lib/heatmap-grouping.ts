@@ -50,8 +50,10 @@ export interface AggregatedConsumerMarker {
   /** Number of raw ScanEvent rows aggregated into this point. */
   bucketCount: number;
   hasSuspicious: boolean;
-  earliestAt: Date;
-  latestAt: Date;
+  /** ISO 8601 string — safe to cross the server→client boundary. */
+  earliestAt: string;
+  /** ISO 8601 string — safe to cross the server→client boundary. */
+  latestAt: string;
   campaigns: string[];
   products: string[];
   brands: string[];
@@ -68,8 +70,10 @@ export interface AggregatedDeliveryMarker {
   totalEstimatedUnitsDelivered: number;
   /** Number of DeliveryScan rows aggregated into this point. */
   dropCount: number;
-  earliestAt: Date;
-  latestAt: Date;
+  /** ISO 8601 string — safe to cross the server→client boundary. */
+  earliestAt: string;
+  /** ISO 8601 string — safe to cross the server→client boundary. */
+  latestAt: string;
   campaigns: string[];
   brands: string[];
   retailers: string[];
@@ -120,8 +124,8 @@ export function groupConsumerMarkers(
         totalSuspiciousCount: m.suspiciousCount,
         bucketCount: 1,
         hasSuspicious: m.isSuspicious,
-        earliestAt: new Date(m.createdAt),
-        latestAt: new Date(m.createdAt),
+        earliestAt: new Date(m.createdAt).toISOString(),
+        latestAt: new Date(m.createdAt).toISOString(),
         campaigns: m.campaignName !== "—" ? [m.campaignName] : [],
         products: m.productName !== "—" ? [m.productName] : [],
         brands: m.brandName !== "—" ? [m.brandName] : [],
@@ -136,9 +140,9 @@ export function groupConsumerMarkers(
       existing.totalSuspiciousCount += m.suspiciousCount;
       existing.bucketCount += 1;
       existing.hasSuspicious = existing.hasSuspicious || m.isSuspicious;
-      const at = new Date(m.createdAt);
-      if (at < existing.earliestAt) existing.earliestAt = at;
-      if (at > existing.latestAt) existing.latestAt = at;
+      const atStr = new Date(m.createdAt).toISOString();
+      if (atStr < existing.earliestAt) existing.earliestAt = atStr;
+      if (atStr > existing.latestAt) existing.latestAt = atStr;
       addUnique(existing.campaigns, m.campaignName);
       addUnique(existing.products, m.productName);
       addUnique(existing.brands, m.brandName);
@@ -166,8 +170,8 @@ export function groupDeliveryMarkers(
         totalCartonsDelivered: m.cartonsDelivered,
         totalEstimatedUnitsDelivered: m.estimatedUnitsDelivered,
         dropCount: 1,
-        earliestAt: new Date(m.createdAt),
-        latestAt: new Date(m.createdAt),
+        earliestAt: new Date(m.createdAt).toISOString(),
+        latestAt: new Date(m.createdAt).toISOString(),
         campaigns: m.campaignName !== "—" ? [m.campaignName] : [],
         brands: m.brandName !== "—" ? [m.brandName] : [],
         retailers: m.retailerName !== "—" ? [m.retailerName] : [],
@@ -179,9 +183,9 @@ export function groupDeliveryMarkers(
       existing.totalCartonsDelivered += m.cartonsDelivered;
       existing.totalEstimatedUnitsDelivered += m.estimatedUnitsDelivered;
       existing.dropCount += 1;
-      const at = new Date(m.createdAt);
-      if (at < existing.earliestAt) existing.earliestAt = at;
-      if (at > existing.latestAt) existing.latestAt = at;
+      const atStr = new Date(m.createdAt).toISOString();
+      if (atStr < existing.earliestAt) existing.earliestAt = atStr;
+      if (atStr > existing.latestAt) existing.latestAt = atStr;
       addUnique(existing.campaigns, m.campaignName);
       addUnique(existing.brands, m.brandName);
       addUnique(existing.retailers, m.retailerName);

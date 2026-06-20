@@ -115,9 +115,19 @@ suite("Multiple ScanEvent buckets at the same coordinate", () => {
   assert.equal(groups.length, 1, "should collapse to one geographic group");
   assert.equal(groups[0].totalHitCount, 55, "totalHitCount must equal 49 + 1 + 5 = 55");
   assert.equal(groups[0].bucketCount, 3, "bucketCount must equal number of raw rows");
+  // earliestAt / latestAt must be ISO strings (not Date objects) so they
+  // cross the server→client serialization boundary without corruption.
+  assert.equal(typeof groups[0].earliestAt, "string", "earliestAt must be an ISO string");
+  assert.equal(typeof groups[0].latestAt, "string", "latestAt must be an ISO string");
+  assert.ok(
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(groups[0].earliestAt),
+    "earliestAt must match ISO 8601 format"
+  );
   pass("three buckets with hitCounts 49, 1, 5 → totalHitCount = 55");
   pass("bucketCount = 3");
   pass("single geographic group at the coordinate");
+  pass("earliestAt is ISO string");
+  pass("latestAt is ISO string");
 });
 
 // ─── Test 2: Consumer and delivery at the same coordinate ─────────────────────
@@ -213,7 +223,57 @@ suite("Markers without coordinates are excluded from grouping", () => {
   pass("null-coordinate markers are excluded from geographic groups");
 });
 
-// ─── Test 6: geoKey precision ─────────────────────────────────────────────────
+// ─── Test 6: earliestAt / latestAt date-range tracking ────────────────────────
+suite("earliestAt and latestAt track the min and max timestamps as ISO strings", () => {
+  const LAT = 1.0;
+  const LNG = 2.0;
+
+  // Three buckets at the same coordinate with different timestamps
+  const EARLY = "2024-01-15T08:00:00.000Z";
+  const MID   = "2024-06-01T10:00:00.000Z";
+  const LATE  = "2024-12-31T23:59:59.000Z";
+
+  function makeBucketAt(id: string, isoDate: string) {
+    const b = makeScanBucket({ id, latitude: LAT, longitude: LNG, hitCount: 1 });
+    return { ...b, createdAt: new Date(isoDate) };
+  }
+
+  const groups = groupConsumerMarkers([
+    makeBucketAt("mid",   MID),
+    makeBucketAt("early", EARLY),
+    makeBucketAt("late",  LATE),
+  ]);
+
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].earliestAt, EARLY, "earliestAt must be the oldest timestamp");
+  assert.equal(groups[0].latestAt,   LATE,  "latestAt must be the newest timestamp");
+  // latestAt > earliestAt must hold for ISO strings (lexicographic order matches
+  // chronological order for ISO 8601 — this is the comparison used by HeatmapMap).
+  assert.ok(groups[0].latestAt > groups[0].earliestAt, "latestAt > earliestAt as strings");
+  pass("earliestAt = min ISO timestamp across all buckets");
+  pass("latestAt = max ISO timestamp across all buckets");
+  pass("ISO string comparison mirrors chronological comparison");
+
+  // Same verification for delivery markers
+  function makeDeliveryAt(id: string, isoDate: string) {
+    const d = makeDelivery({ id, latitude: LAT, longitude: LNG });
+    return { ...d, createdAt: new Date(isoDate) };
+  }
+
+  const dGroups = groupDeliveryMarkers([
+    makeDeliveryAt("d-mid",   MID),
+    makeDeliveryAt("d-early", EARLY),
+    makeDeliveryAt("d-late",  LATE),
+  ]);
+
+  assert.equal(dGroups.length, 1);
+  assert.equal(dGroups[0].earliestAt, EARLY, "delivery earliestAt must be the oldest");
+  assert.equal(dGroups[0].latestAt,   LATE,  "delivery latestAt must be the newest");
+  assert.equal(typeof dGroups[0].earliestAt, "string", "delivery earliestAt is ISO string");
+  pass("delivery earliestAt and latestAt are correct ISO strings");
+});
+
+// ─── Test 7: geoKey precision ─────────────────────────────────────────────────
 suite("Geographic key precision", () => {
   assert.equal(GEO_PRECISION, 3, "GEO_PRECISION should be 3 decimal places");
   // Two coordinates that round to the same 3 d.p. cell
