@@ -401,6 +401,13 @@ export async function createQRCode(
   }
 
   // Strict derivations and validations based on QR Type
+  let canonicalBrandId: string | null = null;
+  let canonicalAdvertiserId: string | null = null;
+  let canonicalCampaignId: string | null = null;
+  let canonicalProductId: string | null = null;
+
+  const scopeContext = await getQRMutationScopeContext(user);
+
   if (type === "BATCH_DELIVERY") {
     if (!batchId) return { ok: false, error: "Batch is required for Batch Delivery QR codes" };
     const batch = await prisma.batch.findUnique({
@@ -408,14 +415,25 @@ export async function createQRCode(
       select: { brandId: true, campaignId: true, productId: true, campaign: { select: { advertiserId: true } } },
     });
     if (!batch) return { ok: false, error: "Selected batch does not exist" };
-    if (brandId && brandId !== batch.brandId) return { ok: false, error: "Provided brand does not match the batch's brand" };
-    if (campaignId && campaignId !== batch.campaignId) return { ok: false, error: "Provided campaign does not match the batch's campaign" };
-    if (productId && productId !== batch.productId) return { ok: false, error: "Provided product does not match the batch's product" };
-    if (advertiserId && advertiserId !== batch.campaign.advertiserId) return { ok: false, error: "Provided advertiser does not match the batch's advertiser" };
-    brandId = batch.brandId;
-    campaignId = batch.campaignId;
-    productId = batch.productId;
-    advertiserId = batch.campaign.advertiserId;
+
+    canonicalBrandId = batch.brandId;
+    canonicalCampaignId = batch.campaignId;
+    canonicalProductId = batch.productId;
+    canonicalAdvertiserId = batch.campaign.advertiserId;
+
+    if (!canMutateQRTarget(user, { brandId: canonicalBrandId, advertiserId: canonicalAdvertiserId, campaignId: canonicalCampaignId }, scopeContext)) {
+      return qrMutationDenied(user);
+    }
+
+    if (brandId && brandId !== canonicalBrandId) return { ok: false, error: "Provided brand does not match the batch's brand" };
+    if (campaignId && campaignId !== canonicalCampaignId) return { ok: false, error: "Provided campaign does not match the batch's campaign" };
+    if (productId && productId !== canonicalProductId) return { ok: false, error: "Provided product does not match the batch's product" };
+    if (advertiserId && advertiserId !== canonicalAdvertiserId) return { ok: false, error: "Provided advertiser does not match the batch's advertiser" };
+
+    brandId = canonicalBrandId;
+    campaignId = canonicalCampaignId;
+    productId = canonicalProductId;
+    advertiserId = canonicalAdvertiserId;
   } else if (type === "CONSUMER_CAMPAIGN" || type === "INTERNAL_TEST") {
     if (!campaignId) return { ok: false, error: "Campaign is required" };
     const campaign = await prisma.campaign.findUnique({
@@ -423,12 +441,22 @@ export async function createQRCode(
       select: { brandId: true, advertiserId: true, productId: true },
     });
     if (!campaign) return { ok: false, error: "Selected campaign does not exist" };
-    if (brandId && brandId !== campaign.brandId) return { ok: false, error: "Provided brand does not match the campaign's brand" };
-    if (advertiserId && advertiserId !== campaign.advertiserId) return { ok: false, error: "Provided advertiser does not match the campaign's advertiser" };
-    if (productId && productId !== campaign.productId) return { ok: false, error: "Provided product does not match the campaign's product" };
-    brandId = campaign.brandId;
-    advertiserId = campaign.advertiserId;
-    productId = campaign.productId;
+
+    canonicalBrandId = campaign.brandId;
+    canonicalAdvertiserId = campaign.advertiserId;
+    canonicalProductId = campaign.productId;
+
+    if (!canMutateQRTarget(user, { brandId: canonicalBrandId, advertiserId: canonicalAdvertiserId, campaignId }, scopeContext)) {
+      return qrMutationDenied(user);
+    }
+
+    if (brandId && brandId !== canonicalBrandId) return { ok: false, error: "Provided brand does not match the campaign's brand" };
+    if (advertiserId && advertiserId !== canonicalAdvertiserId) return { ok: false, error: "Provided advertiser does not match the campaign's advertiser" };
+    if (productId && productId !== canonicalProductId) return { ok: false, error: "Provided product does not match the campaign's product" };
+
+    brandId = canonicalBrandId;
+    advertiserId = canonicalAdvertiserId;
+    productId = canonicalProductId;
     batchId = null;
   } else if (type === "SAMPLE_LABEL") {
     if (!productId) return { ok: false, error: "Product is required for Sample Labels" };
@@ -437,22 +465,23 @@ export async function createQRCode(
       select: { brandId: true },
     });
     if (!product) return { ok: false, error: "Selected product does not exist" };
-    if (brandId && brandId !== product.brandId) return { ok: false, error: "Provided brand does not match the product's brand" };
-    brandId = product.brandId;
+
+    canonicalBrandId = product.brandId;
+
+    if (!canMutateQRTarget(user, { brandId: canonicalBrandId, advertiserId: null, campaignId: null }, scopeContext)) {
+      return qrMutationDenied(user);
+    }
+
+    if (brandId && brandId !== canonicalBrandId) return { ok: false, error: "Provided brand does not match the product's brand" };
+
+    brandId = canonicalBrandId;
     advertiserId = null;
     campaignId = null;
     batchId = null;
-  }
-
-  const scopeContext = await getQRMutationScopeContext(user);
-  if (
-    !canMutateQRTarget(
-      user,
-      { brandId, advertiserId, campaignId },
-      scopeContext
-    )
-  ) {
-    return qrMutationDenied(user);
+  } else {
+    if (!canMutateQRTarget(user, { brandId, advertiserId, campaignId }, scopeContext)) {
+      return qrMutationDenied(user);
+    }
   }
 
   if (!destinationUrl) {
@@ -544,6 +573,11 @@ export async function updateQRCode(
   }
 
   // Strict derivations and validations based on QR Type
+  let canonicalBrandId: string | null = null;
+  let canonicalAdvertiserId: string | null = null;
+  let canonicalCampaignId: string | null = null;
+  let canonicalProductId: string | null = null;
+
   if (type === "BATCH_DELIVERY") {
     if (!batchId) return { ok: false, error: "Batch is required for Batch Delivery QR codes" };
     const batch = await prisma.batch.findUnique({
@@ -551,14 +585,25 @@ export async function updateQRCode(
       select: { brandId: true, campaignId: true, productId: true, campaign: { select: { advertiserId: true } } },
     });
     if (!batch) return { ok: false, error: "Selected batch does not exist" };
-    if (brandId && brandId !== batch.brandId) return { ok: false, error: "Provided brand does not match the batch's brand" };
-    if (campaignId && campaignId !== batch.campaignId) return { ok: false, error: "Provided campaign does not match the batch's campaign" };
-    if (productId && productId !== batch.productId) return { ok: false, error: "Provided product does not match the batch's product" };
-    if (advertiserId && advertiserId !== batch.campaign.advertiserId) return { ok: false, error: "Provided advertiser does not match the batch's advertiser" };
-    brandId = batch.brandId;
-    campaignId = batch.campaignId;
-    productId = batch.productId;
-    advertiserId = batch.campaign.advertiserId;
+
+    canonicalBrandId = batch.brandId;
+    canonicalCampaignId = batch.campaignId;
+    canonicalProductId = batch.productId;
+    canonicalAdvertiserId = batch.campaign.advertiserId;
+
+    if (!canMutateQRTarget(user, { brandId: canonicalBrandId, advertiserId: canonicalAdvertiserId, campaignId: canonicalCampaignId }, scopeContext)) {
+      return qrMutationDenied(user);
+    }
+
+    if (brandId && brandId !== canonicalBrandId) return { ok: false, error: "Provided brand does not match the batch's brand" };
+    if (campaignId && campaignId !== canonicalCampaignId) return { ok: false, error: "Provided campaign does not match the batch's campaign" };
+    if (productId && productId !== canonicalProductId) return { ok: false, error: "Provided product does not match the batch's product" };
+    if (advertiserId && advertiserId !== canonicalAdvertiserId) return { ok: false, error: "Provided advertiser does not match the batch's advertiser" };
+
+    brandId = canonicalBrandId;
+    campaignId = canonicalCampaignId;
+    productId = canonicalProductId;
+    advertiserId = canonicalAdvertiserId;
   } else if (type === "CONSUMER_CAMPAIGN" || type === "INTERNAL_TEST") {
     if (!campaignId) return { ok: false, error: "Campaign is required" };
     const campaign = await prisma.campaign.findUnique({
@@ -566,12 +611,22 @@ export async function updateQRCode(
       select: { brandId: true, advertiserId: true, productId: true },
     });
     if (!campaign) return { ok: false, error: "Selected campaign does not exist" };
-    if (brandId && brandId !== campaign.brandId) return { ok: false, error: "Provided brand does not match the campaign's brand" };
-    if (advertiserId && advertiserId !== campaign.advertiserId) return { ok: false, error: "Provided advertiser does not match the campaign's advertiser" };
-    if (productId && productId !== campaign.productId) return { ok: false, error: "Provided product does not match the campaign's product" };
-    brandId = campaign.brandId;
-    advertiserId = campaign.advertiserId;
-    productId = campaign.productId;
+
+    canonicalBrandId = campaign.brandId;
+    canonicalAdvertiserId = campaign.advertiserId;
+    canonicalProductId = campaign.productId;
+
+    if (!canMutateQRTarget(user, { brandId: canonicalBrandId, advertiserId: canonicalAdvertiserId, campaignId }, scopeContext)) {
+      return qrMutationDenied(user);
+    }
+
+    if (brandId && brandId !== canonicalBrandId) return { ok: false, error: "Provided brand does not match the campaign's brand" };
+    if (advertiserId && advertiserId !== canonicalAdvertiserId) return { ok: false, error: "Provided advertiser does not match the campaign's advertiser" };
+    if (productId && productId !== canonicalProductId) return { ok: false, error: "Provided product does not match the campaign's product" };
+
+    brandId = canonicalBrandId;
+    advertiserId = canonicalAdvertiserId;
+    productId = canonicalProductId;
     batchId = null;
   } else if (type === "SAMPLE_LABEL") {
     if (!productId) return { ok: false, error: "Product is required for Sample Labels" };
@@ -580,21 +635,23 @@ export async function updateQRCode(
       select: { brandId: true },
     });
     if (!product) return { ok: false, error: "Selected product does not exist" };
-    if (brandId && brandId !== product.brandId) return { ok: false, error: "Provided brand does not match the product's brand" };
-    brandId = product.brandId;
+
+    canonicalBrandId = product.brandId;
+
+    if (!canMutateQRTarget(user, { brandId: canonicalBrandId, advertiserId: null, campaignId: null }, scopeContext)) {
+      return qrMutationDenied(user);
+    }
+
+    if (brandId && brandId !== canonicalBrandId) return { ok: false, error: "Provided brand does not match the product's brand" };
+
+    brandId = canonicalBrandId;
     advertiserId = null;
     campaignId = null;
     batchId = null;
-  }
-
-  if (
-    !canMutateQRTarget(
-      user,
-      { brandId, advertiserId, campaignId },
-      scopeContext
-    )
-  ) {
-    return qrMutationDenied(user);
+  } else {
+    if (!canMutateQRTarget(user, { brandId, advertiserId, campaignId }, scopeContext)) {
+      return qrMutationDenied(user);
+    }
   }
 
   // Re-generate destination URL if empty

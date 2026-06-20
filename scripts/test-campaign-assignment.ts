@@ -95,160 +95,216 @@ async function main() {
     ? { id: retailUser.id, role: "RETAIL_OPERATIONS", brandId: retailUser.brandId, advertiserId: null }
     : null;
 
-  // -------------------------------------------------------
-  // Test 1: Brand Admin can assign a Campaign Manager
-  // -------------------------------------------------------
-  console.log("Test 1: Brand Admin assigns Campaign Manager");
+  const assignments = await prisma.campaignAssignment.findMany({
+    where: { userId: campaignManager.id },
+    select: { campaignId: true }
+  });
+  const assignedCampaignIds = assignments.map(a => a.campaignId);
 
-  // Clean up any existing assignment first
-  await prisma.campaignAssignment
-    .delete({ where: { campaignId_userId: { campaignId: campaign.id, userId: campaignManager.id } } })
-    .catch(() => { /* not assigned yet, that's fine */ });
-
-  const assignResult = await assignCampaignManager(campaign.id, campaignManager.id, adminUser);
-  assert("assign returns ok:true", assignResult.ok === true);
-
-  const assignedAfter = await getAssignedManagersForCampaign(campaign.id);
-  assert(
-    "Campaign Manager appears in assignment list",
-    assignedAfter.some((m) => m.id === campaignManager.id)
-  );
-
-  // -------------------------------------------------------
-  // Test 2: Duplicate assignment is safe (upsert, not error)
-  // -------------------------------------------------------
-  console.log("\nTest 2: Duplicate assignment is idempotent");
-
-  const dupResult = await assignCampaignManager(campaign.id, campaignManager.id, adminUser);
-  assert("Second assign returns ok:true (no error)", dupResult.ok === true);
-
-  const afterDup = await getAssignedManagersForCampaign(campaign.id);
-  const occurrences = afterDup.filter((m) => m.id === campaignManager.id).length;
-  assert("Campaign Manager appears exactly once", occurrences === 1);
-
-  // -------------------------------------------------------
-  // Test 3: Assigned Campaign Manager can see the campaign
-  // -------------------------------------------------------
-  console.log("\nTest 3: Assigned CM can see assigned campaign");
-
-  const cmPageData = await getCampaignsPageData(cmUser);
-  assert(
-    "Campaign appears in CM campaigns list",
-    cmPageData.campaigns.some((c) => c.id === campaign.id)
-  );
-
-  // -------------------------------------------------------
-  // Test 4: Non-assigned CM cannot see unrelated campaigns
-  // -------------------------------------------------------
-  console.log("\nTest 4: Unassigned campaigns are invisible to CM");
-
-  if (otherBrandCampaign) {
-    const hasOtherCampaign = cmPageData.campaigns.some((c) => c.id === otherBrandCampaign.id);
-    assert("Cross-brand campaign not visible to CM", !hasOtherCampaign);
-  } else {
-    console.log("  (skipped — no other-brand campaign in DB)");
+  let unassignedCampaign = await prisma.campaign.findFirst({
+    where: { id: { notIn: [...assignedCampaignIds, campaign.id] }, brandId: { not: brandAdmin.brandId } }
+  });
+  if (!unassignedCampaign) {
+    unassignedCampaign = await prisma.campaign.findFirst({
+      where: { id: { notIn: [...assignedCampaignIds, campaign.id] } }
+    });
   }
 
-  // -------------------------------------------------------
-  // Test 5: RETAIL_OPERATIONS cannot assign Campaign Managers
-  // -------------------------------------------------------
-  console.log("\nTest 5: RETAIL_OPERATIONS cannot assign");
+  const cleanups = {
+    campaigns: [] as string[],
+    assignments: [] as { campaignId: string, userId: string }[]
+  };
 
-  if (retailScopedUser) {
-    const retailAssign = await assignCampaignManager(campaign.id, campaignManager.id, retailScopedUser);
-    assert("RETAIL assign returns ok:false", retailAssign.ok === false);
-  } else {
-    console.log("  (skipped — no RETAIL_OPERATIONS user in DB)");
-  }
+  try {
+    if (!unassignedCampaign) {
+      console.log("No unassigned campaign found. Creating a temporary one.");
+      unassignedCampaign = await prisma.campaign.create({
+        data: {
+          brandId: brandAdmin.brandId,
+          advertiserId: campaign.advertiserId,
+          name: "Temp Unassigned",
+          slug: `temp-unassigned-${Date.now()}`,
+          offerTitle: "Temp",
+          rewardType: "FREE_DATA",
+          status: "ACTIVE",
+          currency: "USD",
+          maxClaimsPerMobile: 1,
+          createdById: brandAdmin.id,
+        }
+      });
+      cleanups.campaigns.push(unassignedCampaign.id);
+    }
+    const safeUnassignedCampaign = unassignedCampaign;
 
-  // -------------------------------------------------------
-  // Test 6: CAMPAIGN_MANAGER cannot assign Campaign Managers
-  // -------------------------------------------------------
-  console.log("\nTest 6: CAMPAIGN_MANAGER cannot assign");
+    // -------------------------------------------------------
+    // Test 1: Brand Admin can assign a Campaign Manager
+    // -------------------------------------------------------
+    console.log("Test 1: Brand Admin assigns Campaign Manager");
 
-  const cmAssign = await assignCampaignManager(campaign.id, campaignManager.id, cmUser);
-  assert("CAMPAIGN_MANAGER assign returns ok:false", cmAssign.ok === false);
+    // Clean up any existing assignment first to ensure Test 1 passes
+    await prisma.campaignAssignment.deleteMany({
+      where: { campaignId: campaign.id, userId: campaignManager.id }
+    });
 
-  // -------------------------------------------------------
-  // Test 7: Cross-brand assignment rejected (Brand Admin assigning CM from another brand)
-  // -------------------------------------------------------
-  console.log("\nTest 7: Cross-brand assignment rejected");
+    const assignResult = await assignCampaignManager(campaign.id, campaignManager.id, adminUser);
+    assert("assign returns ok:true", assignResult.ok === true);
 
-  if (otherBrandCM) {
-    const crossBrandResult = await assignCampaignManager(campaign.id, otherBrandCM.id, adminUser);
+    const assignedAfter = await getAssignedManagersForCampaign(campaign.id);
     assert(
-      "Assigning CM from another brand returns ok:false",
-      crossBrandResult.ok === false
+      "Campaign Manager appears in assignment list",
+      assignedAfter.some((m) => m.id === campaignManager.id)
     );
-  } else {
-    console.log("  (skipped — no other-brand CM in DB)");
-  }
 
-  // -------------------------------------------------------
-  // Test 8: Brand Admin cannot assign to another brand's campaign
-  // -------------------------------------------------------
-  console.log("\nTest 8: Brand Admin cannot mutate another brand's campaign");
+    // -------------------------------------------------------
+    // Test 2: Duplicate assignment is safe (upsert, not error)
+    // -------------------------------------------------------
+    console.log("\nTest 2: Duplicate assignment is idempotent");
 
-  if (otherBrandCampaign) {
-    const foreignCampaignAssign = await assignCampaignManager(
-      otherBrandCampaign.id,
-      campaignManager.id,
-      adminUser
-    );
+    const dupResult = await assignCampaignManager(campaign.id, campaignManager.id, adminUser);
+    assert("Second assign returns ok:true (no error)", dupResult.ok === true);
+
+    const afterDup = await getAssignedManagersForCampaign(campaign.id);
+    const occurrences = afterDup.filter((m) => m.id === campaignManager.id).length;
+    assert("Campaign Manager appears exactly once", occurrences === 1);
+
+    // -------------------------------------------------------
+    // Test 3: Assigned Campaign Manager can see the campaign
+    // -------------------------------------------------------
+    console.log("\nTest 3: Assigned CM can see assigned campaign");
+
+    const cmPageData = await getCampaignsPageData(cmUser);
     assert(
-      "Assigning to another brand's campaign returns ok:false",
-      foreignCampaignAssign.ok === false
+      "Campaign appears in CM campaigns list",
+      cmPageData.campaigns.some((c) => c.id === campaign.id)
     );
-  } else {
-    console.log("  (skipped — no other-brand campaign in DB)");
-  }
 
-  // -------------------------------------------------------
-  // Test 9: getCampaignManagersForBrand returns only same-brand CMs
-  // -------------------------------------------------------
-  console.log("\nTest 9: getCampaignManagersForBrand scoped correctly");
+    const currentAssignments = await prisma.campaignAssignment.findMany({
+      where: { userId: campaignManager.id },
+      select: { campaignId: true }
+    });
+    const currentAssignedIds = currentAssignments.map(a => a.campaignId);
+    const visibleIds = cmPageData.campaigns.map(c => c.id);
+    const allAssignedVisible = currentAssignedIds.every(id => visibleIds.includes(id));
+    assert("Every assigned campaign is visible", allAssignedVisible);
 
-  const managersForBrand = await getCampaignManagersForBrand(brandAdmin.brandId);
-  assert(
-    "All returned managers belong to brand",
-    managersForBrand.length >= 0 // query already scoped by WHERE brandId = ?
-  );
-  if (otherBrandCM) {
+    // -------------------------------------------------------
+    // Test 4: Non-assigned CM cannot see unrelated campaigns
+    // -------------------------------------------------------
+    console.log("\nTest 4: Unassigned campaigns are invisible to CM");
+
+    const hasUnassignedCampaign = cmPageData.campaigns.some((c) => c.id === safeUnassignedCampaign.id);
+    assert("Genuinely unassigned campaign not visible to CM", !hasUnassignedCampaign);
+
+    // -------------------------------------------------------
+    // Test 5: RETAIL_OPERATIONS cannot assign Campaign Managers
+    // -------------------------------------------------------
+    console.log("\nTest 5: RETAIL_OPERATIONS cannot assign");
+
+    if (retailScopedUser) {
+      const retailAssign = await assignCampaignManager(campaign.id, campaignManager.id, retailScopedUser);
+      assert("RETAIL assign returns ok:false", retailAssign.ok === false);
+    } else {
+      console.log("  (skipped — no RETAIL_OPERATIONS user in DB)");
+    }
+
+    // -------------------------------------------------------
+    // Test 6: CAMPAIGN_MANAGER cannot assign Campaign Managers
+    // -------------------------------------------------------
+    console.log("\nTest 6: CAMPAIGN_MANAGER cannot assign");
+
+    const cmAssign = await assignCampaignManager(campaign.id, campaignManager.id, cmUser);
+    assert("CAMPAIGN_MANAGER assign returns ok:false", cmAssign.ok === false);
+
+    // -------------------------------------------------------
+    // Test 7: Cross-brand assignment rejected (Brand Admin assigning CM from another brand)
+    // -------------------------------------------------------
+    console.log("\nTest 7: Cross-brand assignment rejected");
+
+    if (otherBrandCM) {
+      const crossBrandResult = await assignCampaignManager(campaign.id, otherBrandCM.id, adminUser);
+      assert(
+        "Assigning CM from another brand returns ok:false",
+        crossBrandResult.ok === false
+      );
+    } else {
+      console.log("  (skipped — no other-brand CM in DB)");
+    }
+
+    // -------------------------------------------------------
+    // Test 8: Brand Admin cannot assign to another brand's campaign
+    // -------------------------------------------------------
+    console.log("\nTest 8: Brand Admin cannot mutate another brand's campaign");
+
+    if (otherBrandCampaign) {
+      const foreignCampaignAssign = await assignCampaignManager(
+        otherBrandCampaign.id,
+        campaignManager.id,
+        adminUser
+      );
+      assert(
+        "Assigning to another brand's campaign returns ok:false",
+        foreignCampaignAssign.ok === false
+      );
+    } else {
+      console.log("  (skipped — no other-brand campaign in DB)");
+    }
+
+    // -------------------------------------------------------
+    // Test 9: getCampaignManagersForBrand returns only same-brand CMs
+    // -------------------------------------------------------
+    console.log("\nTest 9: getCampaignManagersForBrand scoped correctly");
+
+    const managersForBrand = await getCampaignManagersForBrand(brandAdmin.brandId);
     assert(
-      "Other-brand CM not returned",
-      !managersForBrand.some((m) => m.id === otherBrandCM.id)
+      "All returned managers belong to brand",
+      managersForBrand.length >= 0 // query already scoped by WHERE brandId = ?
     );
-  }
+    if (otherBrandCM) {
+      assert(
+        "Other-brand CM not returned",
+        !managersForBrand.some((m) => m.id === otherBrandCM.id)
+      );
+    }
 
-  // -------------------------------------------------------
-  // Test 10: Unassignment removes access
-  // -------------------------------------------------------
-  console.log("\nTest 10: Unassignment removes Campaign Manager");
+    // -------------------------------------------------------
+    // Test 10: Unassignment removes access
+    // -------------------------------------------------------
+    console.log("\nTest 10: Unassignment removes Campaign Manager");
 
-  const unassignResult = await unassignCampaignManager(campaign.id, campaignManager.id, adminUser);
-  assert("Unassign returns ok:true", unassignResult.ok === true);
+    const unassignResult = await unassignCampaignManager(campaign.id, campaignManager.id, adminUser);
+    assert("Unassign returns ok:true", unassignResult.ok === true);
 
-  const afterUnassign = await getAssignedManagersForCampaign(campaign.id);
-  assert(
-    "Campaign Manager no longer in assignment list",
-    !afterUnassign.some((m) => m.id === campaignManager.id)
-  );
+    const afterUnassign = await getAssignedManagersForCampaign(campaign.id);
+    assert(
+      "Campaign Manager no longer in assignment list",
+      !afterUnassign.some((m) => m.id === campaignManager.id)
+    );
 
-  const cmPageAfterUnassign = await getCampaignsPageData(cmUser);
-  assert(
-    "Campaign no longer visible to CM after unassignment",
-    !cmPageAfterUnassign.campaigns.some((c) => c.id === campaign.id)
-  );
+    const cmPageAfterUnassign = await getCampaignsPageData(cmUser);
+    assert(
+      "Campaign no longer visible to CM after unassignment",
+      !cmPageAfterUnassign.campaigns.some((c) => c.id === campaign.id)
+    );
 
-  // -------------------------------------------------------
-  // Summary
-  // -------------------------------------------------------
-  console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
+    // -------------------------------------------------------
+    // Summary
+    // -------------------------------------------------------
+    console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
 
-  await prisma.$disconnect();
+  } finally {
+    for (const assign of cleanups.assignments) {
+      await prisma.campaignAssignment.deleteMany({
+        where: { campaignId: assign.campaignId, userId: assign.userId }
+      });
+    }
+    for (const cId of cleanups.campaigns) {
+      await prisma.campaign.deleteMany({ where: { id: cId } });
+    }
+    await prisma.$disconnect();
 
-  if (failed > 0) {
-    process.exit(1);
+    if (failed > 0) {
+      process.exit(1);
+    }
   }
 }
 

@@ -439,10 +439,10 @@ async function main() {
         code: assignedQR.code,
         type: assignedQR.type,
         status: assignedQR.status,
-        brandId: assignedQR.brandId ?? undefined,
-        advertiserId: assignedQR.advertiserId ?? undefined,
+        brandId: unassignedCampaign.brandId ?? undefined,
+        advertiserId: unassignedCampaign.advertiserId ?? undefined,
         campaignId: unassignedCampaign.id, // change pointer to unassigned campaign
-        productId: assignedQR.productId ?? undefined,
+        productId: unassignedCampaign.productId ?? undefined,
         batchId: assignedQR.batchId ?? undefined,
         label: "Label",
         destinationUrl: assignedQR.destinationUrl ?? undefined,
@@ -463,6 +463,36 @@ async function main() {
         throw new Error("Security Breach: QR campaignId changed despite rejected updateQRCode call!");
       }
       console.log("✔ QR update campaign pointer swap rejected & row unchanged.");
+
+      // E.2. Update QR code with inconsistent relationship IDs on an assigned campaign (Negative)
+      const qrInconsistentInput = {
+        code: assignedQR.code,
+        type: assignedQR.type,
+        status: assignedQR.status,
+        brandId: "inconsistent-brand-id", // intentionally wrong brand for the assigned campaign
+        advertiserId: assignedQR.advertiserId ?? undefined,
+        campaignId: assignedQR.campaignId ?? undefined,
+        productId: assignedQR.productId ?? undefined,
+        batchId: assignedQR.batchId ?? undefined,
+        label: "Label",
+        destinationUrl: assignedQR.destinationUrl ?? undefined,
+      };
+      const qrInconsistentResult = await updateQRCode(assignedQR.id, qrInconsistentInput, scopedUser);
+      if (qrInconsistentResult.ok) {
+        throw new Error("Security Leak: Campaign Manager updated a QR code with inconsistent relationship IDs!");
+      }
+      if (!qrInconsistentResult.error.includes("Provided brand does not match")) {
+        throw new Error(`Test Failure: Expected 'Provided brand does not match...' but got '${qrInconsistentResult.error}'`);
+      }
+
+      // Verify no mutation
+      const postQRInconsistent = await prisma.qRCode.findUnique({
+        where: { id: assignedQR.id },
+      });
+      if (postQRInconsistent?.brandId !== originalAssignedQR.brandId) {
+        throw new Error("Security Breach: QR brandId changed despite rejected updateQRCode call!");
+      }
+      console.log("✔ QR update with inconsistent relationship IDs rejected & row unchanged.");
     }
 
     // F. Advertiser Viewer QR mutations remain denied even for visible advertiser resources
@@ -694,6 +724,7 @@ async function main() {
     const qrCodeVal = `QR_CM_TEMP_${Date.now()}`;
     const posQrCreateResult = await createQRCode({
       brandId: tempCampaign.brandId,
+      advertiserId: tempCampaign.advertiserId,
       campaignId: tempCampaign.id,
       code: qrCodeVal,
       type: "CONSUMER_CAMPAIGN",
@@ -713,6 +744,7 @@ async function main() {
       type: "CONSUMER_CAMPAIGN",
       status: "ACTIVE",
       brandId: tempCampaign.brandId,
+      advertiserId: tempCampaign.advertiserId,
       campaignId: tempCampaign.id,
       label: "Disposable CM QR Updated",
     }, scopedUser);
