@@ -5,9 +5,17 @@ import { ReportType } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, FileText, Table, Eye, Loader2, AlertCircle } from "lucide-react";
+import { FileText, Table, Eye, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+type PreviewRow = Record<string, unknown>;
+
+type PreviewResponse = {
+  data: PreviewRow[];
+  totalCount: number;
+  isTruncated: boolean;
+};
 
 export const DEFAULT_REPORT_CARDS = [
   {
@@ -58,7 +66,7 @@ export function ReportsClient({
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [previewData, setPreviewData] = useState<any[] | null>(null);
+  const [previewData, setPreviewData] = useState<PreviewRow[] | null>(null);
   const [previewType, setPreviewType] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [isTruncated, setIsTruncated] = useState<boolean>(false);
@@ -120,9 +128,13 @@ export function ReportsClient({
       document.body.removeChild(a);
 
       toast.success("Report downloaded successfully");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      toast.error(error.message || "Failed to download report");
+      toast.error(
+        error instanceof Error && error.message
+          ? error.message
+          : "Failed to download report"
+      );
     } finally {
       setIsDownloading(null);
     }
@@ -145,15 +157,19 @@ export function ReportsClient({
         throw new Error(errorText || "Failed to load preview");
       }
 
-      const result = await response.json();
+      const result = (await response.json()) as PreviewResponse;
       setPreviewData(result.data);
       setPreviewType(title);
       setTotalCount(result.totalCount);
       setIsTruncated(result.isTruncated);
       toast.success("Preview loaded successfully");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      toast.error(error.message || "Failed to load preview");
+      toast.error(
+        error instanceof Error && error.message
+          ? error.message
+          : "Failed to load preview"
+      );
     } finally {
       setIsPreviewLoading(null);
     }
@@ -353,7 +369,7 @@ export function ReportsClient({
                         key={idx}
                         className="border-b border-border/20 last:border-0 hover:bg-muted/20 transition-colors"
                       >
-                        {Object.values(row).map((val: any, colIdx) => (
+                        {Object.values(row).map((val, colIdx) => (
                           <td
                             key={colIdx}
                             className="py-3 px-4 text-muted-foreground font-sans whitespace-nowrap max-w-[200px] truncate"

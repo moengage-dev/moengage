@@ -9,7 +9,6 @@ import { useSidebar } from "@/components/ui/sidebar";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -57,7 +56,7 @@ export function UserMenu({ user }: UserMenuProps) {
   const roleLabel = getHumanReadableRole(user.role);
 
   return (
-    <TooltipProvider>
+    <>
       {isCollapsed ? (
         <div className="flex flex-col items-center gap-3 py-2 w-full">
           <Tooltip>
@@ -124,6 +123,6 @@ export function UserMenu({ user }: UserMenuProps) {
           </Button>
         </div>
       )}
-    </TooltipProvider>
+    </>
   );
 }

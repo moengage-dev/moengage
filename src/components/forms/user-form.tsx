@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type Resolver, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -82,16 +82,16 @@ export function UserForm({
     register,
     handleSubmit,
     control,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<CreateUserFormValues | UpdateUserFormValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(schema) as any,
+    resolver: zodResolver(schema) as Resolver<
+      CreateUserFormValues | UpdateUserFormValues
+    >,
     defaultValues,
   });
 
-  const selectedRole = watch("role");
+  const selectedRole = useWatch({ control, name: "role" }) ?? defaultValues.role;
   const prevRole = useRef(defaultValues.role);
 
   // Clear irrelevant association fields when role changes
@@ -114,8 +114,10 @@ export function UserForm({
   const showAdvertiser = selectedRole === "ADVERTISER_VIEWER";
 
   const onSubmit = async (values: CreateUserFormValues | UpdateUserFormValues) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (onSubmitAction as any)(values);
+    const result =
+      mode === "create"
+        ? await onSubmitAction(values as CreateUserFormValues)
+        : await onSubmitAction(values as UpdateUserFormValues);
     if (result.ok) {
       toast.success(result.message);
       onSuccess?.();

@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { createDeliveryScanAction } from "@/app/d/[code]/actions";
+import type { RetailerType } from "@/lib/validators/delivery-scan.validator";
 
 type RetailerOption = {
   id: string;
@@ -53,6 +54,15 @@ type LocationState =
   | { status: "gps"; lat: number; lng: number }
   | { status: "ip"; lat: number | null; lng: number | null }
   | { status: "unavailable" };
+
+type DeliveryScanSuccessData = {
+  cartonsDelivered: number;
+  estimatedUnits: number;
+  retailerName: string | undefined;
+  city: string | null | undefined;
+  suburb: string | null | undefined;
+  notes: string;
+};
 
 type Props = {
   qrCode: {
@@ -80,13 +90,13 @@ function locationLabel(state: LocationState): string {
 
 export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
   const [isPending, startTransition] = useTransition();
-  const [successData, setSuccessData] = useState<any | null>(null);
+  const [successData, setSuccessData] = useState<DeliveryScanSuccessData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Form states
   const [retailerSelection, setRetailerSelection] = useState<string>("_NEW_");
   const [retailerName, setRetailerName] = useState("");
-  const [retailerType, setRetailerType] = useState<string>("RETAILER");
+  const [retailerType, setRetailerType] = useState<RetailerType>("RETAILER");
   const [country, setCountry] = useState(ipLocation?.country ?? "Tanzania");
   const [region, setRegion] = useState(ipLocation?.region ?? "");
   const [city, setCity] = useState(ipLocation?.city ?? "");
@@ -186,7 +196,7 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
         batchId: qrCode.batchId!,
         retailerId: retailerSelection === "_NEW_" ? null : retailerSelection,
         retailerName: retailerSelection === "_NEW_" ? retailerName : null,
-        retailerType: retailerSelection === "_NEW_" ? (retailerType as any) : null,
+        retailerType: retailerSelection === "_NEW_" ? retailerType : null,
         country: retailerSelection === "_NEW_" ? country : null,
         region: retailerSelection === "_NEW_" ? region : null,
         city: retailerSelection === "_NEW_" ? city : null,
@@ -372,7 +382,10 @@ export function DeliveryScanForm({ qrCode, retailers, ipLocation }: Props) {
                   <Label htmlFor="retailerType" className="text-[11px] font-semibold text-muted-foreground">
                     Outlet Type
                   </Label>
-                  <Select value={retailerType} onValueChange={setRetailerType}>
+                  <Select
+                    value={retailerType}
+                    onValueChange={(value) => setRetailerType(value as RetailerType)}
+                  >
                     <SelectTrigger id="retailerType" className="text-xs">
                       <SelectValue />
                     </SelectTrigger>

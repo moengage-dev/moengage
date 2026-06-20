@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useRef, useMemo } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type Resolver, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -46,12 +46,10 @@ export function BatchForm({
     register,
     handleSubmit,
     control,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<BatchFormValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(batchSchema) as any,
+    resolver: zodResolver(batchSchema) as Resolver<BatchFormValues>,
     defaultValues: {
       brandId: initialData?.brandId ?? "",
       campaignId: initialData?.campaignId ?? "",
@@ -66,9 +64,9 @@ export function BatchForm({
     },
   });
 
-  const selectedBrandId = watch("brandId");
-  const selectedCampaignId = watch("campaignId");
-  const selectedProductId = watch("productId");
+  const selectedBrandId = useWatch({ control, name: "brandId" });
+  const selectedCampaignId = useWatch({ control, name: "campaignId" });
+  const selectedProductId = useWatch({ control, name: "productId" });
   const prevBrandId = useRef(initialData?.brandId ?? "");
   const prevCampaignId = useRef(initialData?.campaignId ?? "");
 

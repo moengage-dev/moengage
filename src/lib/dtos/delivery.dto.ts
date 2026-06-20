@@ -1,4 +1,5 @@
 // src/lib/dtos/delivery.dto.ts
+import type { Prisma } from "@prisma/client";
 
 export type CampaignDTO = {
   id: string;
@@ -70,17 +71,91 @@ export type CampaignOptionDTO = {
   productId: string | null;
 };
 
-function convertDecimal(val: any): number | null {
+type DecimalLike =
+  | Prisma.Decimal
+  | number
+  | string
+  | null
+  | undefined;
+
+type RetailerDTOInput = {
+  id: string;
+  name: string;
+  brandId: string | null;
+  type: string | null;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  suburb: string | null;
+  latitude: DecimalLike;
+  longitude: DecimalLike;
+};
+
+type CampaignDTOInput = {
+  id: string;
+  name: string;
+  brandId: string;
+  advertiserId: string;
+  fixedFeePerUnit: DecimalLike;
+  engagementFeePerScan: DecimalLike;
+  currency: string;
+  startDate: Date | string | null;
+  endDate: Date | string | null;
+};
+
+type DeliveryScanDTOInput = {
+  id: string;
+  qrCodeId: string;
+  brandId: string | null;
+  campaignId: string | null;
+  batchId: string | null;
+  retailerId: string | null;
+  scannedByUserId: string | null;
+  cartonsDelivered: number;
+  unitsPerCarton: number;
+  estimatedUnitsDelivered: number;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  suburb: string | null;
+  latitude: DecimalLike;
+  longitude: DecimalLike;
+  locationSource: string;
+  notes: string | null;
+  createdAt: Date | string;
+  brand?: { id: string; name: string } | null;
+  retailer?: RetailerDTOInput | null;
+  campaign?: CampaignDTOInput | null;
+  batch?: { id: string; batchCode: string } | null;
+  qrCode?: {
+    id: string;
+    code: string;
+    product?: { id: string; name: string } | null;
+  } | null;
+};
+
+type RetailerOptionDTOInput = {
+  id: string;
+  name: string;
+  brandId: string | null;
+};
+
+type CampaignOptionDTOInput = {
+  id: string;
+  name: string;
+  brandId: string;
+  advertiserId: string;
+  productId?: string | null;
+};
+
+function convertDecimal(val: DecimalLike): number | null {
   if (val === null || val === undefined) return null;
   if (typeof val === "number") return val;
   if (typeof val === "string") return Number(val);
-  if (typeof val === "object" && typeof val.toNumber === "function") {
-    return val.toNumber();
-  }
-  return Number(val);
+  return val.toNumber();
 }
 
-export function toDeliveryScanDTO(scan: any): DeliveryScanDTO {
+export function toDeliveryScanDTO(scan: DeliveryScanDTOInput): DeliveryScanDTO {
   return {
     id: scan.id,
     qrCodeId: scan.qrCodeId,
@@ -113,7 +188,7 @@ export function toDeliveryScanDTO(scan: any): DeliveryScanDTO {
   };
 }
 
-export function toRetailerDTO(retailer: any): RetailerDTO {
+export function toRetailerDTO(retailer: RetailerDTOInput): RetailerDTO {
   return {
     id: retailer.id,
     name: retailer.name,
@@ -128,7 +203,7 @@ export function toRetailerDTO(retailer: any): RetailerDTO {
   };
 }
 
-export function toCampaignDTO(campaign: any): CampaignDTO {
+export function toCampaignDTO(campaign: CampaignDTOInput): CampaignDTO {
   return {
     id: campaign.id,
     name: campaign.name,
@@ -142,7 +217,7 @@ export function toCampaignDTO(campaign: any): CampaignDTO {
   };
 }
 
-export function toRetailerOptionDTO(retailer: any): RetailerOptionDTO {
+export function toRetailerOptionDTO(retailer: RetailerOptionDTOInput): RetailerOptionDTO {
   return {
     id: retailer.id,
     name: retailer.name,
@@ -150,7 +225,7 @@ export function toRetailerOptionDTO(retailer: any): RetailerOptionDTO {
   };
 }
 
-export function toCampaignOptionDTO(campaign: any): CampaignOptionDTO {
+export function toCampaignOptionDTO(campaign: CampaignOptionDTOInput): CampaignOptionDTO {
   return {
     id: campaign.id,
     name: campaign.name,

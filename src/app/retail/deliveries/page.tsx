@@ -7,7 +7,9 @@ import { getRetailDeliveriesPageData } from "@/server/services/delivery-scan.ser
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate, formatNumber } from "@/lib/format";
-import { Truck, Layers, Archive, Calendar, MapPin, ArrowLeft } from "lucide-react";
+import { Truck, Layers, Archive, Calendar, MapPin, ArrowLeft, Info } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { DELIVERY_LIST_LIMIT } from "@/server/services/delivery-scan.service";
 import Link from "next/link";
 import { DashboardSectionHeader } from "@/components/dashboard/dashboard-section-header";
 
@@ -25,6 +27,7 @@ export default async function RetailDeliveriesPage() {
     totalDeliveryScans,
     totalCartonsDelivered,
     totalEstimatedUnitsDelivered,
+    isTruncated,
   } = await getRetailDeliveriesPageData(user);
 
   return (
@@ -71,6 +74,16 @@ export default async function RetailDeliveriesPage() {
           <p className="text-[10px] text-muted-foreground font-medium">units in circulation</p>
         </div>
       </div>
+
+      {isTruncated && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertTitle>Showing most recent {DELIVERY_LIST_LIMIT} records</AlertTitle>
+          <AlertDescription>
+            Your full history has {formatNumber(totalDeliveryScans)} delivery scans. Only the most recent {formatNumber(DELIVERY_LIST_LIMIT)} are shown here.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* History Table */}
       <div className="bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
@@ -122,7 +135,7 @@ export default async function RetailDeliveriesPage() {
                         {scan.campaign?.name ?? "—"}
                       </td>
                       <td className="py-3.5 px-4 max-w-[120px] truncate text-foreground">
-                        {(scan as any).qrCode?.product?.name ?? "—"}
+                        {scan.qrCode?.product?.name ?? "—"}
                       </td>
                       <td className="py-3.5 px-4 font-mono text-[10px] text-muted-foreground whitespace-nowrap">
                         {scan.batch?.batchCode ?? "—"}

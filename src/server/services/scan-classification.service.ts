@@ -23,6 +23,19 @@ export type ClassificationResult = {
   ipHash: string | null;
 };
 
+function metadataMarksScanSafe(metadata: unknown): boolean {
+  if (typeof metadata !== "object" || metadata === null || Array.isArray(metadata)) {
+    return false;
+  }
+  const after = (metadata as { after?: unknown }).after;
+  return (
+    typeof after === "object" &&
+    after !== null &&
+    !Array.isArray(after) &&
+    (after as { isSuspicious?: unknown }).isSuspicious === false
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Public entry point — no transaction client (backward-compatible, used by
 // any caller that does NOT need serialised classification).
@@ -204,14 +217,11 @@ export async function getSuspiciousScansPageData(filters: SuspiciousScansFilter 
   }
 
   const markedSafeEventIds = Array.from(latestOverrideByEventId.entries())
-    .filter(([_, log]) => {
-      const metadata = log.metadata as any;
-      return metadata?.after?.isSuspicious === false;
-    })
+    .filter(([, log]) => metadataMarksScanSafe(log.metadata))
     .map(([id]) => id);
 
   const reviewState = filters.reviewState || "FLAGGED";
-  let stateWhereClause: any = {};
+  let stateWhereClause: Prisma.ScanEventWhereInput = {};
 
   if (reviewState === "FLAGGED") {
     stateWhereClause = {
@@ -238,7 +248,7 @@ export async function getSuspiciousScansPageData(filters: SuspiciousScansFilter 
     };
   }
 
-  const whereClause: any = { ...stateWhereClause };
+  const whereClause: Prisma.ScanEventWhereInput = { ...stateWhereClause };
 
   // Filter by brand
   if (filters.brandId) {
@@ -259,7 +269,7 @@ export async function getSuspiciousScansPageData(filters: SuspiciousScansFilter 
     };
   }
   // Filter by date range
-  const dateFilter: any = {};
+  const dateFilter: Prisma.DateTimeFilter<"ScanEvent"> = {};
   if (filters.startDate) {
     dateFilter.gte = new Date(filters.startDate);
   }
@@ -345,7 +355,7 @@ export async function getSuspiciousScansPageData(filters: SuspiciousScansFilter 
           action: latestLog.action,
           user: latestLog.user ? latestLog.user.name || latestLog.user.email : "Unknown Admin",
           timestamp: latestLog.createdAt,
-          wasMarkedSafe: (latestLog.metadata as any)?.after?.isSuspicious === false,
+          wasMarkedSafe: metadataMarksScanSafe(latestLog.metadata),
         } : null,
       };
     }),

@@ -11,7 +11,6 @@ import {
   Navigation,
   Building2,
 } from "lucide-react";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +39,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { createRetailerAction, updateRetailerAction } from "./actions";
@@ -267,7 +265,6 @@ export function RetailersClient({
                     {formatDate(r.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
@@ -282,7 +279,6 @@ export function RetailersClient({
                         </TooltipTrigger>
                         <TooltipContent side="top">Edit retailer</TooltipContent>
                       </Tooltip>
-                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))

@@ -11,8 +11,11 @@ import {
   getBillingSummaryData,
   getSuspiciousScansData,
 } from "@/server/services/reports.service";
+import type { ReportParams } from "@/server/services/reports.service";
 import { generateCSV, generatePDF } from "@/lib/report-generator";
 import { formatCurrency, formatDateTime } from "@/lib/format";
+import prisma from "@/lib/prisma";
+import { ReportType } from "@prisma/client";
 
 export async function GET(request: Request) {
   try {
@@ -54,7 +57,7 @@ export async function GET(request: Request) {
       return new NextResponse(errorMsg, { status: 400 });
     }
 
-    const filters: any = { ...parseResult.data, ...scope };
+    const filters: ReportParams = { ...parseResult.data, ...scope };
 
     // Additional Role constraints on Report Types
     if (user.role === "ADVERTISER_VIEWER" && filters.type === "SUSPICIOUS_SCANS_CSV") {
@@ -468,13 +471,55 @@ export async function GET(request: Request) {
         return new NextResponse("Unsupported report type", { status: 400 });
     }
 
+    // Audit: record successful report downloads (not previews — already returned above)
+    const auditFileUrl = `generated:${filters.type}:${Date.now()}`;
+    // brandId/advertiserId/campaignId can be Prisma filter objects; only extract plain strings
+    const auditBrandId = typeof filters.brandId === "string" ? filters.brandId : null;
+    const auditAdvertiserId = typeof filters.advertiserId === "string" ? filters.advertiserId : null;
+    const auditCampaignId = typeof filters.campaignId === "string" ? filters.campaignId : null;
+
+    if (filters.type === "SUSPICIOUS_SCANS_CSV") {
+      // SUSPICIOUS_SCANS_CSV is not in the ReportType enum; use AuditLog instead
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: "REPORT_DOWNLOAD",
+          entityType: "SUSPICIOUS_SCANS_CSV",
+          metadata: {
+            mimeType: contentType,
+            fileName: filename,
+            brandId: auditBrandId,
+            advertiserId: auditAdvertiserId,
+            campaignId: auditCampaignId,
+            fileUrl: auditFileUrl,
+          },
+        },
+      });
+    } else {
+      const reportTypeValue = filters.type as ReportType;
+      await prisma.reportExport.create({
+        data: {
+          type: reportTypeValue,
+          generatedById: user.id,
+          brandId: auditBrandId,
+          advertiserId: auditAdvertiserId,
+          campaignId: auditCampaignId,
+          fileName: filename,
+          mimeType: contentType,
+          fileUrl: auditFileUrl,
+        },
+      });
+    }
+
     const headers = new Headers();
     headers.set("Content-Type", contentType);
     headers.set("Content-Disposition", `attachment; filename="${filename}"`);
     headers.set("Cache-Control", "no-store");
     headers.set("X-Content-Type-Options", "nosniff");
 
-    return new NextResponse(fileBuffer as any, { headers });
+    const body =
+      typeof fileBuffer === "string" ? fileBuffer : new Uint8Array(fileBuffer);
+    return new NextResponse(body, { headers });
   } catch (error) {
     console.error("[REPORTS_GET]", error);
     return new NextResponse("Internal error", { status: 500 });

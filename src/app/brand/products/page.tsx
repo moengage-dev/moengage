@@ -1,34 +1,57 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Clock } from "lucide-react";
+import { redirect } from "next/navigation";
+import { requireRole } from "@/lib/auth/require-role";
+import { getProductsPageData } from "@/server/services/products.service";
+import { formatNumber } from "@/lib/format";
+import { ProductsClient } from "@/app/admin/products/products-client";
+import { DashboardSectionHeader } from "@/components/dashboard/dashboard-section-header";
+import {
+  createProductAction,
+  updateProductAction,
+  archiveProductAction,
+} from "./actions";
 
-export default function Page() {
+export const dynamic = "force-dynamic";
+
+export default async function BrandProductsPage() {
+  const user = await requireRole(["BRAND_ADMIN"]);
+
+  if (!user.brandId) {
+    redirect("/brand");
+  }
+
+  const { products, brands, totalProducts, activeProducts } =
+    await getProductsPageData(user);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Product Catalog</h1>
-          <p className="text-muted-foreground">Manage brand products, categories, units, and manufacturing SKUs.</p>
+      <DashboardSectionHeader
+        title="Products"
+        description="Brand-scoped product catalog. Only products belonging to your brand are shown."
+        badgeText="Brand Admin"
+        badgeVariant="emerald"
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-primary">
+          <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Total Products</span>
+          <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(totalProducts)}</div>
         </div>
-        <Badge variant="secondary" className="w-fit">
-          Coming soon
-        </Badge>
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-2 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-teal">
+          <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Active Products</span>
+          <div className="text-2xl font-extrabold text-foreground tracking-tight">{formatNumber(activeProducts)}</div>
+        </div>
       </div>
 
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <Clock className="h-6 w-6" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-base font-semibold">This module is coming soon</p>
-            <p className="max-w-md text-sm text-muted-foreground">
-              A brand-scoped product catalog will appear here. For live metrics, use your dashboard overview.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <ProductsClient
+        products={products}
+        brands={brands}
+        actions={{
+          create: createProductAction,
+          update: updateProductAction,
+          archive: archiveProductAction,
+        }}
+      />
     </div>
   );
 }

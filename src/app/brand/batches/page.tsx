@@ -1,34 +1,59 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Clock } from "lucide-react";
+import { redirect } from "next/navigation";
+import { requireRole } from "@/lib/auth/require-role";
+import { getBatchesPageData } from "@/server/services/batches.service";
+import { BatchesClient } from "@/app/admin/batches/batches-client";
+import { DashboardSectionHeader } from "@/components/dashboard/dashboard-section-header";
+import {
+  createBatchAction,
+  updateBatchAction,
+  closeBatchAction,
+} from "./actions";
 
-export default function Page() {
+export const dynamic = "force-dynamic";
+
+export default async function BrandBatchesPage() {
+  const user = await requireRole(["BRAND_ADMIN"]);
+
+  if (!user.brandId) {
+    redirect("/brand");
+  }
+
+  const {
+    batches,
+    brands,
+    campaigns,
+    products,
+    totalBatches,
+    activeBatches,
+    deliveringBatches,
+    closedBatches,
+  } = await getBatchesPageData(user);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Batch Management</h1>
-          <p className="text-muted-foreground">Define and assign manufacturing batches and QR labels.</p>
-        </div>
-        <Badge variant="secondary" className="w-fit">
-          Coming soon
-        </Badge>
-      </div>
+      <DashboardSectionHeader
+        title="Batches"
+        description="Brand-scoped batch management. Create and track manufacturing batches for your campaigns."
+        badgeText="Brand Admin"
+        badgeVariant="emerald"
+      />
 
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <Clock className="h-6 w-6" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-base font-semibold">This module is coming soon</p>
-            <p className="max-w-md text-sm text-muted-foreground">
-              A brand-scoped batch view will appear here. For live metrics, use your dashboard overview.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <BatchesClient
+        batches={batches}
+        brands={brands}
+        campaigns={campaigns}
+        products={products}
+        totalBatches={totalBatches}
+        activeBatches={activeBatches}
+        deliveringBatches={deliveringBatches}
+        closedBatches={closedBatches}
+        actions={{
+          create: createBatchAction,
+          update: updateBatchAction,
+          close: closeBatchAction,
+        }}
+      />
     </div>
   );
 }

@@ -43,7 +43,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ProductForm } from "@/components/forms/product-form";
@@ -51,17 +50,28 @@ import {
   createProductAction,
   updateProductAction,
   archiveProductAction,
+  type ActionResult,
 } from "@/app/admin/products/actions";
 import type { ProductRow, BrandOption } from "@/server/services/products.service";
 import type { ProductFormValues } from "@/lib/validators/product.validator";
 import { formatDate, formatStatusLabel } from "@/lib/format";
 
+type ProductsClientActions = {
+  create: (values: ProductFormValues) => Promise<ActionResult>;
+  update: (id: string, values: ProductFormValues) => Promise<ActionResult>;
+  archive: (id: string) => Promise<ActionResult>;
+};
+
 type Props = {
   products: ProductRow[];
   brands: BrandOption[];
+  actions?: ProductsClientActions;
 };
 
-export function ProductsClient({ products, brands }: Props) {
+export function ProductsClient({ products, brands, actions }: Props) {
+  const create = actions?.create ?? createProductAction;
+  const update = actions?.update ?? updateProductAction;
+  const archive = actions?.archive ?? archiveProductAction;
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductRow | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
@@ -98,7 +108,7 @@ export function ProductsClient({ products, brands }: Props) {
   }
 
   async function handleArchive(product: ProductRow) {
-    const result = await archiveProductAction(product.id);
+    const result = await archive(product.id);
     if (result.ok) {
       toast.success(result.message);
     } else {
@@ -109,8 +119,8 @@ export function ProductsClient({ products, brands }: Props) {
   function makeSubmitAction(product?: ProductRow) {
     return (values: ProductFormValues) =>
       product
-        ? updateProductAction(product.id, values)
-        : createProductAction(values);
+        ? update(product.id, values)
+        : create(values);
   }
 
   const hasActiveFilters = searchQuery !== "" || statusFilter !== "ALL";
@@ -211,7 +221,6 @@ export function ProductsClient({ products, brands }: Props) {
                     {formatDate(product.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <TooltipProvider>
                       <div className="flex justify-end gap-1">
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -266,7 +275,6 @@ export function ProductsClient({ products, brands }: Props) {
                           </AlertDialog>
                         )}
                       </div>
-                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))

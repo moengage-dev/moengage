@@ -1,4 +1,4 @@
-export async function fetchJson<T = any>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
+export async function fetchJson<T = unknown>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
   const response = await fetch(input, init);
   if (!response.ok) {
     throw new Error(`Error: ${response.status}`);
@@ -6,12 +6,13 @@ export async function fetchJson<T = any>(input: RequestInfo | URL, init?: Reques
   return response.json();
 }
 
-export function getErrorMessage(error: any, fallback: string): string {
+export function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error) return error.message;
   return fallback;
 }
 
 export async function deleteUploadedAsset(url: string) {
+  void url;
   // stub
 }
 

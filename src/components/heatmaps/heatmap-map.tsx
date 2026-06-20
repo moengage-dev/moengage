@@ -166,7 +166,7 @@ export function HeatmapMap({ locationMarkers }: HeatmapMapProps) {
               key={loc.groupKey}
               latitude={loc.latitude}
               longitude={loc.longitude}
-              onClick={(e: any) => {
+              onClick={(e: { originalEvent: { stopPropagation: () => void } }) => {
                 e.originalEvent.stopPropagation();
                 openPopup(loc);
               }}

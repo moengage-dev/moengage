@@ -43,7 +43,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { QRCodeForm } from "@/components/forms/qr-code-form";
@@ -51,6 +50,7 @@ import {
   createQRCodeAction,
   updateQRCodeAction,
   disableQRCodeAction,
+  type ActionResult,
 } from "@/app/admin/qr-codes/actions";
 import type {
   QRCodeRow,
@@ -60,7 +60,14 @@ import type {
   ProductOption,
   BatchOption,
 } from "@/server/services/qr-codes.service";
+import type { QRCodeFormValues } from "@/lib/validators/qr-code.validator";
 import { formatDate, formatStatusLabel, formatNumber } from "@/lib/format";
+
+type QRCodesClientActions = {
+  create: (values: QRCodeFormValues) => Promise<ActionResult>;
+  update: (id: string, values: QRCodeFormValues) => Promise<ActionResult>;
+  disable: (id: string) => Promise<ActionResult>;
+};
 
 type Props = {
   qrCodes: QRCodeRow[];
@@ -75,6 +82,7 @@ type Props = {
   deliveryQRCodes: number;
   sampleLabelQRCodes: number;
   internalTestQRCodes: number;
+  actions?: QRCodesClientActions;
 };
 
 function statusVariant(
@@ -108,7 +116,11 @@ export function QRCodesClient({
   deliveryQRCodes,
   sampleLabelQRCodes,
   internalTestQRCodes,
+  actions,
 }: Props) {
+  const create = actions?.create ?? createQRCodeAction;
+  const update = actions?.update ?? updateQRCodeAction;
+  const disable = actions?.disable ?? disableQRCodeAction;
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingQR, setEditingQR] = useState<QRCodeRow | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
@@ -147,7 +159,7 @@ export function QRCodesClient({
   }
 
   async function handleDisable(qr: QRCodeRow) {
-    const result = await disableQRCodeAction(qr.id);
+    const result = await disable(qr.id);
     if (result.ok) {
       toast.success(result.message);
     } else {
@@ -295,7 +307,6 @@ export function QRCodesClient({
                   </TableCell>
                   <TableCell className="text-muted-foreground">{formatDate(qr.createdAt)}</TableCell>
                   <TableCell className="text-right">
-                    <TooltipProvider>
                       <div className="flex justify-end gap-1">
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -373,7 +384,6 @@ export function QRCodesClient({
                           </AlertDialog>
                         )}
                       </div>
-                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))
@@ -402,7 +412,7 @@ export function QRCodesClient({
               campaigns={campaigns}
               products={products}
               batches={batches}
-              onSubmitAction={(values) => updateQRCodeAction(editingQR.id, values)}
+              onSubmitAction={(values) => update(editingQR.id, values)}
               onSuccess={handleSheetSuccess}
             />
           ) : (
@@ -414,7 +424,7 @@ export function QRCodesClient({
               campaigns={campaigns}
               products={products}
               batches={batches}
-              onSubmitAction={createQRCodeAction}
+              onSubmitAction={(values) => create(values)}
               onSuccess={handleSheetSuccess}
             />
           )}

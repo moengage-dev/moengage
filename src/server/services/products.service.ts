@@ -1,5 +1,6 @@
 // src/server/services/products.service.ts
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { productSchema } from "@/lib/validators/product.validator";
 import type { ProductFormValues } from "@/lib/validators/product.validator";
 
@@ -45,16 +46,16 @@ export type ServiceResult<T = void> =
   | { ok: false; error: string };
 
 export async function getProductsPageData(user: ScopedUser): Promise<AdminProductsPageData> {
-  const productFilter: any = {};
+  const productFilter: Prisma.ProductWhereInput = {};
   if (user.role === "BRAND_ADMIN") {
-    productFilter.brandId = user.brandId;
+    productFilter.brandId = user.brandId ?? "__NONE__";
   } else if (user.role !== "ADMIN") {
     productFilter.id = "none";
   }
 
-  const brandFilter: any = { status: "ACTIVE" };
+  const brandFilter: Prisma.BrandWhereInput = { status: "ACTIVE" };
   if (user.role === "BRAND_ADMIN") {
-    brandFilter.id = user.brandId;
+    brandFilter.id = user.brandId ?? "__NONE__";
   }
 
   const [products, brands, totalProducts, activeProducts] = await Promise.all([

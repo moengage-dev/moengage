@@ -43,7 +43,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { AdvertiserForm } from "@/components/forms/advertiser-form";
@@ -222,7 +221,6 @@ export function AdvertisersClient({ advertisers, unassignedUsers }: Props) {
                     {formatDate(adv.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <TooltipProvider>
                       <div className="flex justify-end gap-1">
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -277,7 +275,6 @@ export function AdvertisersClient({ advertisers, unassignedUsers }: Props) {
                           </AlertDialog>
                         )}
                       </div>
-                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))

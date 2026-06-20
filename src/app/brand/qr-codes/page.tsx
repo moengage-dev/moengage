@@ -1,34 +1,67 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Clock } from "lucide-react";
+import { redirect } from "next/navigation";
+import { requireRole } from "@/lib/auth/require-role";
+import { getQRCodesPageData } from "@/server/services/qr-codes.service";
+import { QRCodesClient } from "@/app/admin/qr-codes/qr-codes-client";
+import { DashboardSectionHeader } from "@/components/dashboard/dashboard-section-header";
+import {
+  createQRCodeAction,
+  updateQRCodeAction,
+  disableQRCodeAction,
+} from "./actions";
 
-export default function Page() {
+export const dynamic = "force-dynamic";
+
+export default async function BrandQRCodesPage() {
+  const user = await requireRole(["BRAND_ADMIN"]);
+
+  if (!user.brandId) {
+    redirect("/brand");
+  }
+
+  const {
+    qrCodes,
+    brands,
+    advertisers,
+    campaigns,
+    products,
+    batches,
+    totalQRCodes,
+    activeQRCodes,
+    consumerCampaignQRCodes,
+    deliveryQRCodes,
+    sampleLabelQRCodes,
+    internalTestQRCodes,
+  } = await getQRCodesPageData(user);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">QR Codes</h1>
-          <p className="text-muted-foreground">View, edit, and export consumer QR codes for product labeling.</p>
-        </div>
-        <Badge variant="secondary" className="w-fit">
-          Coming soon
-        </Badge>
-      </div>
+      <DashboardSectionHeader
+        title="QR Codes"
+        description="Brand-scoped QR code management. View, edit, and export QR codes for your brand."
+        badgeText="Brand Admin"
+        badgeVariant="emerald"
+      />
 
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <Clock className="h-6 w-6" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-base font-semibold">This module is coming soon</p>
-            <p className="max-w-md text-sm text-muted-foreground">
-              A brand-scoped QR code view will appear here. For live scan metrics, use your dashboard overview.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <QRCodesClient
+        qrCodes={qrCodes}
+        brands={brands}
+        advertisers={advertisers}
+        campaigns={campaigns}
+        products={products}
+        batches={batches}
+        totalQRCodes={totalQRCodes}
+        activeQRCodes={activeQRCodes}
+        consumerCampaignQRCodes={consumerCampaignQRCodes}
+        deliveryQRCodes={deliveryQRCodes}
+        sampleLabelQRCodes={sampleLabelQRCodes}
+        internalTestQRCodes={internalTestQRCodes}
+        actions={{
+          create: createQRCodeAction,
+          update: updateQRCodeAction,
+          disable: disableQRCodeAction,
+        }}
+      />
     </div>
   );
 }

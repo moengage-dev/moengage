@@ -16,15 +16,6 @@ const optionalString = z.preprocess(
   z.string().nullable().optional()
 );
 
-const optionalDecimal = z.preprocess(
-  (v) => {
-    if (v == null || v === "") return null;
-    const n = Number(v);
-    return Number.isNaN(n) ? v : n;
-  },
-  z.number().nullable().optional()
-);
-
 const requiredDecimal = z.preprocess(
   (v) => {
     if (v == null || v === "") return undefined;

@@ -329,6 +329,31 @@ async function main() {
     // --- QR Code Tests ---
     console.log("\n--- Testing QR Code Scoping (Negative) ---");
 
+    // A. Create QR code for unassigned campaign
+    const unauthorizedQrCode = `QR_CM_UNASSIGNED_${Date.now()}`;
+    const qrCreateCountBefore = await prisma.qRCode.count();
+    const qrCreateResult = await createQRCode({
+      brandId: unassignedCampaign.brandId,
+      advertiserId: unassignedCampaign.advertiserId,
+      campaignId: unassignedCampaign.id,
+      productId: unassignedCampaign.productId ?? undefined,
+      code: unauthorizedQrCode,
+      type: "CONSUMER_CAMPAIGN",
+      status: "ACTIVE",
+      label: "Unauthorized QR Create Attempt",
+    }, scopedUser);
+    if (qrCreateResult.ok) {
+      throw new Error("Security Leak: Campaign Manager created a QR code for an unassigned campaign!");
+    }
+    if (qrCreateResult.error !== "QR Code not found") {
+      throw new Error(`Test Failure: Expected 'QR Code not found' for unassigned QR create, but got '${qrCreateResult.error}'`);
+    }
+    const qrCreateCountAfter = await prisma.qRCode.count();
+    if (qrCreateCountBefore !== qrCreateCountAfter) {
+      throw new Error("Security Breach: QR row was created despite rejected createQRCode call!");
+    }
+    console.log("✔ QR creation on unassigned campaign rejected & row count unchanged.");
+
     // Find a QR code for unassigned campaign
     const unassignedQR = await prisma.qRCode.findFirst({
       where: { campaignId: { notIn: assignedCampaignIds } },
@@ -353,7 +378,7 @@ async function main() {
         destinationUrl: unassignedQR.destinationUrl ?? undefined,
       };
 
-      // A. Update QR code on unassigned campaign
+      // B. Update QR code on unassigned campaign
       const qrUpdateResult = await updateQRCode(unassignedQR.id, qrUpdateInput, scopedUser);
       if (qrUpdateResult.ok) {
         throw new Error("Security Leak: Campaign Manager updated a QR code belonging to an unassigned campaign!");
@@ -371,7 +396,7 @@ async function main() {
       }
       console.log("✔ QR update on unassigned campaign rejected & row unchanged.");
 
-      // B. Disable QR code on unassigned campaign
+      // C. Disable QR code on unassigned campaign
       const qrDisableResult = await disableQRCode(unassignedQR.id, scopedUser);
       if (qrDisableResult.ok) {
         throw new Error("Security Leak: Campaign Manager disabled a QR code belonging to an unassigned campaign!");
@@ -389,7 +414,7 @@ async function main() {
       }
       console.log("✔ QR disable on unassigned campaign rejected & row unchanged.");
 
-      // C. Download QR code image on unassigned campaign
+      // D. Download QR code image on unassigned campaign
       const qrDownloadResult = await generateQRCodeDownloadData(unassignedQR.id, "png", scopedUser);
       if (qrDownloadResult.ok) {
         throw new Error("Security Leak: Campaign Manager downloaded QR code belonging to an unassigned campaign!");
@@ -400,7 +425,7 @@ async function main() {
       console.log("✔ QR download on unassigned campaign rejected.");
     }
 
-    // D. Update QR code to target Unassigned Campaign (Negative)
+    // E. Update QR code to target Unassigned Campaign (Negative)
     const assignedQR = await prisma.qRCode.findFirst({
       where: { campaignId: { in: assignedCampaignIds } },
     });
@@ -414,10 +439,10 @@ async function main() {
         code: assignedQR.code,
         type: assignedQR.type,
         status: assignedQR.status,
-        brandId: assignedQR.brandId ?? undefined,
-        advertiserId: assignedQR.advertiserId ?? undefined,
+        brandId: unassignedCampaign.brandId ?? undefined,
+        advertiserId: unassignedCampaign.advertiserId ?? undefined,
         campaignId: unassignedCampaign.id, // change pointer to unassigned campaign
-        productId: assignedQR.productId ?? undefined,
+        productId: unassignedCampaign.productId ?? undefined,
         batchId: assignedQR.batchId ?? undefined,
         label: "Label",
         destinationUrl: assignedQR.destinationUrl ?? undefined,
@@ -426,8 +451,8 @@ async function main() {
       if (qrHackedCampResult.ok) {
         throw new Error("Security Leak: Campaign Manager updated an assigned QR code to point to an unassigned campaign!");
       }
-      if (qrHackedCampResult.error !== "Unauthorized: Campaign Managers can only assign QR codes to assigned campaigns") {
-        throw new Error(`Test Failure: Expected 'Unauthorized: Campaign Managers can only assign QR codes to assigned campaigns' but got '${qrHackedCampResult.error}'`);
+      if (qrHackedCampResult.error !== "QR Code not found") {
+        throw new Error(`Test Failure: Expected 'QR Code not found' but got '${qrHackedCampResult.error}'`);
       }
 
       // Verify no mutation
@@ -438,6 +463,148 @@ async function main() {
         throw new Error("Security Breach: QR campaignId changed despite rejected updateQRCode call!");
       }
       console.log("✔ QR update campaign pointer swap rejected & row unchanged.");
+
+      // E.2. Update QR code with inconsistent relationship IDs on an assigned campaign (Negative)
+      const qrInconsistentInput = {
+        code: assignedQR.code,
+        type: assignedQR.type,
+        status: assignedQR.status,
+        brandId: "inconsistent-brand-id", // intentionally wrong brand for the assigned campaign
+        advertiserId: assignedQR.advertiserId ?? undefined,
+        campaignId: assignedQR.campaignId ?? undefined,
+        productId: assignedQR.productId ?? undefined,
+        batchId: assignedQR.batchId ?? undefined,
+        label: "Label",
+        destinationUrl: assignedQR.destinationUrl ?? undefined,
+      };
+      const qrInconsistentResult = await updateQRCode(assignedQR.id, qrInconsistentInput, scopedUser);
+      if (qrInconsistentResult.ok) {
+        throw new Error("Security Leak: Campaign Manager updated a QR code with inconsistent relationship IDs!");
+      }
+      if (!qrInconsistentResult.error.includes("Provided brand does not match")) {
+        throw new Error(`Test Failure: Expected 'Provided brand does not match...' but got '${qrInconsistentResult.error}'`);
+      }
+
+      // Verify no mutation
+      const postQRInconsistent = await prisma.qRCode.findUnique({
+        where: { id: assignedQR.id },
+      });
+      if (postQRInconsistent?.brandId !== originalAssignedQR.brandId) {
+        throw new Error("Security Breach: QR brandId changed despite rejected updateQRCode call!");
+      }
+      console.log("✔ QR update with inconsistent relationship IDs rejected & row unchanged.");
+    }
+
+    // F. Advertiser Viewer QR mutations remain denied even for visible advertiser resources
+    const advertiserViewerUser = await prisma.user.findFirst({
+      where: { role: "ADVERTISER_VIEWER" },
+    });
+    if (advertiserViewerUser) {
+      const advertiserScopedUser = {
+        id: advertiserViewerUser.id,
+        role: advertiserViewerUser.role,
+        brandId: advertiserViewerUser.brandId,
+        advertiserId: advertiserViewerUser.advertiserId,
+      };
+      const advertiserQrCode = `QR_ADV_DENIED_${Date.now()}`;
+      const advertiserQrCountBefore = await prisma.qRCode.count();
+      const advertiserCreateResult = await createQRCode({
+        brandId: unassignedCampaign.brandId,
+        advertiserId: unassignedCampaign.advertiserId,
+        campaignId: unassignedCampaign.id,
+        productId: unassignedCampaign.productId ?? undefined,
+        code: advertiserQrCode,
+        type: "CONSUMER_CAMPAIGN",
+        status: "ACTIVE",
+        label: "Advertiser QR Create Attempt",
+      }, advertiserScopedUser);
+      if (advertiserCreateResult.ok) {
+        throw new Error("Security Leak: Advertiser Viewer created a QR code!");
+      }
+      if (advertiserCreateResult.error !== "Unauthorized") {
+        throw new Error(`Test Failure: Expected 'Unauthorized' for Advertiser Viewer QR create, but got '${advertiserCreateResult.error}'`);
+      }
+      if (advertiserQrCountBefore !== await prisma.qRCode.count()) {
+        throw new Error("Security Breach: QR row was created despite rejected Advertiser Viewer createQRCode call!");
+      }
+
+      if (assignedQR) {
+        const advertiserUpdateResult = await updateQRCode(assignedQR.id, {
+          code: assignedQR.code,
+          type: assignedQR.type,
+          status: assignedQR.status,
+          brandId: assignedQR.brandId ?? undefined,
+          advertiserId: assignedQR.advertiserId ?? undefined,
+          campaignId: assignedQR.campaignId ?? undefined,
+          productId: assignedQR.productId ?? undefined,
+          batchId: assignedQR.batchId ?? undefined,
+          label: "Advertiser Update Attempt",
+          destinationUrl: assignedQR.destinationUrl ?? undefined,
+        }, advertiserScopedUser);
+        if (advertiserUpdateResult.ok) {
+          throw new Error("Security Leak: Advertiser Viewer updated a QR code!");
+        }
+        if (advertiserUpdateResult.error !== "Unauthorized") {
+          throw new Error(`Test Failure: Expected 'Unauthorized' for Advertiser Viewer QR update, but got '${advertiserUpdateResult.error}'`);
+        }
+      }
+      console.log("✔ Advertiser Viewer QR create/update mutations rejected.");
+    }
+
+    // G. Retail Operations QR mutations are denied
+    const retailOpsUser = await prisma.user.findFirst({
+      where: { role: "RETAIL_OPERATIONS" },
+    });
+    if (retailOpsUser) {
+      const retailScopedUser = {
+        id: retailOpsUser.id,
+        role: retailOpsUser.role,
+        brandId: retailOpsUser.brandId,
+        advertiserId: retailOpsUser.advertiserId,
+      };
+      const retailQrCode = `QR_RETAIL_DENIED_${Date.now()}`;
+      const retailQrCountBefore = await prisma.qRCode.count();
+      const retailCreateResult = await createQRCode({
+        brandId: unassignedCampaign.brandId,
+        advertiserId: unassignedCampaign.advertiserId,
+        campaignId: unassignedCampaign.id,
+        productId: unassignedCampaign.productId ?? undefined,
+        code: retailQrCode,
+        type: "CONSUMER_CAMPAIGN",
+        status: "ACTIVE",
+        label: "Retail QR Create Attempt",
+      }, retailScopedUser);
+      if (retailCreateResult.ok) {
+        throw new Error("Security Leak: Retail Operations created a QR code!");
+      }
+      if (retailCreateResult.error !== "Unauthorized") {
+        throw new Error(`Test Failure: Expected 'Unauthorized' for Retail Operations QR create, but got '${retailCreateResult.error}'`);
+      }
+      if (retailQrCountBefore !== await prisma.qRCode.count()) {
+        throw new Error("Security Breach: QR row was created despite rejected Retail Operations createQRCode call!");
+      }
+
+      if (assignedQR) {
+        const retailUpdateResult = await updateQRCode(assignedQR.id, {
+          code: assignedQR.code,
+          type: assignedQR.type,
+          status: assignedQR.status,
+          brandId: assignedQR.brandId ?? undefined,
+          advertiserId: assignedQR.advertiserId ?? undefined,
+          campaignId: assignedQR.campaignId ?? undefined,
+          productId: assignedQR.productId ?? undefined,
+          batchId: assignedQR.batchId ?? undefined,
+          label: "Retail Update Attempt",
+          destinationUrl: assignedQR.destinationUrl ?? undefined,
+        }, retailScopedUser);
+        if (retailUpdateResult.ok) {
+          throw new Error("Security Leak: Retail Operations updated a QR code!");
+        }
+        if (retailUpdateResult.error !== "Unauthorized") {
+          throw new Error(`Test Failure: Expected 'Unauthorized' for Retail Operations QR update, but got '${retailUpdateResult.error}'`);
+        }
+      }
+      console.log("✔ Retail Operations QR create/update mutations rejected.");
     }
 
 
@@ -463,7 +630,7 @@ async function main() {
     });
     cleanups.campaigns.push(tempCampaign.id);
 
-    const tempAssignment = await prisma.campaignAssignment.create({
+    await prisma.campaignAssignment.create({
       data: {
         campaignId: tempCampaign.id,
         userId: campaignManagerUser.id,
@@ -557,6 +724,7 @@ async function main() {
     const qrCodeVal = `QR_CM_TEMP_${Date.now()}`;
     const posQrCreateResult = await createQRCode({
       brandId: tempCampaign.brandId,
+      advertiserId: tempCampaign.advertiserId,
       campaignId: tempCampaign.id,
       code: qrCodeVal,
       type: "CONSUMER_CAMPAIGN",
@@ -576,6 +744,7 @@ async function main() {
       type: "CONSUMER_CAMPAIGN",
       status: "ACTIVE",
       brandId: tempCampaign.brandId,
+      advertiserId: tempCampaign.advertiserId,
       campaignId: tempCampaign.id,
       label: "Disposable CM QR Updated",
     }, scopedUser);

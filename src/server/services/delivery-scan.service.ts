@@ -7,14 +7,39 @@ import type { CurrentUser } from "@/lib/auth/get-current-user";
 import { toDeliveryScanDTO, toRetailerDTO } from "@/lib/dtos/delivery.dto";
 
 
-export type ServiceResult<T = any> =
+export type ServiceResult<T = unknown> =
   | { ok: true; status: string; data: T }
   | { ok: false; status: string; error: string };
+
+type DeliveryQRCodePageData = {
+  qrCode: {
+    id: string;
+    code: string;
+    type: string;
+    status: string;
+    brandId: string | null;
+    campaignId: string | null;
+    productId: string | null;
+    batchId: string | null;
+    brand: { name: string } | null;
+    campaign: { name: string; offerTitle: string } | null;
+    product: { name: string } | null;
+    batch: {
+      id: string;
+      batchCode: string;
+      unitsPerCarton: number | null;
+    } | null;
+  };
+};
+
+type CreatedDeliveryScanData = {
+  id: string;
+};
 
 export async function getDeliveryQRCodePageData(
   code: string,
   user: CurrentUser
-): Promise<ServiceResult> {
+): Promise<ServiceResult<DeliveryQRCodePageData>> {
   const qrCode = await prisma.qRCode.findUnique({
     where: { code },
     select: {
@@ -101,7 +126,7 @@ export async function getDeliveryQRCodePageData(
 export async function createDeliveryScan(
   input: DeliveryScanFormValues,
   user: CurrentUser
-): Promise<ServiceResult> {
+): Promise<ServiceResult<CreatedDeliveryScanData>> {
   const parsed = deliveryScanSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -244,7 +269,7 @@ export async function createDeliveryScan(
           suburb: data.suburb ?? null,
           latitude: data.latitude ?? null,
           longitude: data.longitude ?? null,
-          locationSource: (data.locationSource as any) ?? "MANUAL",
+          locationSource: data.locationSource ?? "MANUAL",
           notes: data.notes ?? null,
         },
       });
@@ -263,7 +288,7 @@ export async function createDeliveryScan(
       status: "CREATED",
       data: result,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof Error && error.message === "RETAILER_SCOPE_MISMATCH") {
       return {
         ok: false,
@@ -334,6 +359,9 @@ export async function getRetailOperationsDashboardData(user: CurrentUser) {
     recentDeliveryScans,
   };
 }
+
+/** Maximum rows returned by delivery list queries. Aggregation / KPI queries are unaffected. */
+export const DELIVERY_LIST_LIMIT = 500;
 
 export type DeliveryFilterParams = {
   brandId?: string;
@@ -466,7 +494,7 @@ export async function getAdminDeliveryPageData(user: CurrentUser, filters: Deliv
   where.createdAt = { gte: startDate, lte: endDate };
 
   const [
-    deliveryScans,
+    scansRaw,
     retailers,
     totalDeliveryScans,
     cartonsAggregate,
@@ -474,7 +502,8 @@ export async function getAdminDeliveryPageData(user: CurrentUser, filters: Deliv
   ] = await Promise.all([
     prisma.deliveryScan.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: DELIVERY_LIST_LIMIT + 1,
       include: {
         retailer: true,
         campaign: true,
@@ -503,12 +532,165 @@ export async function getAdminDeliveryPageData(user: CurrentUser, filters: Deliv
     }),
   ]);
 
+  const isTruncated = scansRaw.length > DELIVERY_LIST_LIMIT;
+  const deliveryScans = scansRaw.slice(0, DELIVERY_LIST_LIMIT).map(toDeliveryScanDTO);
+
   return {
-    deliveryScans: deliveryScans.map(toDeliveryScanDTO),
+    deliveryScans,
     retailers: retailers.map(toRetailerDTO),
     totalDeliveryScans,
     totalCartonsDelivered: cartonsAggregate._sum.cartonsDelivered ?? 0,
     totalEstimatedUnitsDelivered: unitsAggregate._sum.estimatedUnitsDelivered ?? 0,
+    isTruncated,
+    returnedCount: deliveryScans.length,
+  };
+}
+
+export async function getBrandDeliveryPageData(user: CurrentUser, filters: DeliveryFilterParams = {}) {
+  if (user.role !== "BRAND_ADMIN" || !user.brandId) {
+    return {
+      deliveryScans: [] as ReturnType<typeof toDeliveryScanDTO>[],
+      retailers: [] as ReturnType<typeof toRetailerDTO>[],
+      totalDeliveryScans: 0,
+      totalCartonsDelivered: 0,
+      totalEstimatedUnitsDelivered: 0,
+      isTruncated: false,
+      returnedCount: 0,
+    };
+  }
+
+  let startDate: Date;
+  let endDate: Date;
+
+  if (filters.startDate || filters.endDate) {
+    if (!filters.startDate || !filters.endDate) {
+      return {
+        deliveryScans: [] as ReturnType<typeof toDeliveryScanDTO>[],
+        retailers: [] as ReturnType<typeof toRetailerDTO>[],
+        totalDeliveryScans: 0,
+        totalCartonsDelivered: 0,
+        totalEstimatedUnitsDelivered: 0,
+        isTruncated: false,
+        returnedCount: 0,
+        error: "Both Start Date and End Date are required when filtering by a date range.",
+      };
+    }
+    const startVal = new Date(filters.startDate);
+    const endVal = new Date(filters.endDate);
+    if (isNaN(startVal.getTime()) || isNaN(endVal.getTime()) || startVal > endVal) {
+      return {
+        deliveryScans: [] as ReturnType<typeof toDeliveryScanDTO>[],
+        retailers: [] as ReturnType<typeof toRetailerDTO>[],
+        totalDeliveryScans: 0,
+        totalCartonsDelivered: 0,
+        totalEstimatedUnitsDelivered: 0,
+        isTruncated: false,
+        returnedCount: 0,
+        error: "Invalid date range.",
+      };
+    }
+    startDate = startVal;
+    endDate = endVal;
+  } else {
+    endDate = new Date();
+    startDate = new Date();
+    startDate.setDate(endDate.getDate() - 90);
+  }
+
+  endDate.setHours(23, 59, 59, 999);
+
+  // Always scope to the authenticated BRAND_ADMIN's brand — never accept brandId from URL
+  const where: Prisma.DeliveryScanWhereInput = {
+    brandId: user.brandId,
+    createdAt: { gte: startDate, lte: endDate },
+  };
+
+  const campaignWhere: Prisma.CampaignWhereInput = {};
+  let hasCampaignWhere = false;
+
+  if (filters.campaignId) {
+    campaignWhere.id = filters.campaignId;
+    hasCampaignWhere = true;
+  }
+
+  if (filters.productId) {
+    where.qrCode = { productId: filters.productId };
+  }
+
+  if (filters.batchId) {
+    where.batchId = filters.batchId;
+  }
+
+  if (filters.retailerId) {
+    where.retailerId = filters.retailerId;
+  }
+
+  if (filters.country) {
+    where.country = filters.country;
+  }
+
+  if (filters.region) {
+    where.region = filters.region;
+  }
+
+  if (filters.city) {
+    where.city = filters.city;
+  }
+
+  if (hasCampaignWhere) {
+    const matchingCampaigns = await prisma.campaign.findMany({
+      where: { ...campaignWhere, brandId: user.brandId },
+      select: { id: true },
+    });
+    const campaignIds = matchingCampaigns.map((c) => c.id);
+    if (campaignIds.length === 0) {
+      return {
+        deliveryScans: [] as ReturnType<typeof toDeliveryScanDTO>[],
+        retailers: [] as ReturnType<typeof toRetailerDTO>[],
+        totalDeliveryScans: 0,
+        totalCartonsDelivered: 0,
+        totalEstimatedUnitsDelivered: 0,
+        isTruncated: false,
+        returnedCount: 0,
+      };
+    }
+    where.campaignId = { in: campaignIds };
+  }
+
+  const [scansRaw, brandRetailers, totalDeliveryScans, cartonsAggregate, unitsAggregate] =
+    await Promise.all([
+      prisma.deliveryScan.findMany({
+        where,
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: DELIVERY_LIST_LIMIT + 1,
+        include: {
+          retailer: true,
+          campaign: true,
+          batch: true,
+          brand: true,
+          qrCode: { include: { product: true } },
+        },
+      }),
+      prisma.retailer.findMany({
+        where: { brandId: user.brandId },
+        orderBy: { name: "asc" },
+      }),
+      prisma.deliveryScan.count({ where }),
+      prisma.deliveryScan.aggregate({ _sum: { cartonsDelivered: true }, where }),
+      prisma.deliveryScan.aggregate({ _sum: { estimatedUnitsDelivered: true }, where }),
+    ]);
+
+  const isTruncated = scansRaw.length > DELIVERY_LIST_LIMIT;
+  const deliveryScans = scansRaw.slice(0, DELIVERY_LIST_LIMIT).map(toDeliveryScanDTO);
+
+  return {
+    deliveryScans,
+    retailers: brandRetailers.map(toRetailerDTO),
+    totalDeliveryScans,
+    totalCartonsDelivered: cartonsAggregate._sum.cartonsDelivered ?? 0,
+    totalEstimatedUnitsDelivered: unitsAggregate._sum.estimatedUnitsDelivered ?? 0,
+    isTruncated,
+    returnedCount: deliveryScans.length,
   };
 }
 
@@ -530,7 +712,7 @@ export async function getRetailDeliveriesPageData(user: CurrentUser) {
   }
 
   const [
-    deliveryScans,
+    scansRaw,
     retailers,
     totalDeliveryScans,
     cartonsAggregate,
@@ -538,7 +720,8 @@ export async function getRetailDeliveriesPageData(user: CurrentUser) {
   ] = await Promise.all([
     prisma.deliveryScan.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: DELIVERY_LIST_LIMIT + 1,
       include: {
         retailer: true,
         campaign: true,
@@ -572,11 +755,16 @@ export async function getRetailDeliveriesPageData(user: CurrentUser) {
     }),
   ]);
 
+  const isTruncated = scansRaw.length > DELIVERY_LIST_LIMIT;
+  const deliveryScans = scansRaw.slice(0, DELIVERY_LIST_LIMIT);
+
   return {
     deliveryScans,
     retailers,
     totalDeliveryScans,
     totalCartonsDelivered: cartonsAggregate._sum.cartonsDelivered ?? 0,
     totalEstimatedUnitsDelivered: unitsAggregate._sum.estimatedUnitsDelivered ?? 0,
+    isTruncated,
+    returnedCount: deliveryScans.length,
   };
 }

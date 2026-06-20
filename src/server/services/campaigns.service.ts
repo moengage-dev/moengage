@@ -1,6 +1,6 @@
 // src/server/services/campaigns.service.ts
 import prisma from "@/lib/prisma";
-import { RewardType, CampaignStatus } from "@prisma/client";
+import { RewardType, CampaignStatus, Prisma } from "@prisma/client";
 import { getAssignedCampaignIds } from "@/lib/auth/role-scope";
 import { campaignSchema } from "@/lib/validators/campaign.validator";
 import type { CampaignFormValues } from "@/lib/validators/campaign.validator";
@@ -137,9 +137,9 @@ const campaignInclude = {
 } as const;
 
 export async function getCampaignsPageData(user: ScopedUser): Promise<AdminCampaignsPageData> {
-  const campaignFilter: any = {};
+  const campaignFilter: Prisma.CampaignWhereInput = {};
   if (user.role === "BRAND_ADMIN") {
-    campaignFilter.brandId = user.brandId;
+    campaignFilter.brandId = user.brandId ?? "__NONE__";
   } else if (user.role === "CAMPAIGN_MANAGER") {
     const assignedCampaignIds = await getAssignedCampaignIds(user.id);
     if (assignedCampaignIds.length === 0) {
@@ -156,22 +156,22 @@ export async function getCampaignsPageData(user: ScopedUser): Promise<AdminCampa
     }
     campaignFilter.id = { in: assignedCampaignIds };
   } else if (user.role === "ADVERTISER_VIEWER") {
-    campaignFilter.advertiserId = user.advertiserId;
+    campaignFilter.advertiserId = user.advertiserId ?? "__NONE__";
   }
 
-  const brandFilter: any = { status: "ACTIVE" };
+  const brandFilter: Prisma.BrandWhereInput = { status: "ACTIVE" };
   if (user.role === "BRAND_ADMIN") {
-    brandFilter.id = user.brandId;
+    brandFilter.id = user.brandId ?? "__NONE__";
   }
 
-  const advertiserFilter: any = { status: "ACTIVE" };
+  const advertiserFilter: Prisma.AdvertiserWhereInput = { status: "ACTIVE" };
   if (user.role === "ADVERTISER_VIEWER") {
-    advertiserFilter.id = user.advertiserId;
+    advertiserFilter.id = user.advertiserId ?? "__NONE__";
   }
 
-  const productFilter: any = { status: "ACTIVE" };
+  const productFilter: Prisma.ProductWhereInput = { status: "ACTIVE" };
   if (user.role === "BRAND_ADMIN") {
-    productFilter.brandId = user.brandId;
+    productFilter.brandId = user.brandId ?? "__NONE__";
   }
 
   const [
@@ -399,6 +399,129 @@ export async function updateCampaign(
   });
 
   return { ok: true, data: toCampaignRow(campaign) };
+}
+
+export type CampaignManagerOption = {
+  id: string;
+  name: string | null;
+  email: string;
+};
+
+export async function getCampaignManagersForBrand(
+  brandId: string
+): Promise<CampaignManagerOption[]> {
+  const users = await prisma.user.findMany({
+    where: { role: "CAMPAIGN_MANAGER", brandId, isActive: true },
+    select: { id: true, name: true, email: true },
+    orderBy: { name: "asc" },
+  });
+  return users;
+}
+
+export async function getAssignedManagersForCampaign(
+  campaignId: string
+): Promise<CampaignManagerOption[]> {
+  const assignments = await prisma.campaignAssignment.findMany({
+    where: { campaignId },
+    include: { user: { select: { id: true, name: true, email: true } } },
+  });
+  return assignments.map((a) => ({
+    id: a.user.id,
+    name: a.user.name,
+    email: a.user.email,
+  }));
+}
+
+export async function assignCampaignManager(
+  campaignId: string,
+  managerId: string,
+  actor: ScopedUser
+): Promise<ServiceResult> {
+  const campaign = await prisma.campaign.findUnique({
+    where: { id: campaignId },
+    select: { brandId: true },
+  });
+  if (!campaign) return { ok: false, error: "Campaign not found" };
+
+  if (actor.role === "BRAND_ADMIN") {
+    if (campaign.brandId !== actor.brandId) return { ok: false, error: "Campaign not found" };
+  } else if (actor.role !== "ADMIN") {
+    return { ok: false, error: "Unauthorized" };
+  }
+
+  const manager = await prisma.user.findUnique({
+    where: { id: managerId },
+    select: { role: true, brandId: true, isActive: true },
+  });
+  if (!manager || !manager.isActive) return { ok: false, error: "User not found" };
+  if (manager.role !== "CAMPAIGN_MANAGER") return { ok: false, error: "User is not a Campaign Manager" };
+  if (actor.role === "BRAND_ADMIN" && manager.brandId !== actor.brandId) {
+    return { ok: false, error: "User does not belong to your brand" };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.campaignAssignment.upsert({
+      where: { campaignId_userId: { campaignId, userId: managerId } },
+      create: { campaignId, userId: managerId },
+      update: {},
+    });
+    await tx.auditLog.create({
+      data: {
+        userId: actor.id,
+        action: "ASSIGN_CAMPAIGN_MANAGER",
+        entityType: "CampaignAssignment",
+        entityId: campaignId,
+        metadata: { managerId, actorRole: actor.role },
+      },
+    });
+  });
+
+  return { ok: true, data: undefined };
+}
+
+export async function unassignCampaignManager(
+  campaignId: string,
+  managerId: string,
+  actor: ScopedUser
+): Promise<ServiceResult> {
+  const campaign = await prisma.campaign.findUnique({
+    where: { id: campaignId },
+    select: { brandId: true },
+  });
+  if (!campaign) return { ok: false, error: "Campaign not found" };
+
+  if (actor.role === "BRAND_ADMIN") {
+    if (campaign.brandId !== actor.brandId) return { ok: false, error: "Campaign not found" };
+  } else if (actor.role !== "ADMIN") {
+    return { ok: false, error: "Unauthorized" };
+  }
+
+  const assignment = await prisma.campaignAssignment.findUnique({
+    where: { campaignId_userId: { campaignId, userId: managerId } },
+    include: { user: { select: { brandId: true } } },
+  });
+  if (!assignment) return { ok: false, error: "Assignment not found" };
+
+  if (actor.role === "BRAND_ADMIN" && assignment.user.brandId !== actor.brandId) {
+    return { ok: false, error: "User does not belong to your brand" };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.campaignAssignment.delete({
+      where: { campaignId_userId: { campaignId, userId: managerId } },
+    });
+    await tx.auditLog.create({
+      data: {
+        userId: actor.id,
+        action: "UNASSIGN_CAMPAIGN_MANAGER",
+        entityType: "CampaignAssignment",
+        entityId: campaignId,
+        metadata: { managerId, actorRole: actor.role },
+      },
+    });
+  });
+
+  return { ok: true, data: undefined };
 }
 
 export async function archiveCampaign(id: string, user: ScopedUser): Promise<ServiceResult> {

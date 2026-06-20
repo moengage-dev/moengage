@@ -4,12 +4,14 @@ import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { redirect } from "next/navigation";
 import { getDashboardForRole } from "@/lib/auth/role-redirect";
 import { getRetailOperationsDashboardData } from "@/server/services/delivery-scan.service";
+import { getRetailDeliveryMapData } from "@/server/services/heatmaps.service";
 import { formatDate, formatNumber } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Truck, Archive, Layers, Calendar, MapPin, ClipboardList, Scan } from "lucide-react";
+import { Truck, Archive, Layers, Calendar, MapPin, ClipboardList, Scan, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { DashboardSectionHeader } from "@/components/dashboard/dashboard-section-header";
+import { HeatmapMap } from "@/components/heatmaps/heatmap-map";
 
 export const dynamic = "force-dynamic";
 
@@ -20,12 +22,13 @@ export default async function RetailDashboardPage() {
     redirect(getDashboardForRole(user.role));
   }
 
-  const {
-    totalDeliveryScans,
-    totalCartonsDelivered,
-    totalEstimatedUnitsDelivered,
-    recentDeliveryScans,
-  } = await getRetailOperationsDashboardData(user);
+  const [
+    { totalDeliveryScans, totalCartonsDelivered, totalEstimatedUnitsDelivered, recentDeliveryScans },
+    deliveryMapData,
+  ] = await Promise.all([
+    getRetailOperationsDashboardData(user),
+    getRetailDeliveryMapData(user),
+  ]);
 
   return (
     <div className="min-h-screen bg-background p-6 md:p-10 space-y-8">
@@ -150,6 +153,42 @@ export default async function RetailDashboardPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Delivery Location Map — last 90 days, brand-scoped */}
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-base font-semibold text-foreground">Delivery Location Map</h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            Geographic distribution of deliveries for the past 90 days.
+            {deliveryMapData.metadata.isDataTruncated && (
+              <span className="ml-1 text-amber-600 font-medium">
+                Showing the most recent 500 delivery locations.
+              </span>
+            )}
+          </p>
+        </div>
+
+        {deliveryMapData.aggregatedMarkers.length === 0 ? (
+          <div className="flex items-center gap-3 rounded-xl border border-dashed border-border/50 bg-muted/30 p-8 text-center justify-center">
+            <MapPin className="h-5 w-5 text-muted-foreground shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              No delivery locations with coordinates recorded in the past 90 days.
+            </p>
+          </div>
+        ) : (
+          <>
+            {deliveryMapData.metadata.isDataTruncated && (
+              <div className="bg-muted border border-border rounded-xl p-4 flex items-start gap-3 text-foreground shadow-sm">
+                <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  Showing the 500 most recent delivery locations. Use the Deliveries page for the full history.
+                </div>
+              </div>
+            )}
+            <HeatmapMap locationMarkers={deliveryMapData.aggregatedMarkers} />
+          </>
+        )}
       </div>
     </div>
   );

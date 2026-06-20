@@ -101,17 +101,24 @@ export type AnalyticsDashboardData = {
   hasData: boolean;
 };
 
+type AnalyticsFilters = {
+  campaign: Prisma.CampaignWhereInput;
+  qrCode: Prisma.QRCodeWhereInput;
+  scanEvent: Prisma.ScanEventWhereInput;
+  rewardClaim: Prisma.RewardClaimWhereInput;
+  rewardClaimAttempt: Prisma.RewardClaimAttemptWhereInput;
+  deliveryScan: Prisma.DeliveryScanWhereInput;
+};
+
 // Generic helper to compute scoped metrics and performance groups
-async function computeMetricsAndPerformance(filters: {
-  campaign: any;
-  qrCode: any;
-  scanEvent: any;
-  rewardClaim: any;
-  deliveryScan: any;
-}): Promise<AnalyticsDashboardData> {
-  const productWhere =
-    filters.campaign.brandId
-      ? { brandId: filters.campaign.brandId }
+async function computeMetricsAndPerformance(filters: AnalyticsFilters): Promise<AnalyticsDashboardData> {
+  const campaignBrandId =
+    typeof filters.campaign.brandId === "string"
+      ? filters.campaign.brandId
+      : undefined;
+  const productWhere: Prisma.ProductWhereInput =
+    campaignBrandId
+      ? { brandId: campaignBrandId }
       : Object.keys(filters.campaign).length > 0
         ? { campaigns: { some: filters.campaign } }
         : {};
@@ -153,7 +160,7 @@ async function computeMetricsAndPerformance(filters: {
       where: { ...filters.scanEvent, anonymousVisitorId: { not: null } },
     }),
     prisma.rewardClaim.count({ where: { ...filters.rewardClaim, status: "APPROVED" } }),
-    prisma.rewardClaimAttempt.count({ where: { ...filters.rewardClaim, status: "DECLINED_DUPLICATE" } }),
+    prisma.rewardClaimAttempt.count({ where: { ...filters.rewardClaimAttempt, status: "DECLINED_DUPLICATE" } }),
     prisma.deliveryScan.count({ where: filters.deliveryScan }),
     prisma.deliveryScan.aggregate({ _sum: { cartonsDelivered: true }, where: filters.deliveryScan }),
     prisma.deliveryScan.aggregate({ _sum: { estimatedUnitsDelivered: true }, where: filters.deliveryScan }),
@@ -238,7 +245,7 @@ async function computeMetricsAndPerformance(filters: {
             where: { ...filters.rewardClaim, campaignId: c.id, status: "APPROVED" },
           }),
           prisma.rewardClaimAttempt.count({
-            where: { ...filters.rewardClaim, campaignId: c.id, status: "DECLINED_DUPLICATE" },
+            where: { ...filters.rewardClaimAttempt, campaignId: c.id, status: "DECLINED_DUPLICATE" },
           }),
           prisma.deliveryScan.count({ where: { ...filters.deliveryScan, campaignId: c.id } }),
           prisma.deliveryScan.aggregate({
@@ -418,12 +425,85 @@ const EMPTY_ANALYTICS_DATA: AnalyticsDashboardData = {
   hasData: false,
 };
 
+// ── Advertiser campaign list with scan counter aggregates ────────────────────
+
+export type AdvertiserCampaignRow = {
+  id: string;
+  name: string;
+  brandName: string;
+  productName: string | null;
+  status: string;
+  startDate: string | null;
+  endDate: string | null;
+  totalHits: number;
+  billableHits: number;
+  suspiciousHits: number;
+  approvedClaims: number;
+};
+
+export async function getAdvertiserCampaignsWithStats(
+  user: ScopedUser
+): Promise<AdvertiserCampaignRow[]> {
+  if (user.role !== "ADVERTISER_VIEWER" && user.role !== "ADMIN") return [];
+  if (user.role === "ADVERTISER_VIEWER" && !user.advertiserId) return [];
+
+  const campaignWhere: Prisma.CampaignWhereInput =
+    user.role === "ADVERTISER_VIEWER" ? { advertiserId: user.advertiserId! } : {};
+
+  const campaigns = await prisma.campaign.findMany({
+    where: campaignWhere,
+    include: {
+      brand: { select: { name: true } },
+      product: { select: { name: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (campaigns.length === 0) return [];
+
+  const campaignIds = campaigns.map((c) => c.id);
+
+  const [scanAggs, claimCounts] = await Promise.all([
+    prisma.scanEvent.groupBy({
+      by: ["campaignId"],
+      where: { campaignId: { in: campaignIds } },
+      _sum: { hitCount: true, billableCount: true, suspiciousCount: true },
+    }),
+    prisma.rewardClaim.groupBy({
+      by: ["campaignId"],
+      where: { campaignId: { in: campaignIds }, status: "APPROVED" },
+      _count: { id: true },
+    }),
+  ]);
+
+  const scanMap = new Map(scanAggs.map((s) => [s.campaignId, s._sum]));
+  const claimMap = new Map(claimCounts.map((c) => [c.campaignId, c._count.id]));
+
+  return campaigns.map((c) => {
+    const scans = scanMap.get(c.id);
+    return {
+      id: c.id,
+      name: c.name,
+      brandName: c.brand?.name ?? "—",
+      productName: c.product?.name ?? null,
+      status: c.status,
+      startDate: c.startDate ? c.startDate.toISOString().split("T")[0] : null,
+      endDate: c.endDate ? c.endDate.toISOString().split("T")[0] : null,
+      totalHits: scans?.hitCount ?? 0,
+      billableHits: scans?.billableCount ?? 0,
+      suspiciousHits: scans?.suspiciousCount ?? 0,
+      approvedClaims: claimMap.get(c.id) ?? 0,
+    };
+  });
+}
+
 export async function getAnalyticsDashboardData(user: ScopedUser): Promise<AnalyticsDashboardData> {
-  const filters: any = {
+  const filters: AnalyticsFilters = {
     campaign: {},
     qrCode: {},
     scanEvent: {},
     rewardClaim: {},
+    rewardClaimAttempt: {},
     deliveryScan: {},
   };
 
@@ -438,6 +518,7 @@ export async function getAnalyticsDashboardData(user: ScopedUser): Promise<Analy
     filters.qrCode.brandId = user.brandId;
     filters.scanEvent.brandId = user.brandId;
     filters.rewardClaim.brandId = user.brandId;
+    filters.rewardClaimAttempt.brandId = user.brandId;
     filters.deliveryScan.brandId = user.brandId;
   } else if (user.role === "CAMPAIGN_MANAGER") {
     // Scope by the campaigns explicitly assigned to this manager.
@@ -449,6 +530,7 @@ export async function getAnalyticsDashboardData(user: ScopedUser): Promise<Analy
     filters.qrCode.campaignId = { in: campaignIds };
     filters.scanEvent.campaignId = { in: campaignIds };
     filters.rewardClaim.campaignId = { in: campaignIds };
+    filters.rewardClaimAttempt.campaignId = { in: campaignIds };
     filters.deliveryScan.campaignId = { in: campaignIds };
   } else if (user.role === "ADVERTISER_VIEWER") {
     // Fail closed: ADVERTISER_VIEWER must have an advertiserId.
@@ -459,6 +541,7 @@ export async function getAnalyticsDashboardData(user: ScopedUser): Promise<Analy
     filters.qrCode.advertiserId = user.advertiserId;
     filters.scanEvent.advertiserId = user.advertiserId;
     filters.rewardClaim.advertiserId = user.advertiserId;
+    filters.rewardClaimAttempt.advertiserId = user.advertiserId;
     filters.deliveryScan.campaign = { advertiserId: user.advertiserId };
   } else {
     // Unknown role: fail closed.
@@ -466,6 +549,62 @@ export async function getAnalyticsDashboardData(user: ScopedUser): Promise<Analy
   }
 
   return computeMetricsAndPerformance(filters);
+}
+
+// ── Admin-only top performance lists ────────────────────────────────────────
+
+export type TopBrandRow = { brandId: string; brandName: string; totalHits: number };
+export type TopAdvertiserRow = { advertiserId: string; advertiserName: string; totalHits: number };
+
+export type AdminTopListData = {
+  topBrands: TopBrandRow[];
+  topAdvertisers: TopAdvertiserRow[];
+};
+
+export async function getAdminTopLists(): Promise<AdminTopListData> {
+  const [brandAggs, advertiserAggs] = await Promise.all([
+    prisma.scanEvent.groupBy({
+      by: ["brandId"],
+      where: { brandId: { not: null } },
+      _sum: { hitCount: true },
+      orderBy: { _sum: { hitCount: "desc" } },
+      take: 5,
+    }),
+    prisma.scanEvent.groupBy({
+      by: ["advertiserId"],
+      where: { advertiserId: { not: null } },
+      _sum: { hitCount: true },
+      orderBy: { _sum: { hitCount: "desc" } },
+      take: 5,
+    }),
+  ]);
+
+  const topBrandIds = brandAggs.map((b) => b.brandId).filter((id): id is string => id !== null);
+  const topAdvertiserIds = advertiserAggs.map((a) => a.advertiserId).filter((id): id is string => id !== null);
+
+  const [brands, advertisers] = await Promise.all([
+    topBrandIds.length > 0
+      ? prisma.brand.findMany({ where: { id: { in: topBrandIds } }, select: { id: true, name: true } })
+      : Promise.resolve([]),
+    topAdvertiserIds.length > 0
+      ? prisma.advertiser.findMany({ where: { id: { in: topAdvertiserIds } }, select: { id: true, name: true } })
+      : Promise.resolve([]),
+  ]);
+
+  const brandNameMap = new Map(brands.map((b) => [b.id, b.name]));
+  const advertiserNameMap = new Map(advertisers.map((a) => [a.id, a.name]));
+
+  const topBrands: TopBrandRow[] = topBrandIds.map((id) => {
+    const agg = brandAggs.find((b) => b.brandId === id)!;
+    return { brandId: id, brandName: brandNameMap.get(id) ?? "—", totalHits: agg._sum.hitCount ?? 0 };
+  });
+
+  const topAdvertisers: TopAdvertiserRow[] = topAdvertiserIds.map((id) => {
+    const agg = advertiserAggs.find((a) => a.advertiserId === id)!;
+    return { advertiserId: id, advertiserName: advertiserNameMap.get(id) ?? "—", totalHits: agg._sum.hitCount ?? 0 };
+  });
+
+  return { topBrands, topAdvertisers };
 }
 
 export async function getScanTrendByMinute(campaignId?: string): Promise<Array<{ minute: Date; scanCount: number }>> {

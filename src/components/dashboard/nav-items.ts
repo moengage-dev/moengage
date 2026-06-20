@@ -126,6 +126,7 @@ export const CAMPAIGN_MANAGER_NAV_GROUPS: NavGroup[] = [
         href: "/campaign-manager/analytics",
         icon: LineChart,
       },
+      { title: "Heatmaps", href: "/campaign-manager/heatmaps", icon: Map },
       { title: "Reports", href: "/campaign-manager/reports", icon: BarChart3 },
     ],
   },

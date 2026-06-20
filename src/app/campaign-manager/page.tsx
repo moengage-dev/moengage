@@ -18,7 +18,6 @@ import {
   Archive,
   BarChart3,
   Award,
-  Calendar,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
